@@ -126,7 +126,7 @@ public :
 };
 
 // Standard implementation of the class, which doubles the capacity each time
-// the array is full.
+// the array is full. T is the type of the stored data, S the index storage type.
 
 template <class T, class S>
 class DST_API dstDynamicArray : public dstDynamicArrayBaseClass <T, S> {
@@ -157,7 +157,7 @@ public :
 	dstCastDynamicArray(S starting_capacity = 4) { }
 	// Get value of element i.
 	inline U Get(S i) const {
-		return (U)((C2 *)this->Get(i));
+		return (U)(((C2 *)this)->Get(i));
 	}
         // Set value of element i.
         inline void Set(S i, U v) const {
@@ -165,11 +165,11 @@ public :
         }
 	// Get a pointer to the start of the array.
 	inline U *DataPointer() const {
-                return (U *)((C2 *)this->DataPointer());
+                return (U *)((C2 *)this)->DataPointer();
         }
 	// Get a pointer to a specific element.
         inline U *DataPointer(uint32_t i) const {
-		return &(U *)((C2 *)this->DataPointer(i));
+		return &(U *)((C2 *)this)->DataPointer(i);
         }
 	inline void Add(U s) {
 		((C2 *)this)->Add((T)s);
