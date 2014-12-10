@@ -8,7 +8,7 @@ VERSION = 0.2
 VERSION_MAJOR = 0
 
 # CFLAGS with optional tuning for CPU
-OPTCFLAGS = -Ofast -ffast-math
+OPTCFLAGS =
 ifeq ($(TARGET_CPU), CORTEX_A7)
 OPTCFLAGS += -mcpu=cortex-a7 -mfpu=vfpv4
 endif
@@ -18,9 +18,30 @@ endif
 ifeq ($(TARGET_CPU), CORTEX_A9)
 OPTCFLAGS += -mcpu=cortex-a9
 endif
-ifeq ($(LIBRARY_CONFIGURATION), DEBUG)
-OPTCFLAGS = -ggdb
+
+# SIMD configuration (SSE on x86).
+ifeq ($(TARGET_SIMD), X86_SSE3)
+OPTCFLAGS += -msse3 -DUSE_SSE2 -DUSE_SSE3
+else
+ifeq ($(TARGET_SIMD), X86_SSE2)
+OPTCFLAGS += -msse2 -DUSE_SSE2
 endif
+endif
+ifeq ($(TARGET_SIMD), ARM_NEON)
+OPTCFLAGS +=-DUSE_ARM_NEON -mneon
+endif
+ifeq ($(TARGET_SIMD), NONE)
+OPTCFLAGS +=-DNO_SIMD
+endif
+
+ifeq ($(LIBRARY_CONFIGURATION), DEBUG)
+# Adding some optimization even when compiling for debugging can help compilation
+# problems related to arguments that need to immediate constants.
+OPTCFLAGS += -O -ggdb
+else
+OPTCFLAGS += -Ofast -ffast-math
+endif
+
 CFLAGS = -Wall -pipe -I. $(OPTCFLAGS)
 
 ifeq ($(LIBRARY_CONFIGURATION), SHARED)
@@ -44,8 +65,9 @@ CFLAGS_LIB = $(CFLAGS)
 CFLAGS_TEST = $(CFLAGS)
 endif
 
-LIBRARY_MODULE_OBJECTS = random.o rng-cmwc.o
-LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h
+LIBRARY_MODULE_OBJECTS = dstRandom.o dstRNGCMWC.o dstSIMDDotMatrix.o
+LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h \
+	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h
 TEST_PROGRAMS = test-random test-array
 
 default : library
