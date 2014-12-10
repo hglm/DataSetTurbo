@@ -20,6 +20,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define __DST_CONFIG_H__
 
 // Include standard headers used in various library header files.
+#include <stdlib.h>  // For NULL.
 #include <stdint.h>  // For uint64_t etc.
 #include <math.h>
 #include <limits.h>  // For __WORDSIZE.

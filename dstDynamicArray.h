@@ -22,6 +22,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dstConfig.h>
 #include <dstRandom.h>
 
+#include <stdio.h>
+#include <signal.h>
+
 // Dynamic array template class allows any type of data.
 // T is the type of the stored data.
 // S is the integer type for the size of the array (normally int, allowing for
@@ -32,30 +35,42 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 template <class T, class S>
 class DST_API dstDynamicArrayBaseClass {
 private :
+	T *data;
 	S nu_elements;
 	S max_elements;
-	S expansion_hint;
-	T *data;
 
-	// By how much to expand the array the next time it is full.
-	virtual S GetExpansionHint(S size) = 0;
+	// By how much to expand the array.
+	virtual inline S GetExpansionHint(S capacity) const = 0;
+	// The absolute maximum capacity allowed by the class variant.
         inline void ResizeCapacity(S new_capacity) {
                 max_elements = new_capacity;
 		data = (T *)realloc(data, sizeof(T) * max_elements);
-		expansion_hint = GetExpansionHint(max_elements);
 	}
 	inline void ExpandCapacity() {
-		ResizeCapacity(max_elements + expansion_hint);
+		S new_capacity = GetExpansionHint(max_elements);
+		if (new_capacity < max_elements) {
+			// When new_capacity is less than max_elements, usually zero,
+			// the maximum capacity has been reached, so the element cannot be
+			// added. Exit with an error message.
+			fprintf(stderr, "dstDynamicArray: maximum array capacity overflow\n");
+			raise(SIGABRT);
+		}
+		ResizeCapacity(new_capacity);
         }
 
 public :
-	dstDynamicArrayBaseClass(S starting_capacity = 4) {
+	virtual inline S MaxCapacity() const = 0;
+	dstDynamicArrayBaseClass() {
 		nu_elements = 0;
 		max_elements = 0;
-		expansion_hint = starting_capacity;
 		data = NULL;
 	}
-	// There is no deconstuctor. Run FreeData or MakeEmpty() to free storage space.
+	dstDynamicArrayBaseClass(S starting_capacity) {
+		nu_elements = 0;
+		data = NULL;
+		ResizeCapacity(starting_capacity);
+	}
+        // There is no deconstuctor. Run FreeData() or MakeEmpty() to free storage space.
 	inline void FreeData() const {
 		free(data);
         }
@@ -63,7 +78,6 @@ public :
 		FreeData();
 		nu_elements = 0;
 		max_elements = 0;
-		expansion_hint = 4;
 		data = NULL;	
 	}
 	inline S Size() const {
@@ -73,21 +87,29 @@ public :
 		return max_elements;
         }
 	// Get value of element i.
-	inline T Get(uint32_t i) const {
+	inline T Get(S i) const {
 		return data[i];
 	}
+        // Set value of element i.
+        inline void Set(S i, T v) {
+		data[i] = v;
+        }
 	// Get a pointer to the start of the array.
 	inline T *DataPointer() const {
                 return data;
         }
 	// Get a pointer to a specific element.
-        inline T *DataPointer(uint32_t i) const {
+        inline T *DataPointer(S i) const {
 		return &data[i];
         }
         // Trim capacity to the number of elements. This may result in a unusual
 	// (e.g. non-power of two) capacity.
 	inline void TrimCapacity() {
 		ResizeCapacity(nu_elements);
+	}
+	// Set the maximum capacity to a specific size.
+        inline void SetCapacity(S capacity) {
+		ResizeCapacity(capacity);
 	}
         // Truncate array to n elements. Capacity remains the same. n must be less or equal
 	// to the current number of elements as reported by Size().
@@ -110,13 +132,17 @@ template <class T, class S>
 class DST_API dstDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
 	dstDynamicArray(S starting_capacity = 4) { }
+	// The absolute maximum capacity allowed by the class variant.
+	inline S MaxCapacity() const {
+		return (S)1 << (sizeof(S) * 8 - 1);
+	}
 
 private :
-	// By how much to expand the array the next time it is full.
-	inline S GetExpansionHint(S size) {
+	// By how much to expand the array.
+	inline S GetExpansionHint(S size) const {
 		// Expand the size to the next power of two.
                 uint32_t log2_size = dstCalculateLog2(size);
-		return (S)((uint32_t)1 << (log2_size + 1));
+		return (S)((S)1 << (log2_size + 1));
 	}
 };
 
@@ -129,9 +155,22 @@ template <class U, class T, class S, class C2>
 class DST_API dstCastDynamicArray : public C2 {
 public :
 	dstCastDynamicArray(S starting_capacity = 4) { }
+	// Get value of element i.
 	inline U Get(S i) const {
 		return (U)((C2 *)this->Get(i));
 	}
+        // Set value of element i.
+        inline void Set(S i, U v) const {
+		((C2 *)this)->Set(i, (T)v);
+        }
+	// Get a pointer to the start of the array.
+	inline U *DataPointer() const {
+                return (U *)((C2 *)this->DataPointer());
+        }
+	// Get a pointer to a specific element.
+        inline U *DataPointer(uint32_t i) const {
+		return &(U *)((C2 *)this->DataPointer(i));
+        }
 	inline void Add(U s) {
 		((C2 *)this)->Add((T)s);
 	}
@@ -143,12 +182,14 @@ typedef dstDynamicArray <int, uint32_t> dstIntArray;
 typedef dstDynamicArray <int64_t, uint32_t> dstInt64Array;
 #if UINTPTR_MAX == 0xFFFFFFFF
 // 32-bit pointers.
-typedef dstCastDynamicArray <void *, int, uin32_t, dstIntArray> dstPointerArray;
+typedef dstCastDynamicArray <void *, int, uint32_t, dstIntArray> dstPointerArray;
 #else
 // 64-bit pointers
 typedef dstCastDynamicArray <void *, int64_t, uint32_t, dstInt64Array> dstPointerArray;
 #endif
 typedef dstCastDynamicArray <char *, void *, uint32_t, dstPointerArray> dstCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint32_t, dstIntArray> dstFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint32_t, dstInt64Array> dstDoubleArray;
 
 // Dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 16 bits (max 32768 entries).
@@ -162,6 +203,8 @@ typedef dstCastDynamicArray <void *, int, uint16_t, dstSmallIntArray> dstSmallPo
 typedef dstCastDynamicArray <void *, int64_t, uint16_t, dstSmallInt64Array> dstSmallPointerArray;
 #endif
 typedef dstCastDynamicArray <char *, void *, uint16_t, dstSmallPointerArray> dstSmallCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint16_t, dstSmallIntArray> dstSmallFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint16_t, dstSmallInt64Array> dstSmallDoubleArray;
 
 // Dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 8 bits (max 128 entries).
@@ -169,21 +212,54 @@ typedef dstDynamicArray <int, uint8_t> dstVerySmallIntArray;
 typedef dstDynamicArray <int64_t, uint8_t> dstVerySmallInt64Array;
 #if UINTPTR_MAX == 0xFFFFFFFF
 // 32-bit pointers.
-typedef dstCastlDynamicArray <void *, int, uint8_t, dstVerySmallIntArray> dstVerySmallPointerArray;
+typedef dstCastDynamicArray <void *, int, uint8_t, dstVerySmallIntArray> dstVerySmallPointerArray;
 #else
 // 64-bit pointers
 typedef dstCastDynamicArray <void *, int64_t, uint8_t, dstVerySmallInt64Array> dstVerySmallPointerArray;
 #endif
 typedef dstCastDynamicArray <char *, void *, uint8_t, dstVerySmallPointerArray> dstVerySmallCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint8_t, dstVerySmallIntArray> dstVerySmallFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint8_t, dstVerySmallInt64Array>
+    dstVerySmallDoubleArray;
+
+// Dynamic array types for int, int64_t, void *, char *, float and double with a size
+// storage size of 64 bits (allowing arrays with much more than 2G entries). Because the size
+// of the array expands by doubling when it is full, this version is less appropriate than the
+// "tight" versions (dstTightHugeIntArray etc) which are less wasteful with address space/memory.
+typedef dstDynamicArray <int, uint64_t> dstHugeIntArray;
+typedef dstDynamicArray <int64_t, uint64_t> dstHugeInt64Array;
+#if UINTPTR_MAX == 0xFFFFFFFF
+// 32-bit pointers. 64-bit index doesn't really make sense in this case.
+typedef dstCastDynamicArray <void *, int, uint64_t, dstHugeIntArray> dstHugePointerArray;
+#else
+// 64-bit pointers
+typedef dstCastDynamicArray <void *, int64_t, uint64_t, dstHugeInt64Array> dstHugePointerArray;
+#endif
+typedef dstCastDynamicArray <char *, void *, uint64_t, dstHugePointerArray> dstHugeCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint64_t, dstHugeIntArray> dstHugeFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint64_t, dstHugeInt64Array> dstHugeDoubleArray;
+
+// Tight array variant, which does not expand by doubling capacity but by smaller steps.
 
 template <class T, class S>
 class DST_API dstTightDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
 	dstTightDynamicArray(S starting_capacity = 4) { }
+	// The absolute maximum capacity allowed by the class variant.
+	inline S MaxCapacity() const {
+		// Calculate the expansion step size near the end of the size range.
+		S largest_power_of_two_size = (S)1 << (sizeof(S) * 8 - 1);
+		S next = GetExpansionHint(largest_power_of_two_size);
+		S step = next - largest_power_of_two_size;
+		// Since the size storage type S is guaranteed to be an unsigned integer type,
+		// (- step) will be equal the largest possible size (just before 2^64, 2^32, 2^16,
+		// and 2^8.
+		return (S)(- step);
+	}
 
 private :
-	// By how much to expand the array the next time it is full.
-	inline S GetExpansionHint(S size) {
+	// By how much to expand the array.
+	inline S GetExpansionHint(S size) const {
 		// Conservatively expand the size of the array, keeping it tight.
 		// A fast, integer log2 function is used.
 		S log2_size = dstCalculateLog2(size);
@@ -222,7 +298,7 @@ private :
 		// 65536	16 	512
 		// 1048576	20	2 ^ (17 - 4) = 8192
 		// 256M		28	2 ^ (25 - 11) = 16384
-		return (S)expansion;
+		return size + expansion;
 	}
 };
 
@@ -240,6 +316,8 @@ typedef dstCastDynamicArray <void *, int64_t, uint32_t, dstTightInt64Array> dstT
 #endif
 typedef dstCastDynamicArray <char *, void *, uint32_t, dstTightPointerArray>
     dstTightCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint32_t, dstTightIntArray> dstTightFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint32_t, dstTightInt64Array> dstTightDoubleArray;
 
 // dstTightSmallDynamicArray types for int, int64_t, void * char *, with a size storage size
 // of 16 bits (max 65536 entries).
@@ -254,6 +332,9 @@ typedef dstCastDynamicArray <void *, int64_t, uint16_t, dstTightSmallInt64Array>
 #endif
 typedef dstCastDynamicArray <char *, void *, uint16_t, dstTightSmallPointerArray>
     dstTightSmallCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint16_t, dstTightSmallIntArray> dstTightSmallFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint16_t, dstTightSmallInt64Array>
+    dstTightSmallDoubleArray;
 
 // Tight dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 8 bits (max 256 entries).
@@ -268,6 +349,28 @@ typedef dstCastDynamicArray <void *, int64_t, uint8_t, dstVerySmallInt64Array> d
 #endif
 typedef dstCastDynamicArray <char *, void *, uint8_t, dstVerySmallPointerArray>
     dstTightVerySmallCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint8_t, dstTightVerySmallIntArray>
+    dstTightVerySmallFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint8_t, dstTightVerySmallInt64Array>
+    dstTightVerySmallDoubleArray;
+
+// Dynamic array types for int, int64_t, void *, char *, float and double with a size
+// storage size of 64 bits (allowing arrays with much more than 2G entries).
+typedef dstTightDynamicArray <int, uint64_t> dstTightHugeIntArray;
+typedef dstTightDynamicArray <int64_t, uint64_t> dstTightHugeInt64Array;
+#if UINTPTR_MAX == 0xFFFFFFFF
+// 32-bit pointers. 64-bit index doesn't really make sense in this case.
+typedef dstCastDynamicArray <void *, int, uint64_t, dstTightHugeIntArray> dstTightHugePointerArray;
+#else
+// 64-bit pointers
+typedef dstCastDynamicArray <void *, int64_t, uint64_t, dstTightHugeInt64Array>
+    dstTightHugePointerArray;
+#endif
+typedef dstCastDynamicArray <char *, void *, uint64_t, dstTightHugePointerArray>
+    dstTightHugeCharPointerArray;
+typedef dstCastDynamicArray <float, int, uint64_t, dstTightHugeIntArray> dstTightHugeFloatArray;
+typedef dstCastDynamicArray <double, int64_t, uint64_t, dstTightHugeInt64Array>
+    dstTightHugeDoubleArray;
 
 #endif
 

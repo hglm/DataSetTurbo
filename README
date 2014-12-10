@@ -25,13 +25,31 @@ Documentation of the public member functions is provided in the header file dstR
 
 --- Dynamic arrays ---
 
-The dynamic array classes implemented in dstDynamicArray.h implement a highly set of
-dynamic arrays, that is arrays that are not limited in size (unlike a regular array)
+The dynamic array classes implemented in dstDynamicArray.h implement a highly optimized set
+of dynamic arrays, that is arrays that are not limited in size (unlike a regular array)
 and are automatically expanded when required, without compromising performance (as opposed
 to linked lists).
 
-A number template classes are utilized, allowing for specific optimization for different
-types of data storage and maximum number of members.
+A number of template classes are utilized, allowing for specific optimization for different
+types of data storage and different maximum numbers of members.
+
+The predefined class names follow the following syntax:
+
+dst[Tight][Small|VerySmall|Huge][data_type]Array
+
+"Tight" is optional; the tight versions less aggressively expand the capacity of the array
+when it is full, conserving memory space at some performance cost.
+
+The next part, Small, VerySmall, Huge or nothing, indicates the storage size of the element
+indices and the number of elements (the size of the array), as follows:
+- (Nothing): The index storage type is 32-bit (uint32_t), allowing for 2^31 elements
+  (2147483648) and a size near 2^32 (4290772992) in the tight variant.
+- Small: The index storage type is 16-bit (uint16_t), allowing for 32768 elemements (64512 in
+  the tight variant).
+- VerySmall: The index storage type is 8-bit (uint16_t), allowing for 128 elements (240 in the
+  tight variant).
+- Huge: The index storage type is 64-bit (uint64_t), allowing for 2^63 elements
+  (9223372036854775808) and nearly 2^64 (18446744073709535232) in the tight variant.
 
 See the header file dstDynamicArray.h for more detail.
 

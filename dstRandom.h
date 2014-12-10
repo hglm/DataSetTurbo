@@ -443,6 +443,11 @@ extern const unsigned char dst_internal_random_table[257] DST_ALIGNED(256);
     DST_API inline uint8_t dstCalculateLog2(uint8_t n) {
         return (uint8_t)dstCalculateLog2Max256(n);
     }
+    DST_API inline uint32_t dstCalculateLog2(uint64_t n) {
+        if ((n >> 32) == 0)
+            return dstCalculateLog2((uint32_t)n);
+        return 32 + dstCalculateLog2(n >> 32);
+    }
     DST_API inline uint16_t dstCalculateBitsNeeded(uint16_t n) {
         return (uint16_t)dstCalculateBitsNeededMax65536(n);
     }
