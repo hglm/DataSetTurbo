@@ -19,6 +19,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_SIMD_H__
 #define __DST_SIMD_H__
 
+#include "dstConfig.h"
+
 // This header file defines inline SIMD accelerator vector processing
 // primitives using compiler intrinsics. The functions are only included
 // if SIMD capability is detected and NO_SIMD is not defined.

@@ -1002,5 +1002,9 @@ public :
     unsigned int Random32();
 };
 
+// Default random number generator.
+DST_API dstRNG *dstGetDefaultRNG();
+DST_API void dstSetDefaultRNG(dstRNG* rng);
+
 #endif // !defined(__DST_RANDOM_H__)
 

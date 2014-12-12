@@ -2,7 +2,64 @@ DataSetTurbo v0.1
 
 --- Overview ---
 
-DataSetTurbo is library featuring a developing set of optimized C++ classes implementing highly optimized random number generation, dynamic arrays and other functions.
+DataSetTurbo is library featuring a developing set of optimized C++ classes implementing highly optimized functions and classes in the following areas:
+
+- Random number generation.
+- Dynamic arrays.
+- Device-independent abstraction of low-level SIMD primitives and implementation for SSE2/SSE3.
+- SIMD-based functions for matrix multiplication and dot product calculation.
+- A timer class including a threaded time-out.
+- Vector and Matrix classes that were originally derived from code written by Eric Lengyel in
+  association with the book "Mathematics for 3D Game Programming and Computer Graphics":
+- Vector classes that implement 2D, 3D and 4D vectors as well a 3D point and color, with
+  several SIMD-optimized functions for dot product calculations.
+- Matrix classes that implement 3x3, 4x4 and 4x3 matrices, with SIMD-optimized functions for
+  for matrix multiplication of various kinds.
+
+Source code overview:
+
+dstConfig.h		Basic definitions, symbol export control and include common headers.
+dstMath.h		Various basic inline functions such as variations of min and max, tests
+			of near-equality etc.
+
+dstDynamicArray.h	Implementation of various configurable dynamic array classes,
+			all derived from same template base class.
+
+dstRandom.h		Random number generation functions, incuding the dstRNG
+			class and dstRNGCMWC classes.
+dstRandom.cpp		Member function implementations for the randon number generator.\
+dstRNGCMWC.cpp		Complementary-Multiply-With-Carry RNG implementation.
+
+dstTimer.h		Basic timer functions for measuring time beween two points, including
+			a class that uses threads to implement a time-out.
+
+dstThread.h		Class implementation of a thread manager (dstTaskScheduler).
+dstThread.cpp
+
+dstSIMD.h		Low-level SIMD API header file, contains logic selecting SIMD
+			implementation in includes it.
+dstSIMDSSE2.h		Low-level SIMD API implementation for x86 SSE2/SSE3.
+
+dstSIMDDot.h		SIMD-based inline functions and non-inline function declarations
+			for class-independent functions operating on arrays of floats for 				calculating dot products.
+dstSIMDMatrix.h		SIMD-based inline functions and non-inline function declarations
+			for class-independent functions for multiplying two matrices, as well
+			as classes implementing repeated SIMD multiplication of a 4x4 or 4x3
+			matrix with a vector (all represented as arrays of floats).
+dstSIMDDotMatrix.cpp	SIMD-based class-independent non-inline versions of functions declared
+			in dstSIMDDot.h and dstSIMDMatrix.h.
+			
+dstVectorMath.h		Header file for Vector2D, Vector3D, Vector4D and Point3D classes.
+dstColor.h		Header file Color class derived from Vector3D.
+dstVectorMath.cpp	Member function implementations for vector classes.
+dstVectorMathSIMD.cpp	Functions that operate on Vector class types that use SIMD.
+
+dstMatrixMath.h		Header file for Matrix3D, Matrix4D and MatrixTransform classes.
+dstMatrixMath.cpp	Member function implementation for matrix classes.
+dstMatrixMathSIMD.cpp	Functions that operate on Matrix class types that use SIMD.
+
+test-random.cpp		Test program for random number generator functions.
+test-array.cpp		Test program for dynamic arrays.
 
 --- Random number generation ---
 

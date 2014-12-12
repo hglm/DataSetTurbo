@@ -33,7 +33,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <fgen.h>
 
 #include "dstRandom.h"
-
+#include "dstMatrixMath.h"
 
 #define MAX_N (1 << 24)
 

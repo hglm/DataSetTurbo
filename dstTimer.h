@@ -25,6 +25,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/time.h>
 #include <pthread.h>
 
+#ifdef _WIN32
+void gettimeofday(struct timeval *tv, struct timezone *tz);
+#endif
+
 // Return current system time/date in cumulative microseconds
 
 DST_API inline uint64_t dstGetCurrentTimeUSec() {

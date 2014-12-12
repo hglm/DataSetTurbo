@@ -32,32 +32,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include "dstRandom.h"
+#include "dstTimer.h"
 
-#ifdef _WIN32
-
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
-#else
-  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-#endif
-
-static void gettimeofday(struct timeval *tv, struct timezone *tz) {
-    FILETIME ft;
-    uint64_t tmpres = 0;
-    if (NULL != tv) {
-        GetSystemTimeAsFileTime(&ft);
-        tmpres |= ft.dwHighDateTime;
-        tmpres <<= 32;
-        tmpres |= ft.dwLowDateTime;
-        tmpres /= 10;  /*convert into microseconds*/
-                       /*converting file time to unix epoch*/
-        tmpres -= DELTA_EPOCH_IN_MICROSECS; 
-        tv->tv_sec = (long)(tmpres / 1000000UL);
-        tv->tv_usec = (long)(tmpres % 1000000UL);
-    }
-}
-
-#endif
 
 dstRNG::dstRNG() {
     storage = 0;
@@ -71,10 +47,9 @@ dstRNG::dstRNG() {
 // Randomize the seed of the random number generator with a value from the system timer.
 
 void dstRNG::SeedWithTimer() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    /* The multiplication by 1000000 will overflow, but that is not important. */
-    Seed(tv.tv_sec * 1000000 + tv.tv_usec);
+    uint64_t time_usec = dstGetCurrentTimeUSec();
+    /* Use the lower order bits. */
+    Seed((uint32_t)time_usec);
 }
 
 #if 0

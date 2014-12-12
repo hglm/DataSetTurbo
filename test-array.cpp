@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < 1000000; i++) {
 		int previous_size = size;
 		a.Add(i);
-		size = a.AllocatedSize();
+		size = a.Capacity();
 		if (size != previous_size)
 			printf("dstIntArray size changed from %d to %d.\n",
 				previous_size, size);
@@ -40,11 +40,11 @@ int main(int argc, char *argv[]) {
 
 	dstTightIntArray ta;
 	printf("dstTightIntArray: MaxCapacity() = %u\n", ta.MaxCapacity());
-        size = ta.AllocatedSize();
+        size = ta.Capacity();
 	for (int i = 0; i < 1000000; i++) {
 		int previous_size = size;
 		ta.Add(i);
-		size = ta.AllocatedSize();
+		size = ta.Capacity();
 		if (size != previous_size)
 			printf("dstTightIntArray size changed from %d to %d.\n",
 				previous_size, size);
@@ -53,11 +53,11 @@ int main(int argc, char *argv[]) {
 	dstTightVerySmallIntArray tvsa1;
 	int tvsa_max_capacity = tvsa1.MaxCapacity();
 	printf("dstTightVerySmallIntArray: MaxCapacity() = %u\n", tvsa_max_capacity);
-        size = tvsa1.AllocatedSize();
+        size = tvsa1.Capacity();
 	for (int i = 0; i < tvsa_max_capacity; i++) {
 		int previous_size = size;
 		tvsa1.Add(i);
-		size = tvsa1.AllocatedSize();
+		size = tvsa1.Capacity();
 		if (size != previous_size)
 			printf("dstTightVerySmallIntArray size changed from %d to %d.\n",
 				previous_size, size);

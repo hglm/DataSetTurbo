@@ -61,5 +61,27 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   #define DST_LOCAL
 #endif // DST_SHARED
 
+// Alignment macros (on some platforms, aligning or packing data structures may improve
+// performance.
+
+#ifndef __GNUC__
+
+#define DST_ALIGNED(n)
+#define DST_PACKED
+#define DST_LINE_SIZE 128
+
+#else
+
+#define DST_ALIGNED(n) __attribute__ ((aligned(n)))
+#define DST_PACKED __attribute__ ((packed))
+// Very rough guess at a cache line size usable for alignment,
+#ifdef OPENGL_ES2
+#define DST_LINE_SIZE 64
+#else
+#define DST_LINE_SIZE 128
+#endif
+
+#endif
+
 #endif // !defined(__DST_CONFIG_H__)
 

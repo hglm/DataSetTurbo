@@ -83,7 +83,7 @@ public :
 	inline S Size() const {
 		return nu_elements;
 	}
-	inline S AllocatedSize() const {
+	inline S Capacity() const {
 		return max_elements;
         }
 	// Get value of element i.
