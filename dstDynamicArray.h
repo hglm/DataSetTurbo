@@ -39,24 +39,33 @@ private :
 	S nu_elements;
 	S max_elements;
 
-	// By how much to expand the array.
+	// By how much to expand array capacity. Return value is new capacity.
 	virtual inline S GetExpansionHint(S capacity) const = 0;
 	// The absolute maximum capacity allowed by the class variant.
         inline void ResizeCapacity(S new_capacity) {
                 max_elements = new_capacity;
 		data = (T *)realloc(data, sizeof(T) * max_elements);
 	}
-	inline void ExpandCapacity() {
-		S new_capacity = GetExpansionHint(max_elements);
-		if (new_capacity < max_elements) {
-			// When new_capacity is less than max_elements, usually zero,
-			// the maximum capacity has been reached, so the element cannot be
-			// added. Exit with an error message.
+	inline void ExpandCapacity(int reference_capacity) {
+		S new_capacity = GetExpansionHint(reference_capacity);
+		if (new_capacity < reference_capacity) {
+			// When new_capacity is less than expected, usually zero, overflow
+			// has occurred and the maximum capacity has been reached, so the
+			// element cannot be added. Exit with an error message.
 			fprintf(stderr, "dstDynamicArray: maximum array capacity overflow\n");
 			raise(SIGABRT);
 		}
 		ResizeCapacity(new_capacity);
         }
+	// Expand capacity when the allocated space is full. The capacity expansion is by one
+	// of more elements (usually a power of two).
+	inline void ExpandCapacity() {
+		ExpandCapacity(max_elements);
+	}
+	// Expand capacity to a minimum of minimum_capacity.
+	inline void ExpandCapacity(S minimum_capacity) {
+		ExpandCapacity(minimum_capacity - 1);
+	}
 
 public :
 	virtual inline S MaxCapacity() const = 0;
@@ -116,12 +125,51 @@ public :
 	inline void Truncate(S n) {
 		nu_elements = n;
         }
-	// Add element with value V.
+	// Add element with value v without a capacity check. Capacity must have room for
+	// at least one more element.
+	inline void AddQuick(T v) {
+		data[nu_elements] = v;
+		nu_elements++;
+	}
+	// Add element with value v.
 	inline void Add(T v) {
 		if (nu_elements == max_elements)
 			ExpandCapacity();
-		data[nu_elements] = v;
-		nu_elements++;
+		AddQuick(v);
+	}
+	// Add n elements from a buffer. No capacity check.
+	inline void AddQuick(const T *v_pointer, S n) {
+		for (S i = 0; i < n; i++)
+			data[nu_elements + i] = v_pointer[i];
+		nu_elements += n;
+	}
+	// Add n elements from a buffer.
+	inline void Add(const T *v_pointer, S n) {
+		if (nu_elements + n > max_elements)
+			ExpandCapacity(nu_elements + n);
+		AddQuick(v_pointer, n);
+	}
+	// Add all elements from another array. No capacity check.
+	inline void AddQuick(const dstDynamicArrayBaseClass <T, S> & array) {
+		AddQuick(array.DataPointer(), array.Size());
+	}
+	// Add all elements from another array.
+	inline void Add(const dstDynamicArrayBaseClass <T, S> & array) {
+		Add(array.DataPointer(), array.Size());
+	}
+	// Pop element (return value of last element and decrease size by one) when
+	// treating array as a stack. The array must contain at least one element.
+	inline S Pop() {
+		S v = data[nu_elements - 1];
+		nu_elements--;
+		return v;
+	}
+	// Pushing an element is equivalent to Add().
+	inline void PushQuick(S v) {
+		AddQuick(v);
+	}
+	inline void Push(S v) {
+		Add(v);
 	}
 };
 
@@ -138,7 +186,7 @@ public :
 	}
 
 private :
-	// By how much to expand the array.
+	// By how much to expand array capacity. Return value is new capacity.
 	inline S GetExpansionHint(S size) const {
 		// Expand the size to the next power of two.
                 uint32_t log2_size = dstCalculateLog2(size);
@@ -168,11 +216,26 @@ public :
                 return (U *)((C2 *)this)->DataPointer();
         }
 	// Get a pointer to a specific element.
-        inline U *DataPointer(uint32_t i) const {
+        inline U *DataPointer(S i) const {
 		return &(U *)((C2 *)this)->DataPointer(i);
         }
-	inline void Add(U s) {
-		((C2 *)this)->Add((T)s);
+	inline void Add(U v) {
+		((C2 *)this)->Add((T)v);
+	}
+	inline void AddQuick(U v) {
+		((C2 *)this)->AddQuick((T)v);
+	}
+	inline void Add(const U *v_pointer, S n) {
+		((C2 *)this)->Add((T *)v_pointer, n);
+	}
+	inline void AddQuick(const U *v_pointer, S n) {
+		((C2 *)this)->AddQuick((T *)v_pointer, n);
+	}
+	inline void Add(const dstDynamicArrayBaseClass <U, S> & array) {
+		((C2 *)this)->Add((const dstDynamicArrayBaseClass <T, S> &)array);
+	}
+	inline void AddQuick(const dstDynamicArrayBaseClass <U, S> & array) {
+		((C2 *)this)->AddQuick((const dstDynamicArrayBaseClass <T, S> &)array);
 	}
 };
 
@@ -258,7 +321,7 @@ public :
 	}
 
 private :
-	// By how much to expand the array.
+	// By how much to expand array capacity. Return value is new capacity.
 	inline S GetExpansionHint(S size) const {
 		// Conservatively expand the size of the array, keeping it tight.
 		// A fast, integer log2 function is used.
