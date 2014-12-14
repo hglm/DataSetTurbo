@@ -23,7 +23,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // This header file defines inline SIMD accelerator vector processing
 // primitives using compiler intrinsics. The functions are only included
-// if SIMD capability is detected and NO_SIMD is not defined.
+// if SIMD capability is detected and DST_NO_SIMD is not defined.
 //
 // A common set of SIMD primitives for 128-bit SIMD vector registers, shared between
 // platforms, is defined with certain features depending on the platform. Most
@@ -96,13 +96,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // Compile-time definitions:
 //
-// NO_SIMD disables automatic detection of SIMD capabilities. SIMD will still be
-// used when USE_SSE2, USE_SSE3, USE_ARM_NEON etc is explicitly defined.
-// USE_SSE2 forces the use of SSE2 SIMD extensions.
-// USE_SSE3 forces the use of SSE2 and SSE3 SIMD extensions.
-// USE_ARM_NEON forces the use of ARM NEON SIMD extensions.
+// DST_NO_SIMD disables automatic detection of SIMD capabilities. SIMD will still be
+// used when DST_USE_SSE2, DST_USE_SSE3, DST_USE_ARM_NEON etc is explicitly defined.
+// DST_USE_SSE2 forces the use of SSE2 SIMD extensions.
+// DST_USE_SSE3 forces the use of SSE2 and SSE3 SIMD extensions.
+// DST_USE_ARM_NEON forces the use of ARM NEON SIMD extensions.
 //
-// USE_SIMD will be defined when SIMD functions are available. This should be used
+// DST_USE_SIMD will be defined when SIMD functions are available. This should be used
 // for testing the availability of SIMD primitives.
 
 #if defined(_MSC_VEC)
@@ -119,42 +119,42 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <mmintrin.h>
 #endif
 
-// USE_SSE2, USE_SSE3 etc. are added as build flags in the Makefile.
+// DST_USE_SSE2, DST_USE_SSE3 etc. are added as build flags in the Makefile.
 // However, when SSE2 or SSE3 is a default platform feature (such as
 // SSE2 on x86_64), always use it, unless all SIMD support is explicitly
 // disabled.
 
-// USE_SSE3, when specified, implies USE_SSE2.
-#if defined(USE_SSE3) && !defined(USE_SSE2)
-#define USE_SSE2
+// DST_USE_SSE3, when specified, implies DST_USE_SSE2.
+#if defined(DST_USE_SSE3) && !defined(DST_USE_SSE2)
+#define DST_USE_SSE2
 #endif
 
-#ifndef NO_SIMD
-#if !defined(USE_SSE2) && defined(__SSE2__)
-#define USE_SSE2
+#ifndef DST_NO_SIMD
+#if !defined(DST_USE_SSE2) && defined(__SSE2__)
+#define DST_USE_SSE2
 #endif
-#if !defined(USE_SSE3) && defined(__SSE3__)
-#define USE_SSE3
+#if !defined(DST_USE_SSE3) && defined(__SSE3__)
+#define DST_USE_SSE3
 #endif
-#if !defined(USE_ARM_NEON) && defined (__ARM_NEON)
-#define USE_ARM_NEON
+#if !defined(DST_USE_ARM_NEON) && defined(__ARM_NEON_FP)
+#define DST_USE_ARM_NEON
 #endif
 #endif
 
 // Set SIMD features that are implemented.
 
-#ifdef USE_SSE2
+#ifdef DST_USE_SSE2
 // SSE3 is a superset of SSE2.
-#ifdef USE_SSE3
+#ifdef DST_USE_SSE3
 // Horizontal pair-wise addition instruction.
 #define SIMD_HAVE_HORIZONTAL_ADD2
 #endif
 #define SIMD_HAVE_TRANSPOSE_4TO3
 #define SIMD_HAVE_TRANSPOSE_3TO4
-#define USE_SIMD
+#define DST_USE_SIMD
 #else // Not SSE2
-#ifdef USE_ARM_NEON
-// When implemented, define USE_SIMD and define feature flags.
+#ifdef DST_USE_ARM_NEON
+// When implemented, define DST_USE_SIMD and define feature flags.
 #else
 // No SIMD.
 #endif
@@ -177,7 +177,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // Define a unifying set of SIMD intrinsic functions.
 
-#ifdef USE_SSE2
+#ifdef DST_USE_SSE2
 
 // PC class processor with SSE2 enabled. Optionally use additional features
 // such as SSE3.
@@ -186,14 +186,14 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #endif
 
-#ifdef USE_ARM_NEON
+#ifdef DST_USE_ARM_NEON
 
 // Not yet implemented.
 
 #endif
 
 
-#ifdef USE_SIMD
+#ifdef DST_USE_SIMD
 
 // Define shared set of generic SIMD functions shared between different platforms
 // that are implemented using lower-level SIMD functions.
@@ -294,7 +294,7 @@ static inline_only __simd128_float simd128_horizontal_add4_float(__simd128_float
 #include "dstSIMDMatrix.h"
 #include "dstSIMDDot.h"
 
-#endif // defined(USE_SIMD)
+#endif // defined(DST_USE_SIMD)
 
 #endif // defined(__DST_SIMD_H__)
 

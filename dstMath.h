@@ -21,24 +21,34 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // The header file defines several convenient small inline math functions.
 
-static inline float invsqrtf(float x) {
+static inline float dstSqrt(float x) {
+	return sqrtf(x);
+}
+
+static inline double dstSqrt(double x) {
+	return sqrt(x);
+}
+
+static inline float dstInvSqrt(float x) {
 	return (1.0f / sqrtf(x));
 }
 
-static inline double invsqrtd(double x) {
+static inline double dstInvSqrt(double x) {
 	return (1.0d / sqrt(x));
 }
 
 // Define approximate equality inline functions, useful for geometrical
 // calculations.
 
-#define EPSILON_DEFAULT 0.0001f
+#define EPSILON_DEFAULT 0.0001
 
-static inline bool AlmostEqual(float x, float y) {
+template <class T>
+static inline bool AlmostEqual(T x, T y) {
     return (x >= y - EPSILON_DEFAULT) && (x <= y + EPSILON_DEFAULT);
 }
 
-static inline bool AlmostEqual(float x, float y, float epsilon) {
+template <class T>
+static inline bool AlmostEqual(T x, T y, T epsilon) {
     return (x >= y - epsilon) && (x <= y + epsilon);
 }
 

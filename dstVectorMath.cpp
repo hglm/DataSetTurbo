@@ -24,25 +24,27 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // Additional member functions for debugging.
 
+template <>
 char *Vector3D::GetString() const {
-    char *s = new char[64];
-    sprintf(s, "Vector3D(%f, %f, %f)", x, y, z);
-    return s;
+	char *s = new char[64];
+	sprintf(s, "Vector3D(%f, %f, %f)", x, y, z);
+//	sprintf(s, "VectorDouble3D(%lf, %lf, %lf)", x, y, z);
+	return s;
 }
 
+template <>
+char *VectorDouble3D::GetString() const {
+	char *s = new char[64];
+	sprintf(s, "VectorDouble3D(%lf, %lf, %lf)", x, y, z);
+	return s;
+}
+
+template <>
 char *Vector4D::GetString() const {
     char *s = new char[64];
     sprintf(s, "Vector4D(%f, %f, %f, %f)", x, y, z, w);
     return s;
 }
-
-#if 0
-char *VectorDouble3D::GetString() const {
-    char *s = new char[64];
-    sprintf(s, "VectorDouble3D(%lf, %lf, %lf)", x, y, z);
-    return s;
-}
-#endif
 
 // Additional color member functions.
 

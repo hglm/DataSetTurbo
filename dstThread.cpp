@@ -78,8 +78,8 @@ const dstIntArray *dstTaskScheduler::GetCompletionNotifications() {
 	LockMutex();
 	for (int i = 0; i < task_info_array.Size(); i++) {
 		dstTaskInfo *task_info = task_info_array.Get(i);
-		if (task_info->flags & (DST_TASK_FLAG_NOTIFY_COMPLETION |
-                DST_TASK_FLAG_COMPLETED | DST_TASK_FLAG_SLOT_AVAILABLE)
+		if ((task_info->flags & (DST_TASK_FLAG_NOTIFY_COMPLETION |
+                DST_TASK_FLAG_COMPLETED | DST_TASK_FLAG_SLOT_AVAILABLE))
                 == (DST_TASK_FLAG_NOTIFY_COMPLETION | DST_TASK_FLAG_COMPLETED)) {
 			completion_notification_array.Add(i);
 			task_info->flags |= DST_TASK_FLAG_SLOT_AVAILABLE;

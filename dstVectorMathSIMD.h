@@ -144,7 +144,8 @@ const Vector3D * __restrict v2, float * __restrict dot) {
 }
 
 // Calculate n dot products from one vector array and one constant vector,
-// and store the result in an array of floats.
+// and store the result in an array of floats. v1, v2 and dot must generally be
+// 16 bytes-aligned.
 
 static inline_only void SIMDCalculateDotProductsWithConstantVector(int n,
 const Vector4D * __restrict v1, const Vector4D& __restrict v2, float * __restrict dot) {

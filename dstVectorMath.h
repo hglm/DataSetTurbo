@@ -25,7 +25,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // This code is largely based on the source code provided by Eric Lengyel
 // in assocation with a book and on the net, as described below.
 //
-// Several changes and additions have been made to the code.
+// Several changes and additions have been made to the code (one of which is
+// changing the meaning of the * operator between vectors from dot product to
+// pairwise multiplication).
 
 //============================================================================
 //
@@ -39,1185 +41,823 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
 //============================================================================
 
+template <class T>
+class DST_API Vector2DBase {
+public:
+	T x;
+	T y;
 
-class DST_API Vector2D
-{
-	public:
-		
-		float	x;
-		float	y;
-		
-		Vector2D() {}
-		
-		Vector2D(float r, float s)
-		{
-			x = r;
-			y = s;
-		}
-		
-		Vector2D& Set(float r, float s)
-		{
-			x = r;
-			y = s;
-			return (*this);
-		}
+	Vector2DBase() {}
 
-		float& operator [](int k)
-		{
-			return ((&x)[k]);
-		}
+	Vector2DBase(T r, T s) {
+		x = r;
+		y = s;
+	}
 
-		const float& operator [](int k) const
-		{
-			return ((&x)[k]);
-		}
-		
-		Vector2D& operator +=(const Vector2D& v)
-		{
-			x += v.x;
-			y += v.y;
-			return (*this);
-		}
-		
-		Vector2D& operator -=(const Vector2D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			return (*this);
-		}
-		
-		Vector2D& operator *=(float t)
-		{
-			x *= t;
-			y *= t;
-			return (*this);
-		}
-		
-		Vector2D& operator /=(float t)
-		{
-			float f = 1.0F / t;
-			x *= f;
-			y *= f;
-			return (*this);
-		}
-		
-		Vector2D& operator &=(const Vector2D& v)
-		{
-			x *= v.x;
-			y *= v.y;
-			return (*this);
-		}
-		
-		Vector2D& Normalize(void)
-		{
-			return (*this *= invsqrtf(x * x + y * y));
-		}
+	Vector2DBase& Set(T r, T s) {
+		x = r;
+		y = s;
+		return (*this);
+	}
+
+	T& operator [](int k) {
+		return ((&x)[k]);
+	}
+
+	const T& operator [](int k) const {
+		return ((&x)[k]);
+	}
+
+	Vector2DBase& operator +=(const Vector2DBase& v) {
+		x += v.x;
+		y += v.y;
+		return (*this);
+	}
+
+	Vector2DBase& operator -=(const Vector2DBase& v) {
+		x -= v.x;
+		y -= v.y;
+		return (*this);
+	}
+
+	Vector2DBase& operator *=(T t) {
+		x *= t;
+		y *= t;
+		return (*this);
+	}
+
+	Vector2DBase& operator /=(T t) {
+		T f = 1.0F / t;
+		x *= f;
+		y *= f;
+		return (*this);
+	}
+
+	Vector2DBase& operator &=(const Vector2DBase& v) {
+		x *= v.x;
+		y *= v.y;
+		return (*this);
+	}
+
+	Vector2DBase operator -() const {
+		return (Vector2DBase(- x, - y));
+	}
+
+	Vector2DBase operator -(const Vector2DBase& v) const {
+		return (Vector2DBase(x - v.x, y - v.y));
+	}
+
+	Vector2DBase operator +(const Vector2DBase& v) const {
+		return (Vector2DBase(x + v.x, y + v.y));
+	}
+
+	Vector2DBase operator *(T t) const {
+		return (Vector2DBase(x * t, y * t));
+	}
+
+	Vector2DBase operator /(T t) const {
+		float f = 1.0f / t;
+		return (Vector2DBase(x * f, y * f));
+	}
+
+	Vector2DBase& Normalize(void) {
+		return (*this *= dstInvSqrt(x * x + y * y));
+	}
+
+	T operator *(const Vector2DBase& v) const {
+		return (x * v.x + y * v.y);
+	}
+
+	// * operator is pair-wise multiplication.
+	Vector2DBase operator *(const Vector2DBase& v) {
+		return (Vector2DBase(x * v.x, y * v.y));
+	}
+
+	bool operator ==(const Vector2DBase& v) {
+		return ((x == v.x) && (y == v.y));
+	}
+
+	bool operator !=(const Vector2DBase& v) {
+		return ((x != v.x) || (y != v.y));
+	}
+
+	friend Vector2DBase operator *(T t, const Vector2DBase& v) {
+		return (Vector2DBase(t * v.x, t * v.y));
+	}
+
+	friend T Dot(const Vector2DBase& v1, const Vector2DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y);
+	}
+
+	friend Vector2DBase ProjectOnto(const Vector2DBase& v1, const Vector2DBase& v2) {
+		return (v2 * (v1 * v2));
+	}
+
+	friend T Magnitude(const Vector2DBase& v) {
+		return (dstSqrt(v.x * v.x + v.y * v.y));
+	}
+
+	friend T InverseMag(const Vector2DBase& v) {
+		return (dstInvSqrt(v.x * v.x + v.y * v.y));
+	}
+
+	friend T SquaredMag(const Vector2DBase& v) {
+		return (v.x * v.x + v.y * v.y);
+	}
 };
 
+typedef Vector2DBase <float> Vector2D;
+typedef Vector2DBase <double> VectorDouble2D;
 
-inline Vector2D operator -(const Vector2D& v)
-{
-	return (Vector2D(-v.x, -v.y));
-}
 
-inline Vector2D operator +(const Vector2D& v1, const Vector2D& v2)
-{
-	return (Vector2D(v1.x + v2.x, v1.y + v2.y));
-}
+template <class T>
+class DST_API Point2DBase : public Vector2DBase <T> {
+public:
+	Point2DBase() {}
 
-inline Vector2D operator -(const Vector2D& v1, const Vector2D& v2)
-{
-	return (Vector2D(v1.x - v2.x, v1.y - v2.y));
-}
+	Point2DBase(float r, float s) : Vector2DBase <T>(r, s) { }
 
-inline Vector2D operator *(const Vector2D& v, float t)
-{
-	return (Vector2D(v.x * t, v.y * t));
-}
-
-inline Vector2D operator *(float t, const Vector2D& v)
-{
-	return (Vector2D(t * v.x, t * v.y));
-}
-
-inline Vector2D operator /(const Vector2D& v, float t)
-{
-	float f = 1.0F / t;
-	return (Vector2D(v.x * f, v.y * f));
-}
-
-inline float operator *(const Vector2D& v1, const Vector2D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y);
-}
-
-inline Vector2D operator &(const Vector2D& v1, const Vector2D& v2)
-{
-	return (Vector2D(v1.x * v2.x, v1.y * v2.y));
-}
-
-inline bool operator ==(const Vector2D& v1, const Vector2D& v2)
-{
-	return ((v1.x == v2.x) && (v1.y == v2.y));
-}
-
-inline bool operator !=(const Vector2D& v1, const Vector2D& v2)
-{
-	return ((v1.x != v2.x) || (v1.y != v2.y));
-}
-
-class DST_API Point2D : public Vector2D
-{
-	public:
+	Vector2DBase <T> & GetVector2D(void) {
+		return (*this);
+	}
 		
-		Point2D() {}
-		
-		Point2D(float r, float s) : Vector2D(r, s) {}
-		
-		Vector2D& GetVector2D(void)
-		{
-			return (*this);
-		}
-		
-		const Vector2D& GetVector2D(void) const
-		{
-			return (*this);
-		}
-		
-		Point2D& operator =(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			return (*this);
-		}
-		
-		Point2D& operator *=(float t)
-		{
-			x *= t;
-			y *= t;
-			return (*this);
-		}
-		
-		Point2D& operator /=(float t)
-		{
-			float f = 1.0F / t;
-			x *= f;
-			y *= f;
-			return (*this);
-		}
+	const Vector2DBase <T> & GetVector2D(void) const {
+		return (*this);
+	}
+
+	Point2DBase <T> & operator =(const Vector2DBase <T> & v) {
+		*((Vector2DBase <T> *)this) = v;
+		return (*this);
+	}
 };
 
-
-inline Point2D operator -(const Point2D& p)
-{
-	return (Point2D(-p.x, -p.y));
-}
-
-inline Point2D operator +(const Point2D& p1, const Point2D& p2)
-{
-	return (Point2D(p1.x + p2.x, p1.y + p2.y));
-}
-
-inline Point2D operator +(const Point2D& p, const Vector2D& v)
-{
-	return (Point2D(p.x + v.x, p.y + v.y));
-}
-
-inline Point2D operator -(const Point2D& p, const Vector2D& v)
-{
-	return (Point2D(p.x - v.x, p.y - v.y));
-}
-
-inline Vector2D operator -(const Point2D& p1, const Point2D& p2)
-{
-	return (Vector2D(p1.x - p2.x, p1.y - p2.y));
-}
-
-inline Point2D operator *(const Point2D& p, float t)
-{
-	return (Point2D(p.x * t, p.y * t));
-}
-
-inline Point2D operator *(float t, const Point2D& p)
-{
-	return (Point2D(t * p.x, t * p.y));
-}
-
-inline Point2D operator /(const Point2D& p, float t)
-{
-	float f = 1.0F / t;
-	return (Point2D(p.x * f, p.y * f));
-}
+typedef Point2DBase <float> Point2D;
+typedef Point2DBase <double> PointDouble2D;
 
 
-inline float Dot(const Vector2D& v1, const Vector2D& v2)
-{
-	return (v1 * v2);
-}
+template <class T>
+class DST_API Vector3DBase {
+public:
+	union {
+		T x;
+		T r;
+	};
+	union {
+		T y;
+		T g;
+	};
+	union {
+		T z;
+		T b;
+	};
 
-inline Vector2D ProjectOnto(const Vector2D& v1, const Vector2D& v2)
-{
-	return (v2 * (v1 * v2));
-}
+	Vector3DBase() {}
 
-inline float Magnitude(const Vector2D& v)
-{
-	return (sqrtf(v.x * v.x + v.y * v.y));
-}
+	Vector3DBase(T s, T t, T u) {
+		x = s;
+		y = t;
+		z = u;
+	}
 
-inline float InverseMag(const Vector2D& v)
-{
-	return (invsqrtf(v.x * v.x + v.y * v.y));
-}
+	Vector3DBase(const Vector2D& v) {
+		x = v.x;
+		y = v.y;
+		z = 0.0;
+	}
 
-inline float SquaredMag(const Vector2D& v)
-{
-	return (v.x * v.x + v.y * v.y);
-}
+	Vector3DBase(const Vector2D& v, float u) {
+		x = v.x;
+		y = v.y;
+		z = u;
+	}
 
+	Vector3DBase& Set(T s, T t, T u) {
+		x = s;
+		y = t;
+		z = u;
+		return (*this);
+	}
 
-class DST_API Vector3D
-{
-	public:
+	T& operator [](int k) {
+		return ((&x)[k]);
+	}
 
-		union {
-			float	x;
-			float	r;
-		};
-		union {
-			float	y;
-			float   g;
-		};
-		union {
-			float	z;
-			float	b;
-		};
+	const T& operator [](int k) const {
+		return ((&x)[k]);
+	}
+
+	Vector2DBase <T> & GetVector2DBase() {
+		return (*reinterpret_cast<Vector2DBase <T> *>(this));
+	}
 		
-		Vector3D() {}
+	const Vector2DBase <T> & GetVector2D() const {
+		return (*reinterpret_cast<const Vector2DBase <T> *>(this));
+	}
 		
-		Vector3D(float r, float s, float t)
-		{
-			x = r;
-			y = s;
-			z = t;
-		}
+	Point2DBase <T> & GetPoint2D() {
+		return (*reinterpret_cast<Point2DBase <T> *>(this));
+	}
 		
-		Vector3D(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = 0.0F;
-		}
-		
-		Vector3D(const Vector2D& v, float u)
-		{
-			x = v.x;
-			y = v.y;
-			z = u;
-		}
-		
-		Vector3D& Set(float r, float s, float t)
-		{
-			x = r;
-			y = s;
-			z = t;
-			return (*this);
-		}
-		
-		Vector3D& Set(const Vector2D& v, float u)
-		{
-			x = v.x;
-			y = v.y;
-			z = u;
-			return (*this);
-		}
+	const Point2DBase <T>& GetPoint2D() const {
+		return (*reinterpret_cast<const Point2DBase <T> *>(this));
+	}
 
-                // Keep the non-const operator.
-		float& operator [](int k)
-		{
-			return ((&x)[k]);
-		}
+	Vector3DBase& operator +=(const Vector3DBase& v) {
+		x += v.x;
+		y += v.y;
+		z += v.z;
+		return (*this);
+	}
 
-		const float& operator [](int k) const
-		{
-			return ((&x)[k]);
-		}
+	Vector3DBase& operator -=(const Vector3DBase& v) {
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
+		return (*this);
+	}
 
-		Vector2D& GetVector2D(void)
-		{
-			return (*reinterpret_cast<Vector2D *>(this));
-		}
-		
-		const Vector2D& GetVector2D(void) const
-		{
-			return (*reinterpret_cast<const Vector2D *>(this));
-		}
-		
-		Point2D& GetPoint2D(void)
-		{
-			return (*reinterpret_cast<Point2D *>(this));
-		}
-		
-		const Point2D& GetPoint2D(void) const
-		{
-			return (*reinterpret_cast<const Point2D *>(this));
-		}
-		
-		Vector3D& operator =(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = 0.0F;
-			return (*this);
-		}
-		
-		Vector3D& operator +=(const Vector3D& v)
-		{
-			x += v.x;
-			y += v.y;
-			z += v.z;
-			return (*this);
-		}
-		
-		Vector3D& operator +=(const Vector2D& v)
-		{
-			x += v.x;
-			y += v.y;
-			return (*this);
-		}
-		
-		Vector3D& operator -=(const Vector3D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			z -= v.z;
-			return (*this);
-		}
-		
-		Vector3D& operator -=(const Vector2D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			return (*this);
-		}
-		
-		Vector3D& operator *=(float t)
-		{
-			x *= t;
-			y *= t;
-			z *= t;
-			return (*this);
-		}
-		
-		Vector3D& operator /=(float t)
-		{
-			float f = 1.0F / t;
-			x *= f;
-			y *= f;
-			z *= f;
-			return (*this);
-		}
-		
-		Vector3D& operator %=(const Vector3D& v)
-		{
-			float		r, s;
-			
-			r = y * v.z - z * v.y;
-			s = z * v.x - x * v.z;
-			z = x * v.y - y * v.x;
-			x = r;
-			y = s;
-			
-			return (*this);
-		}
-		
-		Vector3D& operator &=(const Vector3D& v)
-		{
-			x *= v.x;
-			y *= v.y;
-			z *= v.z;
-			return (*this);
-		}
-		
-		Vector3D& Normalize(void)
-		{
-			return (*this *= invsqrtf(x * x + y * y + z * z));
-		}
+	Vector3DBase& operator *=(T t) {
+		x *= t;
+		y *= t;
+		z *= t;
+		return (*this);
+	}
 
-		// Return text respresentation. To be freed with delete [].
-		char *GetString() const;
+	Vector3DBase& operator /=(T t) {
+		T f = 1.0F / t;
+		x *= f;
+		y *= f;
+		z *= f;
+		return (*this);
+	}
+
+	// * operator is pair-wise multiplication.
+	Vector3DBase& operator *=(const Vector3DBase& v) {
+		x *= v.x;
+		y *= v.y;
+		z *= v.z;
+		return (*this);
+	}
+
+	Vector3DBase operator -() const {
+		return (Vector3DBase(- x, - y, - z));
+	}
+
+	Vector3DBase operator -(const Vector3DBase& v) const {
+		return (Vector3DBase(x - v.x, y - v.y, z - v.z));
+	}
+
+	Vector3DBase operator -(const Vector2DBase <T> & v) {
+		return (Vector3DBase(x - v.x, y - v.y, z));
+	}
+
+	Vector3DBase operator +(const Vector3DBase& v) const {
+		return (Vector3DBase(x + v.x, y + v.y, z + v.z));
+	}
+
+	Vector3DBase operator +(const Vector2DBase <T>& v) const {
+		return (Vector3DBase <T>(x + v.x, y + v.y, z));
+	}
+
+	Vector3DBase operator *(T t) const {
+		return (Vector3DBase(x * t, y * t, z * t));
+	}
+
+	Vector3DBase operator /(T t) const {
+		float f = 1.0f / t;
+		return (Vector3DBase(x * f, y * f, z * f));
+	}
+
+	Vector3DBase& Normalize(void) {
+		return (*this *= dstInvSqrt(x * x + y * y + z * z));
+	}
+
+	// * operator is pair-wise multiplication.
+	Vector3DBase operator *(const Vector3DBase& v) const{
+		return (Vector3DBase(x * v.x, y * v.y, z * v.z));
+	}
+
+	bool operator ==(const Vector3DBase& v) const {
+		return ((x == v.x) && (y == v.y) && (z == v.z));
+	}
+
+	bool operator !=(const Vector3DBase& v) const {
+		return ((x != v.x) || (y != v.y) || (z != v.z));
+	}
+
+	friend Vector3DBase operator *(T t, const Vector3DBase& v) {
+		return (Vector3DBase(t * v.x, t * v.y, t * v.z));
+	}
+
+	friend T Dot(const Vector3DBase& v1, const Vector3DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
+	}
+
+	friend Vector3DBase Cross(const Vector3DBase& v1, const Vector3DBase& v2) {
+		return Vector3DBase(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z,
+			v1.x * v2.y - v1.y * v2.x);
+	}
+
+	friend Vector3DBase ProjectOnto(const Vector3DBase& v1, const Vector3DBase& v2) {
+		return v2 * Dot(v1, v2);
+	}
+
+	// Project v1 onto or in the direction of v2, with the angle limited by the specified
+	// value.
+	friend Vector3DBase ProjectOntoWithLimit(const Vector3DBase& v1, const Vector3DBase& v2,
+	T min_cos_angle) {
+		float dot = Dot(v1, v2);
+	        if (dot < min_cos_angle)
+        	    dot = min_cos_angle;
+		return v2 * dot;
+	}
+
+	friend T SquaredMag(const Vector3DBase& v) {
+		return (v.x * v.x + v.y * v.y + v.z * v.z);
+	}
+
+	friend T Magnitude(const Vector3DBase& v) {
+		return dstSqrt(SquaredMag(v));
+	}
+
+	friend T InverseMag(const Vector3DBase& v) {
+		return dstInvSqrt(SquaredMag(v));
+	}
+
+	// Return text respresentation. To be freed with delete [].
+	char *GetString() const;
 };
 
-
-inline Vector3D operator -(const Vector3D& v)
-{
-	return (Vector3D(-v.x, -v.y, -v.z));
-}
-
-inline Vector3D operator +(const Vector3D& v1, const Vector3D& v2)
-{
-	return (Vector3D(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z));
-}
-
-inline Vector3D operator +(const Vector3D& v1, const Vector2D& v2)
-{
-	return (Vector3D(v1.x + v2.x, v1.y + v2.y, v1.z));
-}
-
-inline Vector3D operator -(const Vector3D& v1, const Vector3D& v2)
-{
-	return (Vector3D(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z));
-}
-
-inline Vector3D operator -(const Vector3D& v1, const Vector2D& v2)
-{
-	return (Vector3D(v1.x - v2.x, v1.y - v2.y, v1.z));
-}
-
-inline Vector3D operator *(const Vector3D& v, float t)
-{
-	return (Vector3D(v.x * t, v.y * t, v.z * t));
-}
-
-inline Vector3D operator *(float t, const Vector3D& v)
-{
-	return (Vector3D(t * v.x, t * v.y, t * v.z));
-}
-
-inline Vector3D operator /(const Vector3D& v, float t)
-{
-	float f = 1.0F / t;
-	return (Vector3D(v.x * f, v.y * f, v.z * f));
-}
-
-inline float operator *(const Vector3D& v1, const Vector3D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
-}
-
-inline float operator *(const Vector3D& v1, const Vector2D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y);
-}
-
-inline Vector3D operator %(const Vector3D& v1, const Vector3D& v2)
-{
-	return (Vector3D(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x));
-}
-
-inline Vector3D operator &(const Vector3D& v1, const Vector3D& v2)
-{
-	return (Vector3D(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z));
-}
-
-inline bool operator ==(const Vector3D& v1, const Vector3D& v2)
-{
-	return ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z));
-}
-
-inline bool operator !=(const Vector3D& v1, const Vector3D& v2)
-{
-	return ((v1.x != v2.x) || (v1.y != v2.y) || (v1.z != v2.z));
-}
+typedef Vector3DBase <float> Vector3D;
+typedef Vector3DBase <double> VectorDouble3D;
 
 
-class DST_API Point3D : public Vector3D
+template <class T>
+class DST_API Point3DBase : public Vector3DBase <T>
 {
 	public:
 		
-		Point3D() {}
-		
-		Point3D(float r, float s, float t) : Vector3D(r, s, t) {}
-		Point3D(const Vector2D& v) : Vector3D(v) {}
-		Point3D(const Vector2D& v, float u) : Vector3D(v, u) {}
-		Point3D(const Vector3D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-		}
-		
-		Vector3D& GetVector3D(void)
-		{
-			return (*this);
-		}
-		
-		const Vector3D& GetVector3D(void) const
-		{
-			return (*this);
-		}
-		
-		Point2D& GetPoint2D(void)
-		{
-			return (*reinterpret_cast<Point2D *>(this));
-		}
-		
-		const Point2D& GetPoint2D(void) const
-		{
-			return (*reinterpret_cast<const Point2D *>(this));
-		}
-		
-		Point3D& operator =(const Vector3D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			return (*this);
-		}
-		
-		Point3D& operator =(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = 0.0F;
-			return (*this);
-		}
-		
-		Point3D& operator *=(float t)
-		{
-			x *= t;
-			y *= t;
-			z *= t;
-			return (*this);
-		}
-		
-		Point3D& operator /=(float t)
-		{
-			float f = 1.0F / t;
-			x *= f;
-			y *= f;
-			z *= f;
-			return (*this);
-		}
-		
-		Point3D& operator &=(const Vector3D& v)
-		{
-			x *= v.x;
-			y *= v.y;
-			z *= v.z;
-			return (*this);
-		}
+	Point3DBase() {}
+	Point3DBase(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
+	Point3DBase(const Vector2DBase <T> & v) : Vector3DBase <T>(v) {}
+	Point3DBase(const Vector2DBase <T> & v, float u) : Vector3DBase <T>(v, u) {}
+	Point3DBase(const Vector3DBase <T> & v) {
+		*((Vector3DBase <T> *)this) = v;
+	}
+
+	Vector3DBase <T> & GetVector3D(void) {
+		return (*this);
+	}
+
+	const Vector3DBase <T>& GetVector3D(void) const {
+		return (*this);
+	}
+
+	Point2DBase <T> & GetPoint2D(void) {
+		return (*reinterpret_cast<Point2DBase <T> *>(this));
+	}
+
+	const Point2DBase <T> & GetPoint2D(void) const {
+		return (*reinterpret_cast<const Point2DBase <T> *>(this));
+	}
+
+	Point3DBase <T> & operator =(const Vector3DBase <T> & v) {
+		*((Vector3DBase <T> *)this) = v;
+		return (*this);
+	}
+
+	// Adding a vector to a point yields a point, so we cannot inherit the parent class
+	// version.
+	Point3DBase operator -(const Vector3DBase <T>& v) const {
+		return (*(Vector3DBase <T> *)this) - v;
+	}
+
+	// Subtracting a vector from a point yields a point, so we cannot inherit the parent class
+	// version.
+	Point3DBase operator +(const Vector3DBase <T>& v) const {
+		return (*(Vector3DBase <T> *)this) + v;
+	}
+
+	friend Vector3DBase <T> CalculateNormal(const Point3DBase <T> &v1, const Point3DBase <T> &v2,
+	const Point3DBase <T> &v3) {
+	    Vector3DBase <T> v = Cross(v2 - v1, v3 - v1);
+	    v.Normalize();
+	    return v;
+	}
 };
 
+typedef Point3DBase <float> Point3D;
+typedef Point3DBase <double> PointDouble3D;
 
-inline Point3D operator -(const Point3D& p)
-{
-	return (Point3D(-p.x, -p.y, -p.z));
-}
+template <class T>
 
-inline Point3D operator +(const Point3D& p1, const Point3D& p2)
-{
-	return (Point3D(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z));
-}
+class DST_API Vector4DBase {
+public:
+	T x;
+	T y;
+	T z;
+	T w;
 
-inline Point3D operator +(const Point3D& p, const Vector3D& v)
-{
-	return (Point3D(p.x + v.x, p.y + v.y, p.z + v.z));
-}
+	Vector4DBase() {}
 
-inline Point3D operator +(const Vector3D& v, const Point3D& p)
-{
-	return (Point3D(v.x + p.x, v.y + p.y, v.z + p.z));
-}
+	Vector4DBase(T r, T s, T t, T u) {
+		x = r;
+		y = s;
+		z = t;
+		w = u;
+	}
 
-inline Vector3D operator -(const Point3D& p1, const Point3D& p2)
-{
-	return (Vector3D(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z));
-}
+	Vector4DBase(const Vector3DBase <T> & v, T u) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = u;
+	}
 
-inline Point3D operator -(const Point3D& p, const Vector3D& v)
-{
-	return (Point3D(p.x - v.x, p.y - v.y, p.z - v.z));
-}
-
-inline Point3D operator -(const Vector3D& v, const Point3D& p)
-{
-	return (Point3D(v.x - p.x, v.y - p.y, v.z - p.z));
-}
-
-inline Point3D operator *(const Point3D& p, float t)
-{
-	return (Point3D(p.x * t, p.y * t, p.z * t));
-}
-
-inline Point3D operator *(float t, const Point3D& p)
-{
-	return (Point3D(t * p.x, t * p.y, t * p.z));
-}
-
-inline Point3D operator /(const Point3D& p, float t)
-{
-	float f = 1.0F / t;
-	return (Point3D(p.x * f, p.y * f, p.z * f));
-}
-
-inline float operator *(const Point3D& p1, const Point3D& p2)
-{
-	return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
-}
-
-inline float operator *(const Point3D& p, const Vector3D& v)
-{
-	return (p.x * v.x + p.y * v.y + p.z * v.z);
-}
-
-inline float operator *(const Vector3D& v, const Point3D& p)
-{
-	return (v.x * p.x + v.y * p.y + v.z * p.z);
-}
-
-inline float operator *(const Point3D& p, const Vector2D& v)
-{
-	return (p.x * v.x + p.y * v.y);
-}
-
-inline float operator *(const Vector2D& v, const Point3D& p)
-{
-	return (v.x * p.x + v.y * p.y);
-}
-
-inline Vector3D operator %(const Point3D& p1, const Point3D& p2)
-{
-	return (Vector3D(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x - p1.x * p2.z, p1.x * p2.y - p1.y * p2.x));
-}
-
-inline Vector3D operator %(const Point3D& p, const Vector3D& v)
-{
-	return (Vector3D(p.y * v.z - p.z * v.y, p.z * v.x - p.x * v.z, p.x * v.y - p.y * v.x));
-}
-
-inline Vector3D operator %(const Vector3D& v, const Point3D& p)
-{
-	return (Vector3D(v.y * p.z - v.z * p.y, v.z * p.x - v.x * p.z, v.x * p.y - v.y * p.x));
-}
-
-inline Point3D operator &(const Point3D& p1, const Point3D& p2)
-{
-	return (Point3D(p1.x * p2.x, p1.y * p2.y, p1.z * p2.z));
-}
-
-inline Point3D operator &(const Point3D& p, const Vector3D& v)
-{
-	return (Point3D(p.x * v.x, p.y * v.y, p.z * v.z));
-}
-
-inline Point3D operator &(const Vector3D& v, const Point3D& p)
-{
-	return (Point3D(v.x * p.x, v.y * p.y, v.z * p.z));
-}
-
-inline float Dot(const Vector3D& v1, const Vector3D& v2)
-{
-	return (v1 * v2);
-}
-
-inline float Dot(const Point3D& p, const Vector3D& v)
-{
-	return (p * v);
-}
-
-inline Vector3D Cross(const Vector3D& v1, const Vector3D& v2)
-{
-	return (v1 % v2);
-}
-
-inline Vector3D Cross(const Point3D& p, const Vector3D& v)
-{
-	return (p % v);
-}
-
-inline Vector3D ProjectOnto(const Vector3D& v1, const Vector3D& v2)
-{
-	return (v2 * (v1 * v2));
-}
-
-// Project v1 onto or in the direction of v2, with the angle limited by the specified value.
-
-inline Vector3D ProjectOntoWithLimit(const Vector3D& v1, const Vector3D& v2, float min_cos_angle)
-{
-	float dot = Dot(v1, v2);
-        if (dot < min_cos_angle)
-            dot = min_cos_angle;
-	return v2 * dot;
-}
-
-inline float Magnitude(const Vector3D& v)
-{
-	return (sqrtf(v.x * v.x + v.y * v.y + v.z * v.z));
-}
-
-inline float InverseMag(const Vector3D& v)
-{
-	return (invsqrtf(v.x * v.x + v.y * v.y + v.z * v.z));
-}
-
-inline float SquaredMag(const Vector3D& v)
-{
-	return (v.x * v.x + v.y * v.y + v.z * v.z);
-}
-
-inline Vector3D CalculateNormal(const Point3D &v1, const Point3D &v2, const Point3D &v3) {
-    Vector3D v = Cross(v2 - v1, v3 - v1);
-    v.Normalize();
-    return v;
-}
-
-class DST_API Vector4D
-{
-	public:
+	Vector4DBase(const Vector3DBase <T> & v, const Point3D& q) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = - Dot(v, q);
+	}
+	
+	Vector4DBase(const Vector3DBase <T> & v) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = 0.0;
+	}
 		
-		float	x;
-		float	y;
-		float	z;
-		float	w;
-		
-		Vector4D() {}
-		
-		Vector4D(float r, float s, float t, float u)
-		{
-			x = r;
-			y = s;
-			z = t;
-			w = u;
-		}
-		
-		Vector4D(const Vector3D& v, float u)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = u;
-		}
-		
-		Vector4D(const Vector3D& v, const Point3D& q)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = -(v * q);
-		}
-		
-		Vector4D(const Vector3D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = 0.0F;
-		}
-		
-		Vector4D(const Point3D& p)
-		{
-			x = p.x;
-			y = p.y;
-			z = p.z;
-			w = 1.0F;
-		}
-		
-		Vector4D(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = 0.0F;
-			w = 0.0F;
-		}
-		
-		Vector4D(const Point2D& p)
-		{
-			x = p.x;
-			y = p.y;
-			z = 0.0F;
-			w = 1.0F;
-		}
-		
-		Vector4D& Set(float r, float s, float t, float u)
-		{
-			x = r;
-			y = s;
-			z = t;
-			w = u;
-			return (*this);
-		}
-		
-		Vector4D& Set(const Vector3D &v, float u)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = u;
-			return (*this);
-		}
-		
-		Vector4D& Set(const Vector3D &v, const Point3D& q)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = -(v * q);
-			return (*this);
-		}
-		
-		float& operator [](int k)
-		{
-			return ((&x)[k]);
-		}
+	Vector4DBase(const Point3DBase <T> & p) {
+		x = p.x;
+		y = p.y;
+		z = p.z;
+		w = 1.0;
+	}
 
-		const float& operator [](int k) const
-		{
-			return ((&x)[k]);
-		}
-		const Vector3D& GetVector3D(void) const
-		{
-			return (*reinterpret_cast<const Vector3D *>(this));
-		}
+	Vector4DBase(const Vector2DBase <T> & v) {
+		x = v.x;
+		y = v.y;
+		z = 0.0;
+		w = 0.0;
+	}
 
-		const Point3D& GetPoint3D(void) const
-		{
-			return (*reinterpret_cast<const Point3D *>(this));
-		}
+	Vector4DBase(const Point2DBase <T> & p) {
+		x = p.x;
+		y = p.y;
+		z = 0.0;
+		w = 1.0;
+	}
+		
+	Vector4DBase& Set(T r, T s, T t, T u) {
+		x = r;
+		y = s;
+		z = t;
+		w = u;
+		return (*this);
+	}
+
+	Vector4DBase& Set(const Vector3DBase <T> &v, T u) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = u;
+		return (*this);
+	}
+		
+	Vector4DBase& Set(const Vector3DBase <T> &v, const Point3DBase <T> & q) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = - Dot(v, q);
+		return (*this);
+	}
+		
+	T& operator [](int k) {
+		return ((&x)[k]);
+	}
+
+	const T& operator [](int k) const {
+		return ((&x)[k]);
+	}
+
+	const Vector3DBase <T> & GetVector3D(void) const {
+		return (*reinterpret_cast<const Vector3DBase <T> *>(this));
+	}
+
+	const Point3DBase <T> & GetPoint3D(void) const {
+		return (*reinterpret_cast<const Point3DBase <T> *>(this));
+	}
+
+#if 1
+	Vector3DBase <T> & GetVector3D(void) {
+		return (*reinterpret_cast<Vector3DBase <T> *>(this));
+	}
+
+	Point3DBase <T>& GetPoint3D(void) {
+		return (*reinterpret_cast<Point3DBase <T> *>(this));
+	}
+#else
+	// Work around issues encountered with gcc 4.8.2 and -O2 and higher
+	// on armhf.
+	Vector3D GetVector3D(void) {
+		return Vector3D(x, y, z);
+	}
+
+	Point3D GetPoint3D(void) {
+		return Point3D(x, y, z);
+	}
+#endif
+
+	Vector4DBase& operator =(const Vector3DBase <T> & v) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+		w = 0.0;
+		return (*this);
+	}
+		
+	Vector4DBase& operator =(const Point3D& p) {
+		x = p.x;
+		y = p.y;
+		z = p.z;
+		w = 1.0;
+		return (*this);
+	}
+
+	Vector4DBase& operator =(const Vector2D& v) {
+		x = v.x;
+		y = v.y;
+		z = 0.0;
+		w = 0.0;
+		return (*this);
+	}
+
+	Vector4DBase& operator =(const Point2D& p) {
+		x = p.x;
+		y = p.y;
+		z = 0.0;
+		w = 1.0;
+		return (*this);
+	}
+
+	Vector4DBase& operator +=(const Vector4DBase& v) {
+		x += v.x;
+		y += v.y;
+		z += v.z;
+		w += v.w;
+		return (*this);
+	}
+
+	Vector4DBase& operator +=(const Vector3D& v) {
+		x += v.x;
+		y += v.y;
+		z += v.z;
+		return (*this);
+	}
+
+	Vector4DBase& operator +=(const Vector2D& v) {
+		x += v.x;
+		y += v.y;
+		return (*this);
+	}
+
+	Vector4DBase& operator -=(const Vector4DBase& v) {
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
+		w -= v.w;
+		return (*this);
+	}
+
+	Vector4DBase& operator -=(const Vector3D& v) {
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
+		return (*this);
+	}
+
+	Vector4DBase& operator -=(const Vector2D& v) {
+		x -= v.x;
+		y -= v.y;
+		return (*this);
+	}
+
+	Vector4DBase& operator *=(T t) {
+		x *= t;
+		y *= t;
+		z *= t;
+		w *= t;
+		return (*this);
+	}
+
+	Vector4DBase& operator /=(T t) {
+		T f = 1.0 / t;
+		x *= f;
+		y *= f;
+		z *= f;
+		w *= f;
+		return (*this);
+	}
 
 #if 0
-		Vector3D& GetVector3D(void)
-		{
-			return (*reinterpret_cast<Vector3D *>(this));
-		}
-
-		Point3D& GetPoint3D(void)
-		{
-			return (*reinterpret_cast<Point3D *>(this));
-		}
-#else
-		// Work around issues encountered with gcc 4.8.2 and -O2 and higher
-		// on armhf.
-		Vector3D GetVector3D(void)
-		{
-			return Vector3D(x, y, z);
-		}
-
-		Point3D GetPoint3D(void)
-		{
-			return Point3D(x, y, z);
-		}
-#endif
-		
-		Vector4D& operator =(const Vector3D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			w = 0.0F;
-			return (*this);
-		}
-		
-		Vector4D& operator =(const Point3D& p)
-		{
-			x = p.x;
-			y = p.y;
-			z = p.z;
-			w = 1.0F;
-			return (*this);
-		}
-		
-		Vector4D& operator =(const Vector2D& v)
-		{
-			x = v.x;
-			y = v.y;
-			z = 0.0F;
-			w = 0.0F;
-			return (*this);
-		}
-		
-		Vector4D& operator =(const Point2D& p)
-		{
-			x = p.x;
-			y = p.y;
-			z = 0.0F;
-			w = 1.0F;
-			return (*this);
-		}
-		
-		Vector4D& operator +=(const Vector4D& v)
-		{
-			x += v.x;
-			y += v.y;
-			z += v.z;
-			w += v.w;
-			return (*this);
-		}
-		
-		Vector4D& operator +=(const Vector3D& v)
-		{
-			x += v.x;
-			y += v.y;
-			z += v.z;
-			return (*this);
-		}
-		
-		Vector4D& operator +=(const Vector2D& v)
-		{
-			x += v.x;
-			y += v.y;
-			return (*this);
-		}
-		
-		Vector4D& operator -=(const Vector4D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			z -= v.z;
-			w -= v.w;
-			return (*this);
-		}
-		
-		Vector4D& operator -=(const Vector3D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			z -= v.z;
-			return (*this);
-		}
-		
-		Vector4D& operator -=(const Vector2D& v)
-		{
-			x -= v.x;
-			y -= v.y;
-			return (*this);
-		}
-		
-		Vector4D& operator *=(float t)
-		{
-			x *= t;
-			y *= t;
-			z *= t;
-			w *= t;
-			return (*this);
-		}
-		
-		Vector4D& operator /=(float t)
-		{
-			float f = 1.0F / t;
-			x *= f;
-			y *= f;
-			z *= f;
-			w *= f;
-			return (*this);
-		}
-		
-		Vector4D& operator &=(const Vector4D& v)
-		{
-			x *= v.x;
-			y *= v.y;
-			z *= v.z;
-			w *= v.w;
-			return (*this);
-		}
-		
-		Vector4D& Normalize(void)
-		{
-			return (*this *= invsqrtf(x * x + y * y + z * z + w * w));
-		}
-
-                Vector4D OrientPlaneTowardsPoint(const Point3D &P);
-
-		// Return text respresentation. To be freed with delete [].
-		char *GetString() const;
-} DST_ALIGNED(16);
-
-
-inline Vector4D operator -(const Vector4D& v)
-{
-	return (Vector4D(-v.x, -v.y, -v.z, -v.w));
-}
-
-inline Vector4D operator +(const Vector4D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w));
-}
-
-inline Vector4D operator +(const Vector4D& v1, const Vector3D& v2)
-{
-	return (Vector4D(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w));
-}
-
-inline Vector4D operator +(const Vector3D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v2.w));
-}
-
-inline Vector4D operator +(const Vector4D& v1, const Vector2D& v2)
-{
-	return (Vector4D(v1.x + v2.x, v1.y + v2.y, v1.z, v1.w));
-}
-
-inline Vector4D operator +(const Vector2D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x + v2.x, v1.y + v2.y, v2.z, v2.w));
-}
-
-inline Vector4D operator -(const Vector4D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w));
-}
-
-inline Vector4D operator -(const Vector4D& v1, const Vector3D& v2)
-{
-	return (Vector4D(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w));
-}
-
-inline Vector4D operator -(const Vector3D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, -v2.w));
-}
-
-inline Vector4D operator -(const Vector4D& v1, const Vector2D& v2)
-{
-	return (Vector4D(v1.x - v2.x, v1.y - v2.y, v1.z, v1.w));
-}
-
-inline Vector4D operator -(const Vector2D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x - v2.x, v1.y - v2.y, -v2.z, -v2.w));
-}
-
-inline Vector4D operator *(const Vector4D& v, float t)
-{
-	return (Vector4D(v.x * t, v.y * t, v.z * t, v.w * t));
-}
-
-inline Vector4D operator *(float t, const Vector4D& v)
-{
-	return (Vector4D(t * v.x, t * v.y, t * v.z, t * v.w));
-}
-
-inline Vector4D operator /(const Vector4D& v, float t)
-{
-	float f = 1.0F / t;
-	return (Vector4D(v.x * f, v.y * f, v.z * f, v.w * f));
-}
-
-inline float operator *(const Vector4D& v1, const Vector4D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w);
-}
-
-inline float operator *(const Vector4D& v1, const Vector3D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
-}
-
-inline float operator *(const Vector3D& v1, const Vector4D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
-}
-
-inline float operator *(const Vector4D& v, const Point3D& p)
-{
-	return (v.x * p.x + v.y * p.y + v.z * p.z + v.w);
-}
-
-inline float operator *(const Point3D& v1, const Vector4D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v2.w);
-}
-
-inline float operator *(const Vector4D& v1, const Vector2D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y);
-}
-
-inline float operator *(const Vector2D& v1, const Vector4D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y);
-}
-
-inline float operator *(const Vector4D& v, const Point2D& p)
-{
-	return (v.x * p.x + v.y * p.y + v.w);
-}
-
-inline float operator *(const Point2D& v1, const Vector4D& v2)
-{
-	return (v1.x * v2.x + v1.y * v2.y + v2.w);
-}
-
-inline Vector3D operator %(const Vector4D& v1, const Vector3D& v2)
-{
-	return (Vector3D(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x));
-}
-
-inline Vector4D operator &(const Vector4D& v1, const Vector4D& v2)
-{
-	return (Vector4D(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w));
-}
-
-inline bool operator ==(const Vector4D& v1, const Vector4D& v2)
-{
-	return ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) && (v1.w == v2.w));
-}
-
-inline bool operator !=(const Vector4D& v1, const Vector4D& v2)
-{
-	return ((v1.x != v2.x) || (v1.y != v2.y) || (v1.z != v2.z) || (v1.w != v2.w));
-}
-
-
-inline float Dot(const Vector4D& v1, const Vector4D& v2)
-{
-	return (v1 * v2);
-}
-
-inline Vector4D ProjectOnto(const Vector4D& v1, const Vector4D& v2)
-{
-	return (v2 * (v1 * v2));
-}
-
-inline float Magnitude(const Vector4D& v)
-{
-	return (sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w));
-}
-
-inline float InverseMag(const Vector4D& v)
-{
-	return (invsqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w));
-}
-
-inline float SquaredMag(const Vector4D& v)
-{
-	return (v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
-}
-
-inline Vector4D PlaneFromPoints(const Point3D& v1, const Point3D& v2, const Point3D& v3) {
-    Vector3D aux1 = v2 - v1;
-    Vector3D aux2 = v3 - v1;
-    Vector3D normal = Cross(aux2, aux1);
-    normal.Normalize();
-    float distance = - Dot(normal, v2);
-    return Vector4D(normal, distance);
-}
-
-inline Vector4D Vector4D::OrientPlaneTowardsPoint(const Point3D &P) {
-	if ((*this) * P < 0)
-		return (*this) = - (*this);
-        else
+	// * operator is pair-wise multiplication.
+	Vector4DBase& operator *=(const Vector4DBase& v) {
+		x *= v.x;
+		y *= v.y;
+		z *= v.z;
+		w *= v.w;
 		return (*this);
+	}
+#endif
+
+	Vector4DBase operator -(void) const {
+		return (Vector4DBase(- x, - y, - z, - w));
+	}
+
+	Vector4DBase operator +(const Vector4DBase& v) const {
+		return (Vector4DBase(x + v.x, y + v.y, z + z, w + v.w));
+	}
+
+	Vector4DBase operator +(const Vector3DBase <T> & v) const {
+		return (Vector4DBase(x + v.x, y + v.y, z + v.z, w));
+	}
+
+	Vector4DBase operator +(const Vector2DBase <T> & v) const {
+		return (Vector4DBase(x + v.x, y + v.y, z, w));
+	}
+
+	Vector4DBase operator -(const Vector4DBase& v) const {
+		return (Vector4DBase(x - v.x, y - v.y, z - v.z, w - v.w));
+	}
+
+	Vector4DBase operator -(const Vector3DBase <T> & v) const {
+		return (Vector4DBase(x - v.x, y - v.y, z - v.z, w));
+	}
+
+	Vector4DBase operator -(const Vector2DBase <T> & v) const {
+		return (Vector4DBase(x - v.x, y - v.y, z, w));
+	}
+
+	Vector4DBase operator *(float t) const {
+		return (Vector4DBase(x * t, y * t, z * t, w * t));
+	}
+
+	Vector4DBase operator /(float t) const {
+		float f = 1.0 / t;
+		return (Vector4DBase(x * f, y * f, z * f, w * f));
+	}
+
+	// * is pair-wise multiplication
+	Vector4DBase operator *(const Vector4DBase& v) const {
+		return (Vector4DBase(x * v.x, y * v.y, z * v.z, w * v.w));
+	}
+
+	Vector4DBase& Normalize(void) {
+		return (*this *= dstInvSqrt(x * x + y * y + z * z + w * w));
+	}
+
+	Vector4DBase& OrientPlaneTowardsPoint(const Point3DBase <T> &P) {
+		if (Dot((*this), P) < 0)
+			return (*this) = - (*this);
+	        else
+			return (*this);
+	}
+
+	// Return text respresentation. To be freed with delete [].
+	char *GetString() const;
+
+	bool operator ==(const Vector4DBase& v) const {
+		return ((x == v.x) && (y == v.y) && (z == v.z) && (w == v.w));
+	}
+
+	bool operator !=(const Vector4DBase& v) const {
+		return ((x != v.x) || (y != v.y) || (z != v.z) || (w != v.w));
+	}
+
+	friend Vector4DBase operator *(float t, const Vector4DBase& v) {
+		return (Vector4DBase(t * v.x, t * v.y, t * v.z, t * v.w));
+	}
+
+	friend T Dot(const Vector4DBase& v1, const Vector4DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w);
+	}
+
+	friend T Dot(const Vector4DBase& v1, const Vector3D& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
+	}
+
+	friend T Dot(const Vector3D& v1, const Vector4DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z);
+	}
+
+	friend T Dot(const Vector4DBase& v, const Point3D& p) {
+		return (v.x * p.x + v.y * p.y + v.z * p.z + v.w);
+	}
+
+	friend T Dot(const Point3D& v1, const Vector4DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v2.w);
+	}
+
+	friend T Dot(const Vector4DBase& v1, const Vector2D& v2) {
+		return (v1.x * v2.x + v1.y * v2.y);
+	}
+
+	friend T Dot(const Vector2D& v1, const Vector4DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y);
+	}
+
+	friend T Dot(const Vector4DBase& v, const Point2D& p) {
+		return (v.x * p.x + v.y * p.y + v.w);
+	}
+
+	friend T Dot(const Point2D& v1, const Vector4DBase& v2) {
+		return (v1.x * v2.x + v1.y * v2.y + v2.w);
+	}
+
+	friend Vector3DBase <T> Cross(const Vector4DBase <T> & v1, const Vector3DBase <T> & v2) {
+		return (Vector3D(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z,
+			v1.x * v2.y - v1.y * v2.x));
+	}
+
+	friend Vector4DBase ProjectOnto(const Vector4DBase& v1, const Vector4DBase& v2) {
+		return (v2 * Dot(v1, v2));
+	}
+	friend T SquaredMag(const Vector4DBase& v) {
+		return (v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+	}
+
+	friend T Magnitude(const Vector4DBase& v) {
+		return dstSqrt(SquaredMag(v));
+	}
+
+	friend T InverseMag(const Vector4DBase& v) {
+		return dstInvSqrt(SquaredMag(v));
+	}
+};
+
+typedef Vector4DBase <float> Vector4D DST_ALIGNED(16);
+typedef Vector4DBase <double> VectorDouble4D DST_ALIGNED(32);
+
+
+template <class T>
+inline Vector4DBase <T> dstPlaneFromPoints(const Point3DBase <T>& v1, const Point3DBase <T>& v2,
+const Point3DBase <T> & v3) {
+	Vector3DBase <T> aux1 = v2 - v1;
+	Vector3DBase <T> aux2 = v3 - v1;
+	Vector3DBase <T> normal = Cross(aux2, aux1);
+	normal.Normalize();
+	T distance = - Dot(normal, v2);
+	return Vector4DBase <T>(normal, distance);
 }
+
 
 // Define some convenient inline functions specifically using the Vector classes.
 
-static inline bool AlmostEqual(const Vector2D& v1, const Vector2D& v2) {
-    return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y);
+template <class T>
+static inline bool AlmostEqual(const Vector2DBase <T> & v1, const Vector2DBase <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y);
 }
 
-static inline bool AlmostEqual(const Vector3D& v1, const Vector3D& v2) {
-    return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y) && AlmostEqual(v1.z, v2.z);
+template <class T>
+static inline bool AlmostEqual(const Vector3DBase <T> & v1, const Vector3DBase <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y) && AlmostEqual(v1.z, v2.z);
 }
 
-static inline bool AlmostEqual(const Vector2D& v1, const Vector2D& v2, float epsilon) {
-    return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon);
+template <class T>
+static inline bool AlmostEqual(const Vector2DBase <T> & v1, const Vector2DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon);
 }
 
-static inline bool AlmostEqual(const Vector3D& v1, const Vector3D& v2, float epsilon) {
-    return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
-        AlmostEqual(v1.z, v2.z, epsilon);
+template <class T>
+static inline bool AlmostEqual(const Vector3DBase <T> & v1, const Vector3DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
+		AlmostEqual(v1.z, v2.z, epsilon);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Point2DBase <T> & v1, const Point2DBase <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Point3DBase <T> & v1, const Point3DBase <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y) && AlmostEqual(v1.z, v2.z);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Point2DBase <T> & v1, const Point2DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Point3DBase <T> & v1, const Point3DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
+		AlmostEqual(v1.z, v2.z, epsilon);
 }
 
 static inline float max3f(const Vector3D& V) {

@@ -13,6 +13,12 @@ OPTCFLAGS =
 ifeq ($(TARGET_CPU), CORTEX_A7)
 OPTCFLAGS += -mcpu=cortex-a7 -mfpu=vfpv4
 endif
+ifeq ($(TARGET_CPU), CORTEX_A15)
+OPTCFLAGS += -mcpu=cortex-a15 -mfpu=vfpv4
+endif
+ifeq ($(TARGET_CPU), CORTEX_A5)
+OPTCFLAGS += -mcpu=cortex-a5
+endif
 ifeq ($(TARGET_CPU), CORTEX_A8)
 OPTCFLAGS += -mcpu=cortex-a8
 endif
@@ -20,20 +26,36 @@ ifeq ($(TARGET_CPU), CORTEX_A9)
 OPTCFLAGS += -mcpu=cortex-a9
 endif
 
+ARM_ASSEMBLER_FLAGS_THUMB = -march=armv7-a -Wa,-march=armv7-a -mthumb -Wa,-mthumb \
+ -Wa,-mimplicit-it=always -mthumb-interwork -DCONFIG_THUMB
+ARM_ASSEMBLER_FLAGS_NON_THUMB = 
+
 # SIMD configuration (SSE on x86).
 ifeq ($(TARGET_SIMD), X86_SSE3)
-OPTCFLAGS += -msse3 -DUSE_SSE2 -DUSE_SSE3
+OPTCFLAGS += -msse3 -DDST_USE_SSE2 -DDST_USE_SSE3
 else
 ifeq ($(TARGET_SIMD), X86_SSE2)
-OPTCFLAGS += -msse2 -DUSE_SSE2
+OPTCFLAGS += -msse2 -DDST_USE_SSE2
 endif
 endif
 ifeq ($(TARGET_SIMD), ARM_NEON)
-OPTCFLAGS +=-DUSE_ARM_NEON -mneon
+OPTCFLAGS +=-DDST_USE_ARM_NEON -mneon
 endif
 ifeq ($(TARGET_SIMD), NONE)
-OPTCFLAGS +=-DNO_SIMD
+OPTCFLAGS +=-DDST_NO_SIMD
 endif
+
+# Compile time configuration definitions
+OPT_DEFINES =
+
+# Memcpy, memory alignment
+ifeq ($(PREFER_LIBC_MEMCPY), YES)
+OPT_DEFINES += -DDST_PREFER_LIBC_MEMCPY
+endif
+ifeq ($(UNALIGNED_MEMORY_ACCESS), YES)
+OPT_DEFINES += -DDST_UNALIGNED_MEMORY_ACCESS
+endif
+
 
 ifeq ($(LIBRARY_CONFIGURATION), DEBUG)
 # Adding some optimization even when compiling for debugging can help compilation
@@ -43,7 +65,7 @@ else
 OPTCFLAGS += -Ofast -ffast-math
 endif
 
-CFLAGS = -Wall -pipe -I. $(OPTCFLAGS)
+CFLAGS = -Wall -pipe -I. $(OPTCFLAGS) $(OPT_DEFINES)
 
 ifeq ($(LIBRARY_CONFIGURATION), SHARED)
 # Shared library.
@@ -70,11 +92,14 @@ endif
 
 LIBRARY_LIBS = -lpthread -lm -lc
 
-LIBRARY_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o dstSIMDDotMatrix.o \
+LIBRARY_CPP_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o dstSIMDDotMatrix.o \
 	dstVectorMath.o dstVectorMathSIMD.o dstMatrixMath.o dstMatrixMathSIMD.o
+LIBRARY_ASM_MODULE_OBJECTS = dstARMMemset.o
+LIBRARY_MODULE_OBJECTS = $(LIBRARY_CPP_MODULE_OBJECTS) $(LIBRARY_ASM_MODULE_OBJECTS)
 LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h dstThread.h \
 	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h \
-	dstMath.h dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h
+	dstMath.h dstMemory.h \
+	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h
 TEST_PROGRAMS = test-random test-array
 
 LIBRARY_PKG_CONFIG_FILE = datasetturbo.pc
@@ -152,12 +177,24 @@ clean :
 .cpp.o :
 	g++ -c $(CFLAGS_LIB) $< -o $@
 
+.S.o :
+	ARM=`cat /proc/cpuinfo | grep ARMv | wc -l`; \
+if [ ARM > 0 ]; then \
+	THUMB=`echo | gcc -dM -E - | grep __thumb2__ | wc -l`; \
+	if [ THUMB > 0 ]; then \
+		x=$(ARM_THUMB ASSEMBLER_FLAGS); else \
+		x=$(ARM_NON_THUMB_ASSEMBLER_FLAGS); \
+	fi; \
+fi; \
+g++ -c $(CFLAGS_LIB) $x $< -o $@
+
 dep :
 	rm -f .depend
 	make .depend
 
 .depend: Makefile.conf Makefile
-	g++ -MM $(patsubst %.o,%.cpp,$(LIBRARY_MODULE_OBJECTS)) >> .depend
+	g++ -MM $(patsubst %.o,%.cpp,$(LIBRARY_CPP_MODULE_OBJECTS)) >> .depend
+	g++ -MM $(patsubst %.o,%.S,$(LIBRARY_ASM_MODULE_OBJECTS)) >> .depend
         # Make sure Makefile.conf and Makefile are dependency for all modules.
 	for x in $(LIBRARY_MODULE_OBJECTS); do \
 	echo $$x : Makefile.conf Makefile >> .depend; done

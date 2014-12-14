@@ -83,5 +83,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #endif
 
+// The number of bytes starting for discriminating between the dstMemcpySmall and
+// dstMemcpyLarge variants.
+#define DST_MEMCPY_THRESHOLD 256
+
 #endif // !defined(__DST_CONFIG_H__)
 

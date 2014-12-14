@@ -79,5 +79,13 @@ float InverseSRGBGamma(float c);
 
 float SRGBGamma(float c);
 
+static inline bool AlmostEqual(const Color& c1, const Color& c2) {
+	return AlmostEqual(c1.GetVector3D(), c2.GetVector3D());
+}
+
+static inline bool AlmostEqual(const Color& c1, const Color& c2, float epsilon) {
+	return AlmostEqual(c1.GetVector3D(), c2.GetVector3D(), epsilon);
+}
+
 #endif // defined(__DST_COLOR_H__)
 

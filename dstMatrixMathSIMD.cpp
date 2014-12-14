@@ -24,7 +24,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // - MatixTransform * MatrixTranform
 // - Matrix4D * MatrixTransform
 //
-// When USE_SIMD is not defined, these member function will be defined as regular C++
+// When DST_USE_SIMD is not defined, these member function will be defined as regular C++
 // functions in sreMatrixMath.cpp.
 //
 // Additional functions include multiplying a matrix by an array of vectors:
@@ -32,9 +32,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // - Matrix4D * Point3D[]
 // - MatrixTransform * Vector3D[]
 //
-// C++ code is provided for the latter functions when USE_SIMD is not defined.
+// C++ code is provided for the latter functions when DST_USE_SIMD is not defined.
 
-#ifdef USE_SIMD
+#ifdef DST_USE_SIMD
 
 Matrix4D operator *(const Matrix4D& __restrict__ m1, const Matrix4D& __restrict__ m2) {
     Matrix4D m3;
@@ -76,7 +76,7 @@ Matrix4D operator *(const Matrix4D& __restrict__ m1, const MatrixTransform& __re
 
 void MatrixMultiplyVectors(int n, const Matrix4D& m, const Vector4D *v1, Vector4D *v2) {
     int i = 0;
-#ifdef USE_SIMD
+#ifdef DST_USE_SIMD
     Matrix4DSIMD m_simd;
     m_simd.Set(m);
     for (; i + 3 < n; i += 4) {
@@ -94,7 +94,7 @@ void MatrixMultiplyVectors(int n, const Matrix4D& m, const Vector4D *v1, Vector4
 
 void MatrixMultiplyVectors(int n, const Matrix4D& m, const Point3D *p1, Point3D *p2) {
     int i = 0;
-#ifdef USE_SIMD
+#ifdef DST_USE_SIMD
     Matrix4DSIMD m_simd;
     m_simd.Set(m);
     for (; i + 3 < n; i += 4) {

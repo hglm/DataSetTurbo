@@ -500,7 +500,7 @@ Matrix4D& Matrix4D::AssignScaling(float scaling) {
     return (*this);
 }
 
-#ifndef USE_SIMD
+#ifndef DST_USE_SIMD
 
 Matrix4D operator *(const Matrix4D& __restrict__ m1, const Matrix4D& __restrict__ m2)
 {
@@ -872,7 +872,7 @@ MatrixTransform& MatrixTransform::operator *=(const MatrixTransform& __restrict_
 	return (*this);
 }
 
-#ifndef USE_SIMD
+#ifndef DST_USE_SIMD
 
 MatrixTransform operator *(const MatrixTransform& __restrict__ m1,
 const MatrixTransform& __restrict__ m2) {

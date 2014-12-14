@@ -21,7 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // Provide a unifying set of SIMD primitives. This file implements primitives for
 // PC class processor with SSE2 enabled, which optionally use additional features
-// such as SSE3 (if USE_SSE3 is defined).
+// such as SSE3 (if DST_USE_SSE3 is defined).
 
 typedef __m128 __simd128_float;
 typedef __m128i __simd128_int;
@@ -477,7 +477,7 @@ static inline_only __simd128_float simd128_max1_float(__simd128_float s1, __simd
      return _mm_max_ss(s1, s2);
 }
 
-#ifdef USE_SSE3
+#ifdef DST_USE_SSE3
 
 // Horizontally add pairs of elements over two four-float vectors and return
 // in a single vector. Generally inefficient even when available as a single instruction

@@ -107,7 +107,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //     int n, const float * __restrict f1, const float * __restrict f2, float * __restrict dot,
 //     int& negative_count);
 
-// Calculate dot products of four four-component float vectors stored at f1 and f2.
+// Calculate dot products of four four-component float vectors stored at f1 and f2. Both f1 and
+// f2 must be 16-byte aligned.
 
 void simd_four_dot_products_vector4_float(
 const float * __restrict f1, const float * __restrict f2, __simd128_float& result);
@@ -151,6 +152,7 @@ const float * __restrict f1, const float * __restrict f2, __simd128_float& resul
 
 // Calculate dot products of four three-component float vectors stored at f1 and f2. The
 // vectors are assumed to be stored in 128-bit fields (the last four bytes are unused).
+// Both f1 and f2 must be 16-byte aligned.
 
 void simd_four_dot_products_vector3_storage4_float(const float * __restrict f1,
 const float * __restrict f2, __simd128_float& result);
@@ -227,6 +229,7 @@ const float * __restrict f2, __simd128_float& result) {
 
 // Calculate n dot products from one array of four vectors and one single vector,
 // and store the result in an array of floats.
+// f1, f2 and dot must all be 16-bytes aligned.
 
 void simd_dot_product_nx1_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
@@ -240,7 +243,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
     m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
     m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
     int i = 0;
-    for (; i  + 3 < n; i += 4) {
+    for (; i + 3 < n; i += 4) {
         // Loading and using transpose seems to be more efficient than set_float calls,
         // which expand to numerous instructions.
         __simd128_float m_v1_0 = simd128_load_float(&f1[i * 4 + 0]);
@@ -258,7 +261,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
             simd128_add_float(m_dot_x, m_dot_y),
             simd128_add_float(m_dot_z, m_dot_w)
             );
-        simd128_store_float(&dot[i * 4], m_result);
+        simd128_store_float(&dot[i], m_result);
     }
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
@@ -314,6 +317,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 // When vectors of three floats are stored in 16-byte aligned format,
 // simd128_load_float can be used but the fourth element of the SIMD register
 // needs to be initialized with 0.0f (v2 only).
+// f1, f2 and dot must all be 16-bytes aligned.
 
 void simd_dot_product_nx1_vector3_storage4_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
@@ -367,6 +371,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 // The array of vectors is an array of points with implicit w coordinate of 1.0f,
 // and is stored aligned on 16-byte boundaries. The constant vector has four
 // components.
+// f1, f2 and dot must all be 16-bytes aligned.
 
 void simd_dot_product_nx1_point3_storage4_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
@@ -415,6 +420,8 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 // The array of vectors is an array of points with implicit w coordinate of 1.0f,
 // and is stored unaligned on 12-byte boundaries. The constant vector has four
 // components.
+// f2 and dot must be 16-bytes aligned.
+
 
 void simd_dot_product_nx1_point3_storage3_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
@@ -463,6 +470,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 // Calculate n dot products from one array of n point vectors stored on 16-byte
 // boundaries and one single four-element vector, store the result in an array of
 // floats, and count the number of dot products that is smaller than zero.
+// f1, f2 and dot must all be 16-bytes aligned.
 
 void simd_dot_product_nx1_point3_storage4_vector4_and_count_negative_float(
 int n, const float * __restrict f1, const float * __restrict f2, float * __restrict dot,
@@ -515,6 +523,7 @@ int& negative_count) {
 
 // Similar to the previous function, but the point vectors are packed at 12-byte
 // boundaries.
+// f2 and dot must be 16-bytes aligned.
 
 void simd_dot_product_nx1_point3_storage3_vector4_and_count_negative_float(
 int n, const float * __restrict f1, const float * __restrict f2, float * __restrict dot,

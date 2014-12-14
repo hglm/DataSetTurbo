@@ -21,7 +21,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <dstConfig.h>
 #include <dstRandom.h>
+#include <dstMemory.h>
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 
@@ -62,8 +64,8 @@ private :
 	inline void ExpandCapacity() {
 		ExpandCapacity(max_elements);
 	}
-	// Expand capacity to a minimum of minimum_capacity.
-	inline void ExpandCapacity(S minimum_capacity) {
+	// Set capacity to a minimum of minimum_capacity.
+	inline void SetMinimumCapacity(S minimum_capacity) {
 		ExpandCapacity(minimum_capacity - 1);
 	}
 
@@ -137,17 +139,47 @@ public :
 			ExpandCapacity();
 		AddQuick(v);
 	}
+private :
 	// Add n elements from a buffer. No capacity check.
-	inline void AddQuick(const T *v_pointer, S n) {
-		for (S i = 0; i < n; i++)
-			data[nu_elements + i] = v_pointer[i];
+	inline void AddQuick(const T *v_pointer, S n,  bool memcpy_only, bool no_memcpy) {
+		if (memcpy_only || (!no_memcpy && n >= DST_MEMCPY_THRESHOLD))
+			dstMemcpyAlignedLarge(&data[nu_elements], &v_pointer[0],
+				n * sizeof(data[0]));
+		else if (!memcpy_only)
+			dstMemcpyAlignedSmall(&data[nu_elements], &v_pointer[0],
+				n * sizeof(data[0]));
 		nu_elements += n;
 	}
-	// Add n elements from a buffer.
+public :
+	// Add n elements from a buffer. No capacity check. Flexible size.
+	inline void AddQuick(const T *v_pointer, S n) {
+		AddQuick(v_pointer, n, false, false);
+	}
+	// Add n elements from a buffer. No capacity check. Small size (no memcpy).
+	inline void AddQuickSmall(const T *v_pointer, S n) {
+		AddQuick(v_pointer, n, false, true);
+	}
+	// Add n elements from a buffer. No capacity check. Large size (use memcpy).
+	inline void AddQuickLarge(const T *v_pointer, S n) {
+		AddQuick(v_pointer, n, true, false);
+	}
+	// Add n elements from a buffer. Flexible n.
 	inline void Add(const T *v_pointer, S n) {
 		if (nu_elements + n > max_elements)
-			ExpandCapacity(nu_elements + n);
+			SetMinimumCapacity(nu_elements + n);
 		AddQuick(v_pointer, n);
+	}
+	// Add n elements from a buffer. Small n.
+	inline void AddSmall(const T *v_pointer, S n) {
+		if (nu_elements + n > max_elements)
+			SetMinimumCapacity(nu_elements + n);
+		AddQuickSmall(v_pointer, n);
+	}
+	// Add n elements from a buffer. Large n.
+	inline void AddLarge(const T *v_pointer, S n) {
+		if (nu_elements + n > max_elements)
+			SetMinimumCapacity(nu_elements + n);
+		AddQuickLarge(v_pointer, n);
 	}
 	// Add all elements from another array. No capacity check.
 	inline void AddQuick(const dstDynamicArrayBaseClass <T, S> & array) {
@@ -170,6 +202,35 @@ public :
 	}
 	inline void Push(S v) {
 		Add(v);
+	}
+private :
+	// Remove up to n elements from the head (start) of the array. This involves an
+	// overlapping memory copy operation. When n is greater or equal to the number of
+	// elements, the array will be empty.
+	inline void RemoveHead(S n, bool memcpy_only, bool no_memcpy) {
+		int n_leftover = nu_elements - n;
+		if (n_leftover < 0) {
+			nu_elements = 0;
+			return;
+		}
+		if (memcpy_only || (!no_memcpy && n_leftover >= DST_MEMCPY_THRESHOLD))
+			dstMemcpyAlignedLarge(&data[0], &data[n], n_leftover * sizeof(data[0]));
+		else if (!memcpy_only)
+			dstMemcpyAlignedSmall(&data[0], &data[n], n_leftover * sizeof(data[0]));
+		nu_elements = n_leftover;
+	}
+public:
+	// Flexible version for both small and large number of elements to be removed.
+	inline void RemoveHead(S n) {
+		RemoveHead(n, false, false);
+	}
+	// Version for small number of elements to be removed (do not use memcpy).
+	inline void RemoveSmallHead(S n) {
+		RemoveHead(n, false, true);
+	}
+	// Version for large number of elements to be removed (use memcpy).
+	inline void RemoveLargeHead(S n) {
+		RemoveHead(n, true, false);
 	}
 };
 
