@@ -19,9 +19,17 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_MEMORY_H__
 #define __DST_MEMORY_H__
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "dstSIMD.h"
+
+template <class T>
+static inline T *dstNewAligned(size_t n, size_t alignment) {
+   T *buffer;
+   posix_memalign((void **)&buffer, alignment, n * sizeof(T));
+   return buffer;
+}
 
 #ifdef DST_PREFER_LIBC_MEMCPY
 
