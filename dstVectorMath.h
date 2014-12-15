@@ -905,28 +905,28 @@ const Vector4D& v2, float *dot, int& negative_count);
 // Determine the minimum and maximum dot product of an array of vertices with a
 // given constant vector.
 
-DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, Vector3D *vertex,
+DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
 const Vector3D& v2, float& min_dot_product, float& max_dot_product);
 
-DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, Vector4D *vertex,
+DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
 const Vector4D& v2, float& min_dot_product, float& max_dot_product);
 
 // Determine the minimum and maximum dot products of an array of vertices with three
 // constant vectors.
 
 DST_API void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-Vector3D *vertex, const Vector3D* v2, float* min_dot_product, float* max_dot_product);
+const Vector3D *vertex, const Vector3D *v2, float *min_dot_product, float *max_dot_product);
 
 DST_API void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-Vector4D *vertex, const Vector4D *v2, float *min_dot_product, float *max_dot_product);
+const Vector4D *vertex, const Vector4D *v2, float *min_dot_product, float *max_dot_product);
 
 // Determine the indices within an array of vertices that have the minimum and
 // maximum dot product with a given constant vector.
 
-DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, Vector3D *vertex,
+DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
 const Vector3D& v2, int& i_Pmin, int& i_Pmax);
 
-DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, Vector4D *vertex,
+DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
 const Vector4D& v2, int& i_Pmin, int& i_Pmax);
 
 #endif // defined(__DST_VECTOR_MATH__)

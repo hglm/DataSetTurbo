@@ -153,7 +153,7 @@ const Vector4D& v2, float *dot, int& count) {
 // given constant vector.
 // vertex must be aligned on a 16-bytes boundary.
 
-void CalculateMinAndMaxDotProduct(int nu_vertices, Vector3D *vertex,
+void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
 const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
     int i = 0;
 #ifdef DST_USE_SIMD
@@ -162,7 +162,7 @@ const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
         __simd128_float m_v2_y = simd128_set_same_float(v2.y);
         __simd128_float m_v2_z = simd128_set_same_float(v2.z);
         __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_max_dot = simd128_set_same_float(FLT_MIN);
+        __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
         for (; i + 3 < nu_vertices; i += 4) {
 #if 1
             __simd128_float m_vertex0 = simd128_load(&vertex[i]);
@@ -211,7 +211,7 @@ const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
 #endif
     {
         min_dot_product = FLT_MAX;
-        max_dot_product = FLT_MIN;
+        max_dot_product = - FLT_MAX;
     }
     for (; i < nu_vertices; i++) {
         min_dot_product = minf(min_dot_product, Dot(vertex[i], v2));
@@ -219,7 +219,7 @@ const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
     }
 }
 
-void CalculateMinAndMaxDotProduct(int nu_vertices, Vector4D *vertex,
+void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
 const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
     int i = 0;
 #ifdef DST_USE_SIMD
@@ -229,7 +229,7 @@ const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
         __simd128_float m_v2_z = simd128_set_same_float(v2.z);
         __simd128_float m_v2_w = simd128_set_same_float(v2.w);
         __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_max_dot = simd128_set_same_float(FLT_MIN);
+        __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
         for (; i + 3 < nu_vertices; i += 4) {
 #if 1
             __simd128_float m_vertex0 = simd128_load(&vertex[i]);
@@ -283,7 +283,7 @@ const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
 #endif
     {
         min_dot_product = FLT_MAX;
-        max_dot_product = FLT_MIN;
+        max_dot_product = - FLT_MAX;
     }
     for (; i < nu_vertices; i++) {
         min_dot_product = minf(min_dot_product, Dot(vertex[i], v2));
@@ -295,7 +295,7 @@ const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
 // constant vectors.
 
 void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_product) {
+const Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_product) {
     int i = 0;
 #ifdef DST_USE_SIMD
     if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
@@ -311,9 +311,9 @@ Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_prod
         __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
         __simd128_float m_min_dot_C1 = simd128_set_same_float(FLT_MAX);
         __simd128_float m_min_dot_C2 = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_max_dot_C0 = simd128_set_same_float(FLT_MIN);
-        __simd128_float m_max_dot_C1 = simd128_set_same_float(FLT_MIN);
-        __simd128_float m_max_dot_C2 = simd128_set_same_float(FLT_MIN);
+        __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
+        __simd128_float m_max_dot_C1 = simd128_set_same_float(- FLT_MAX);
+        __simd128_float m_max_dot_C2 = simd128_set_same_float(- FLT_MAX);
         for (; i + 3 < nu_vertices; i += 4) {
 #if 1
             __simd128_float m_vertex0 = simd128_load(&vertex[i]);
@@ -405,7 +405,7 @@ Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_prod
 #endif
     for (int j = 0; j < 3; j++) {
         min_dot_product[j] = FLT_MAX;
-        max_dot_product[j] = FLT_MIN;
+        max_dot_product[j] = - FLT_MAX;
     }
     // Process the remaining vertices.
     for (; i < nu_vertices; i++)
@@ -416,7 +416,7 @@ Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_prod
 }
 
 void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_product) {
+const Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_product) {
     int i = 0;
 #ifdef DST_USE_SIMD
     if (((uintptr_t)vertex & 0xF) == 0) {
@@ -435,9 +435,9 @@ Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_prod
     __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
     __simd128_float m_min_dot_C1 = simd128_set_same_float(FLT_MAX);
     __simd128_float m_min_dot_C2 = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_max_dot_C0 = simd128_set_same_float(FLT_MIN);
-    __simd128_float m_max_dot_C1 = simd128_set_same_float(FLT_MIN);
-    __simd128_float m_max_dot_C2 = simd128_set_same_float(FLT_MIN);
+    __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
+    __simd128_float m_max_dot_C1 = simd128_set_same_float(- FLT_MAX);
+    __simd128_float m_max_dot_C2 = simd128_set_same_float(- FLT_MAX);
     for (; i + 3 < nu_vertices; i += 4) {
 #if 1
         __simd128_float m_vertex0 = simd128_load(&vertex[i]);
@@ -540,7 +540,7 @@ Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_prod
 #endif
     for (int j = 0; j < 3; j++) {
         min_dot_product[j] = FLT_MAX;
-        max_dot_product[j] = FLT_MIN;
+        max_dot_product[j] = - FLT_MAX;
     }
     // Process the remaining vertices.
     for (; i < nu_vertices; i++)
@@ -553,18 +553,18 @@ Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_prod
 // Determine the indices within an array of vertices that have the minimum and
 // maximum dot product with the given constant vector.
 
-void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, Vector3D *vertex,
+void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
 const Vector3D& v2, int& i_Pmin, int& i_Pmax) {
     int i = 0;
-    float min_dot_product = FLT_MAX;
-    float max_dot_product = FLT_MIN;
+    float min_dot_product;
+    float max_dot_product;
 #ifdef DST_USE_SIMD
     if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
     __simd128_float m_v2_x = simd128_set_same_float(v2.x);
     __simd128_float m_v2_y = simd128_set_same_float(v2.y);
     __simd128_float m_v2_z = simd128_set_same_float(v2.z);
     __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_max_dot = simd128_set_same_float(FLT_MIN);
+    __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
     __simd128_int m_min_dot_index = simd128_set_zero_int();
     __simd128_int m_max_dot_index = simd128_set_zero_int();
     // Keep track of four minimum and four maximum dot products (each representing the
@@ -631,7 +631,12 @@ const Vector3D& v2, int& i_Pmin, int& i_Pmax) {
         }
     }
     }
+    else
 #endif
+    {
+        min_dot_product = FLT_MAX;
+        max_dot_product = - FLT_MAX;
+    }
     for (; i < nu_vertices; i++) {
         float dot = Dot(vertex[i], v2);
         if (dot < min_dot_product) {
@@ -645,11 +650,11 @@ const Vector3D& v2, int& i_Pmin, int& i_Pmax) {
     }
 }
 
-void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, Vector4D *vertex,
+void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
 const Vector4D& v2, int& i_Pmin, int& i_Pmax) {
     int i = 0;
-    float min_dot_product = FLT_MAX;
-    float max_dot_product = FLT_MIN;
+    float min_dot_product;
+    float max_dot_product;
 #ifdef DST_USE_SIMD
     if (((uintptr_t)vertex & 0xF) == 0) {
     __simd128_float m_v2_x = simd128_set_same_float(v2.x);
@@ -657,7 +662,7 @@ const Vector4D& v2, int& i_Pmin, int& i_Pmax) {
     __simd128_float m_v2_z = simd128_set_same_float(v2.z);
     __simd128_float m_v2_w = simd128_set_same_float(v2.w);
     __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_max_dot = simd128_set_same_float(FLT_MIN);
+    __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
     __simd128_int m_min_dot_index = simd128_set_zero_int();
     __simd128_int m_max_dot_index = simd128_set_zero_int();
     // Keep track of four minimum and four maximum dot products (each representing the
@@ -729,7 +734,12 @@ const Vector4D& v2, int& i_Pmin, int& i_Pmax) {
         }
     }
     }
+    else
 #endif
+    {
+        min_dot_product = FLT_MAX;
+        max_dot_product = - FLT_MAX;
+    }
     for (; i < nu_vertices; i++) {
         float dot = Dot(vertex[i], v2);
         if (dot < min_dot_product) {
