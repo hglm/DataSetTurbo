@@ -70,6 +70,7 @@ private :
 	bool *stop_signalled;
 	uint64_t timeout_period;
 	pthread_t thread;
+	pthread_mutex_t mutex;
 	
 	static void *Thread(void *p) {
 		dstThreadedTimeout *tt = (dstThreadedTimeout *)p;
@@ -79,12 +80,15 @@ private :
 		int usecs = tt->timeout_period % 1000000;
 		if (usecs > 0)
 			usleep(usecs);
+		pthread_mutex_lock(&tt->mutex);
 		*tt->stop_signalled = true;
+		pthread_mutex_unlock(&tt->mutex);
 		return NULL;
 	}
 public :
 	dstThreadedTimeout() {
 		stop_signalled = new bool[1];
+		pthread_mutex_init(&mutex, NULL);
 	}
 	~dstThreadedTimeout() {
 		Stop();
@@ -98,12 +102,17 @@ public :
 		pthread_create(&thread, NULL, thread_func, this);
 	}
 	void Stop() {
+		pthread_mutex_lock(&mutex);
 		if (!(*stop_signalled))
 			pthread_cancel(thread);
+		pthread_mutex_unlock(&mutex);
 		pthread_join(thread, NULL);
 	}
-	bool StopSignalled() const {
-		return *stop_signalled;
+	bool StopSignalled() {
+		pthread_mutex_lock(&mutex);
+		bool b = *stop_signalled;
+		pthread_mutex_unlock(&mutex);
+		return b;
 	}
 };
 
