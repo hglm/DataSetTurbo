@@ -104,37 +104,37 @@ __simd128_float& m_result_3) {
     simd128_transpose4_float(m_v_x, m_v_y, m_v_z, m_v_w);
     __simd128_float m_mul0, m_mul1, m_mul2, m_mul3;
     // Process the x coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row0, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row0, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row0, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row0, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row0, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row0, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row0, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row0, 3), m_v_w);
     __simd128_float m_result_x =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the y coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row1, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row1, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row1, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row1, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row1, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row1, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row1, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row1, 3), m_v_w);
     __simd128_float m_result_y =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the z coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row2, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row2, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row2, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row2, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row2, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row2, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row2, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row2, 3), m_v_w);
     __simd128_float m_result_z =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the w coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row3, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row3, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row3, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row3, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row3, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row3, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row3, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row3, 3), m_v_w);
     __simd128_float m_result_w =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
@@ -180,37 +180,37 @@ __simd128_float& m_result_3) {
     m_v_w = simd128_set_same_float(1.0f);
     __simd128_float m_mul0, m_mul1, m_mul2, m_mul3;
     // Process the x coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row0, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row0, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row0, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row0, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row0, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row0, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row0, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row0, 3), m_v_w);
     __simd128_float m_result_x =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the y coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row1, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row1, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row1, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row1, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row1, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row1, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row1, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row1, 3), m_v_w);
     __simd128_float m_result_y =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the z coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row2, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row2, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row2, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row2, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row2, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row2, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row2, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row2, 3), m_v_w);
     __simd128_float m_result_z =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the w coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row3, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row3, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row3, 2, 2, 2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_select_float(m.m_row3, 3, 3, 3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row3, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row3, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row3, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m.m_row3, 3), m_v_w);
     __simd128_float m_result_w =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
@@ -290,25 +290,25 @@ const Vector3D *v_source_p, Vector3D *v_result_p) {
     simd128_transpose4to3_float(m_v0, m_v1, m_v2, m_v3, m_v_x, m_v_y, m_v_z);
     __simd128_float m_mul0, m_mul1, m_mul2;
     // Process the x coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row0, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row0, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row0, 2, 2, 2, 2), m_v_z);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row0, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row0, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row0, 2), m_v_z);
     __simd128_float m_result_x =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             m_mul2);
     // Process the y coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row1, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row1, 1, 1, 1, 2), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row1, 2, 2, 2, 2), m_v_z);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row1, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row1, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row1, 2), m_v_z);
     __simd128_float m_result_y =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             m_mul2);
     // Process the z coordinates.
-    m_mul0 = simd128_mul_float(simd128_select_float(m.m_row2, 0, 0, 0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_select_float(m.m_row2, 1, 1, 1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_select_float(m.m_row2, 2, 2, 2, 2), m_v_z);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m.m_row2, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m.m_row2, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m.m_row2, 2), m_v_z);
     __simd128_float m_result_z =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),

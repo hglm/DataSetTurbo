@@ -57,6 +57,16 @@ const float * __restrict f2, __simd128_float& result) {
     simd_four_dot_products_vector3_storage3_float(f1, f2, result);
 }
 
+void simd_dot_product_nxn_vector4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    simd_inline_dot_product_nxn_vector4_float(n, f1, f2, dot);
+}
+
+void simd_dot_product_nxn_vector3_storage4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    simd_inline_dot_product_nxn_vector3_storage4_float(n, f1, f2, dot);
+}
+
 void simd_dot_product_nx1_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
     simd_inline_dot_product_nx1_vector4_float(n, f1, f2, dot);

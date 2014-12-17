@@ -144,14 +144,16 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // Set SIMD features that are implemented.
 
 #ifdef DST_USE_SSE2
+#define SIMD_HAVE_TRANSPOSE_4TO3
+#define SIMD_HAVE_TRANSPOSE_3TO4
+// Accurate square root calculation
+#define SIMD_HAVE_ACCURATE_SQRT
+#define DST_USE_SIMD
 // SSE3 is a superset of SSE2.
 #ifdef DST_USE_SSE3
 // Horizontal pair-wise addition instruction.
 #define SIMD_HAVE_HORIZONTAL_ADD2
 #endif
-#define SIMD_HAVE_TRANSPOSE_4TO3
-#define SIMD_HAVE_TRANSPOSE_3TO4
-#define DST_USE_SIMD
 #else // Not SSE2
 #ifdef DST_USE_ARM_NEON
 // When implemented, define DST_USE_SIMD and define feature flags.

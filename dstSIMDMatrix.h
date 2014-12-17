@@ -99,10 +99,10 @@ const float * __restrict__ m2, float * __restrict m3) {
     // For each result column.
     for (int i = 0; i < 4; i++) {
         __simd128_float col_m2 = simd128_load_float(&m2[i * 4]);
-	__simd128_float v0 = simd128_select_float(col_m2, 0, 0, 0, 0);
-        __simd128_float v1 = simd128_select_float(col_m2, 1, 1, 1, 1);
-        __simd128_float v2 = simd128_select_float(col_m2, 2, 2, 2, 2);
-        __simd128_float v3 = simd128_select_float(col_m2, 3, 3, 3, 3);
+	__simd128_float v0 = simd128_replicate_float(col_m2, 0);
+        __simd128_float v1 = simd128_replicate_float(col_m2, 1);
+        __simd128_float v2 = simd128_replicate_float(col_m2, 2);
+        __simd128_float v3 = simd128_replicate_float(col_m2, 3);
         // v0 = m1.n[0][i], v1 = m1.n[1][i], v2 = m1.n[2][i], ...
         __simd128_float result_col = simd128_add_float(
             simd128_add_float(
@@ -132,9 +132,9 @@ const float * __restrict__ m2, float * __restrict m3) {
     for (int i = 0; i < 3; i++) {
         // Get each column from row i in m1.
         __simd128_float row = simd128_load_float(&m1[i * 4]);
-	__simd128_float v0 = simd128_select_float(row, 0, 0, 0, 0);
-        __simd128_float v1 = simd128_select_float(row, 1, 1, 1, 1);
-        __simd128_float v2 = simd128_select_float(row, 2, 2, 2, 2);
+	__simd128_float v0 = simd128_replicate_float(row, 0);
+        __simd128_float v1 = simd128_replicate_float(row, 1);
+        __simd128_float v2 = simd128_replicate_float(row, 2);
         __simd128_float v3_mult = simd128_select_float(
             simd128_merge1_float(zeros, row), 0, 0, 0, 3);
         __simd128_float result_row = simd128_add_float(
@@ -166,9 +166,9 @@ const float * __restrict__ m2, float * __restrict m3) {
     __simd128_float m2_row2 = simd128_load_float(&m2[8]);
     for (int i = 0; i < 3; i++) {
         // Get column i from each row of m2.
-	__simd128_float m2_coli_row0 = simd128_select_float(m2_row0, 0, 0, 0, 0);
- 	__simd128_float m2_coli_row1 = simd128_select_float(m2_row1, 0, 0, 0, 0);
-	__simd128_float m2_coli_row2 = simd128_select_float(m2_row2, 0, 0, 0, 0);
+	__simd128_float m2_coli_row0 = simd128_replicate_float(m2_row0, 0);
+ 	__simd128_float m2_coli_row1 = simd128_replicate_float(m2_row1, 0);
+	__simd128_float m2_coli_row2 = simd128_replicate_float(m2_row2, 0);
         m2_row0 = simd128_shift_right_float(m2_row0, 1);
         m2_row1 = simd128_shift_right_float(m2_row1, 1);
         m2_row2 = simd128_shift_right_float(m2_row2, 1);
@@ -181,9 +181,9 @@ const float * __restrict__ m2, float * __restrict m3) {
         simd128_store_float(&m3[i * 4], result_col);
     }
     // Element 0 of m2_coli_row0/1/2 now contains column 3 of each row.
-    __simd128_float m2_col3_row0 = simd128_select_float(m2_row0, 0, 0, 0, 0);
-    __simd128_float m2_col3_row1 = simd128_select_float(m2_row1, 0, 0, 0, 0);
-    __simd128_float m2_col3_row2 = simd128_select_float(m2_row2, 0, 0, 0, 0);
+    __simd128_float m2_col3_row0 = simd128_replicate_float(m2_row0, 0);
+    __simd128_float m2_col3_row1 = simd128_replicate_float(m2_row1, 0);
+    __simd128_float m2_col3_row2 = simd128_replicate_float(m2_row2, 0);
     __simd128_float result_col3 = simd128_add_float(
         simd128_add_float(
             simd128_mul_float(m2_col3_row0, col0),

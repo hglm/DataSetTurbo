@@ -26,14 +26,16 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 void CalculateDotProducts(int n, const Vector3D *v1, const Vector3D *v2,
 float *dot) {
-    int i = 0;
 #ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0 && sizeof(Vector3D) == 16)
-        for (; i + 3 < n; i += 4) {
-            SIMDCalculateFourDotProducts(&v1[i], &v2[i], &dot[i]);
-	}
-    else
+    if ((((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
+        if (sizeof(Vector3D) == 16)
+            simd_inline_dot_product_nxn_vector3_storage4_float(n, &v1[0].x, &v2[0].x, dot);
+        else
+            simd_inline_dot_product_nxn_vector3_storage3_float(n, &v1[0].x, &v2[0].x, dot);
+        return;
+    }
 #endif
+    int i = 0;
     for (; i + 3 < n; i += 4) {
         dot[i] = Dot(v1[i], v2[i]);
         dot[i + 1] = Dot(v1[i + 1], v2[i + 1]);
@@ -46,14 +48,13 @@ float *dot) {
 
 void CalculateDotProducts(int n, const Vector4D *v1, const Vector4D *v2,
 float *dot) {
-    int i = 0;
 #ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0)
-        for (; i + 3 < n; i += 4) {
-            SIMDCalculateFourDotProducts(&v1[i], &v2[i], &dot[i]);
-	}
-    else
+    if ((((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
+        simd_inline_dot_product_nxn_vector4_float(n, &v1[0].x, &v2[0].x, dot);
+        return;
+    }
 #endif
+    int i = 0;
     for (; i + 3 < n; i += 4) {
         dot[i] = Dot(v1[i], v2[i]);
         dot[i + 1] = Dot(v1[i + 1], v2[i + 1]);

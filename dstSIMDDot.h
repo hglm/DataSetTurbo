@@ -115,7 +115,6 @@ const float * __restrict f1, const float * __restrict f2, __simd128_float& resul
 
 static inline_only void simd_inline_four_dot_products_vector4_float(
 const float * __restrict f1, const float * __restrict f2, __simd128_float& result) {
-#if 1
     // Loading and using tranpose seems to be more efficient than set_float calls, which
     // expand to numerous instructions.
     __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
@@ -130,16 +129,6 @@ const float * __restrict f1, const float * __restrict f2, __simd128_float& resul
     simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z, m_v1_w);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
     simd128_transpose4to4_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z, m_v2_w);
-#else
-    __simd128_float m_v1_x = simd128_set_float(f1[0], f1[4], f1[8], f1[12]);
-    __simd128_float m_v1_y = simd128_set_float(f1[1], f1[5], f1[9], f1[13]);
-    __simd128_float m_v1_z = simd128_set_float(f1[2], f1[6], f1[10], f1[14]);
-    __simd128_float m_v1_w = simd128_set_float(f1[3], f1[7], f1[11], f1[15);
-    __simd128_float m_v2_x = simd128_set_float(f2[0], f2[4], f2[8], f2[12]);
-    __simd128_float m_v2_y = simd128_set_float(f2[1], f2[5], f2[9], f2[13]);
-    __simd128_float m_v2_z = simd128_set_float(f2[2], f2[6], f2[10], f2[14]);
-    __simd128_float m_v2_w = simd128_set_float(f2[3], f2[7], f2[11], f2[15]);
-#endif
     __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
     __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
     __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
@@ -148,6 +137,35 @@ const float * __restrict f1, const float * __restrict f2, __simd128_float& resul
         simd128_add_float(m_dot_x, m_dot_y),
         simd128_add_float(m_dot_z, m_dot_w)
         );
+}
+
+static inline_only void simd_inline_16_dot_products_vector4_float(
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    for (int j = 0; j < 4; j++) {
+    // Loading and using tranpose seems to be more efficient than set_float calls, which
+    // expand to numerous instructions.
+    __simd128_float m_v1_0 = simd128_load_float(&f1[j * 16 + 0]);
+    __simd128_float m_v1_1 = simd128_load_float(&f1[j * 16 + 4]);
+    __simd128_float m_v1_2 = simd128_load_float(&f1[j * 16 + 8]);
+    __simd128_float m_v1_3 = simd128_load_float(&f1[j * 16 + 12]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[j * 16 + 0]);
+    __simd128_float m_v2_1 = simd128_load_float(&f2[j * 16 + 4]);
+    __simd128_float m_v2_2 = simd128_load_float(&f2[j * 16 + 8]);
+    __simd128_float m_v2_3 = simd128_load_float(&f2[j * 16 + 12]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+    simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
+    simd128_transpose4to4_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z, m_v2_w);
+    __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+    __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+    __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+    __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+    __simd128_float m_result = simd128_add_float(
+        simd128_add_float(m_dot_x, m_dot_y),
+        simd128_add_float(m_dot_z, m_dot_w)
+        );
+    simd128_store_float(&dot[j * 4], m_result);
+    }
 }
 
 // Calculate dot products of four three-component float vectors stored at f1 and f2. The
@@ -195,28 +213,33 @@ const float * __restrict f1, const float * __restrict f2, __simd128_float& resul
 void simd_four_dot_products_vector3_storage3_float(const float * __restrict f1,
 const float * __restrict f2, __simd128_float& result);
 
-static inline_only void simd_inline_four_dot_products_vector3_storage3_float(const float * __restrict f1,
-const float * __restrict f2, __simd128_float& result) {
+static inline_only void simd_inline_four_dot_products_vector3_storage3_float(const float * __restrict f1, const float * __restrict f2, __simd128_float& result) {
 #if 1
+    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+    __simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+    __simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+    __simd128_float m_v2_1 = simd128_load_float(&f2[4]);
+    __simd128_float m_v2_2 = simd128_load_float(&f2[8]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+        m_v1_x, m_v1_y, m_v1_z);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z;
+    simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+        m_v2_x, m_v2_y, m_v2_z);
+#else
     __simd128_float m_v1_0 = simd128_load3_float(&f1[0]);
-    __simd128_float m_v1_1 = simd128_load3_float(&f1[4]);
-    __simd128_float m_v1_2 = simd128_load3_float(&f1[8]);
-    __simd128_float m_v1_3 = simd128_load3_float(&f1[12]);
+    __simd128_float m_v1_1 = simd128_load3_float(&f1[3]);
+    __simd128_float m_v1_2 = simd128_load3_float(&f1[6]);
+    __simd128_float m_v1_3 = simd128_load3_float(&f1[9]);
     __simd128_float m_v2_0 = simd128_load3_float(&f2[0]);
-    __simd128_float m_v2_1 = simd128_load3_float(&f2[4]);
-    __simd128_float m_v2_2 = simd128_load3_float(&f2[8]);
-    __simd128_float m_v2_3 = simd128_load3_float(&f2[12]);
+    __simd128_float m_v2_1 = simd128_load3_float(&f2[3]);
+    __simd128_float m_v2_2 = simd128_load3_float(&f2[6]);
+    __simd128_float m_v2_3 = simd128_load3_float(&f2[9]);
     __simd128_float m_v1_x, m_v1_y, m_v1_z;
     simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
     __simd128_float m_v2_x, m_v2_y, m_v2_z;
     simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
-#else
-    __simd128_float m_v1_x = simd128_set_float(f1[0], f1[4], f1[8], f1[12]);
-    __simd128_float m_v1_y = simd128_set_float(f1[1], f1[5], f1[9], f1[13]);
-    __simd128_float m_v1_z = simd128_set_float(f1[2], f1[6], f1[10], f1[14]);
-    __simd128_float m_v2_x = simd128_set_float(f2[0], f2[4], f2[8], f2[12]);
-    __simd128_float m_v2_y = simd128_set_float(f2[1], f2[5], f2[9], f2[13]);
-    __simd128_float m_v2_z = simd128_set_float(f2[2], f2[6], f2[10], f2[14]);
 #endif
     __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
     __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
@@ -227,7 +250,220 @@ const float * __restrict f2, __simd128_float& result) {
         );
 }
 
-// Calculate n dot products from one array of four vectors and one single vector,
+static inline_only void simd_inline_16_dot_products_vector3_storage3_float(
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    for (int j = 0; j < 4; j++) {
+    __simd128_float m_v1_0 = simd128_load_float(&f1[j * 12 + 0]);
+    __simd128_float m_v1_1 = simd128_load_float(&f1[j * 12 + 4]);
+    __simd128_float m_v1_2 = simd128_load_float(&f1[j * 12 + 8]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[j * 12 + 0]);
+    __simd128_float m_v2_1 = simd128_load_float(&f2[j * 12 + 4]);
+    __simd128_float m_v2_2 = simd128_load_float(&f2[j * 12 + 8]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+        m_v1_x, m_v1_y, m_v1_z);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z;
+    simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+        m_v2_x, m_v2_y, m_v2_z);
+    __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+    __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+    __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+    __simd128_float m_result = simd128_add_float(
+        simd128_add_float(m_dot_x, m_dot_y),
+        m_dot_z
+        );
+    simd128_store_float(&dot[j * 4], m_result);
+    }
+}
+
+
+// Calculate n dot products from two arrays of n vectors with four components,
+// and store the result in an array of floats.
+// f1, f2 and dot must all be 16-bytes aligned.
+
+void simd_dot_product_nxn_vector4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
+
+static inline_only void simd_inline_dot_product_nxn_vector4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    int i = 0;
+#if 1
+    for (; i + 15 < n; i += 16) {
+        simd_inline_16_dot_products_vector4_float(&f1[i * 4], &f2[i * 4], &dot[i]);
+    }
+#endif
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_result;
+        simd_inline_four_dot_products_vector4_float(&f1[i * 4], &f2[i * 4], m_result);
+        simd128_store_float(&dot[i], m_result);
+    }
+    for (; i < n; i++) {
+        __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
+        __simd128_float m_v2 = simd128_load_float(&f2[i * 4]);
+        __simd128_float m_dot = simd128_mul_float(m_v1, m_v2);
+//        __simd128_float m_result = simd128_horizontal_add4_float(m_dot);
+        __simd128_float m_shifted_float1 = simd128_shift_right_float(m_dot, 1);
+        __simd128_float m_shifted_float2 = simd128_shift_right_float(m_dot, 2);
+        __simd128_float m_shifted_float3 = simd128_shift_right_float(m_dot, 3);
+	__simd128_float m_result = simd128_add1_float(
+            simd128_add1_float(m_shifted_float1, m_shifted_float2),
+	    simd128_add1_float(m_shifted_float3, m_dot));
+        simd128_store_first_float(&dot[i], m_result);
+    }
+}
+
+void simd_dot_product_nxn_vector3_storage4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
+
+static inline_only void simd_inline_dot_product_nxn_vector3_storage4_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    int i = 0;
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_result;
+        simd_inline_four_dot_products_vector3_storage4_float(&f1[i * 4], &f2[i * 4], m_result);
+        simd128_store_float(&dot[i], m_result);
+    }
+    for (; i < n; i++) {
+        __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
+        __simd128_float m_v2 = simd128_load_float(&f2[i * 4]);
+        __simd128_float m_dot = simd128_mul_float(m_v1, m_v2);
+        __simd128_float m_shifted_float1 = simd128_shift_right_float(m_dot, 1);
+        __simd128_float m_shifted_float2 = simd128_shift_right_float(m_dot, 2);
+	__simd128_float m_result = simd128_add1_float(m_dot,
+            simd128_add1_float(m_shifted_float1, m_shifted_float2));
+        simd128_store_first_float(&dot[i], m_result);
+    }
+}
+
+void simd_dot_product_nxn_vector3_storage3_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot);
+
+static inline_only void simd_inline_dot_product_nxn_vector3_storage3_float(int n,
+const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
+    int i = 0;
+#if 1
+    for (; i + 15 < n; i += 16) {
+        int k = i + 0 * 4;
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 3 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 3 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 3 + 8]);
+        __simd128_float m_v2_0 = simd128_load_float(&f2[k * 3 + 0]);
+        __simd128_float m_v2_1 = simd128_load_float(&f2[k * 3 + 4]);
+        __simd128_float m_v2_2 = simd128_load_float(&f2[k * 3 + 8]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_v2_x, m_v2_y, m_v2_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+            m_v2_x, m_v2_y, m_v2_z);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            m_dot_z
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+
+	k = i + 1 * 4;
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 3 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 3 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 3 + 8]);
+        __simd128_float m_v2_0 = simd128_load_float(&f2[k * 3 + 0]);
+        __simd128_float m_v2_1 = simd128_load_float(&f2[k * 3 + 4]);
+        __simd128_float m_v2_2 = simd128_load_float(&f2[k * 3 + 8]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_v2_x, m_v2_y, m_v2_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+            m_v2_x, m_v2_y, m_v2_z);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            m_dot_z
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+
+	k = i + 2 * 4;
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 3 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 3 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 3 + 8]);
+        __simd128_float m_v2_0 = simd128_load_float(&f2[k * 3 + 0]);
+        __simd128_float m_v2_1 = simd128_load_float(&f2[k * 3 + 4]);
+        __simd128_float m_v2_2 = simd128_load_float(&f2[k * 3 + 8]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_v2_x, m_v2_y, m_v2_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+            m_v2_x, m_v2_y, m_v2_z);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            m_dot_z
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+
+	k = i + 3 * 4;
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 3 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 3 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 3 + 8]);
+        __simd128_float m_v2_0 = simd128_load_float(&f2[k * 3 + 0]);
+        __simd128_float m_v2_1 = simd128_load_float(&f2[k * 3 + 4]);
+        __simd128_float m_v2_2 = simd128_load_float(&f2[k * 3 + 8]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2,
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_v2_x, m_v2_y, m_v2_z;
+        simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2,
+            m_v2_x, m_v2_y, m_v2_z);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            m_dot_z
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+
+    }
+#elif 1
+    for (; i + 15 < n; i += 16) {
+        simd_inline_16_dot_products_vector3_storage3_float(&f1[i * 3], &f2[i * 3], &dot[i]);
+    }
+#endif
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_result;
+        simd_inline_four_dot_products_vector3_storage3_float(&f1[i * 3], &f2[i * 3], m_result);
+        simd128_store_float(&dot[i], m_result);
+    }
+    for (; i < n; i++) {
+        /// Note: simd128_load3_float assigns 0.0f to the w component.
+        __simd128_float m_v1 = simd128_load3_float(&f1[i * 3]);
+        __simd128_float m_v2 = simd128_load3_float(&f2[i * 3]);
+        __simd128_float m_dot = simd128_mul_float(m_v1, m_v2);
+        __simd128_float m_shifted_float1 = simd128_shift_right_float(m_dot, 1);
+        __simd128_float m_shifted_float2 = simd128_shift_right_float(m_dot, 2);
+	__simd128_float m_result = simd128_add1_float(m_dot,
+            simd128_add1_float(m_shifted_float1, m_shifted_float2));
+        simd128_store_first_float(&dot[i], m_result);
+    }
+}
+
+// Calculate n dot products from one array of n vectors and one single vector,
 // and store the result in an array of floats.
 // f1, f2 and dot must all be 16-bytes aligned.
 
@@ -238,11 +474,123 @@ static inline_only void simd_inline_dot_product_nx1_vector4_float(int n,
 const float * __restrict f1, const float * __restrict f2, float * __restrict dot) {
     __simd128_float m_v2 = simd128_load_float(f2);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
-    m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
+    m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
+#if 1
+    for (; i + 15 < n; i += 16) {
+        int k = i + 0 * 4;
+        // Loading and using transpose seems to be more efficient than set_float calls,
+        // which expand to numerous instructions.
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 4 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 4 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 4 + 8]);
+        __simd128_float m_v1_3 = simd128_load_float(&f1[k * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+        simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3,
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_dot_w)
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+	k = i + 1 * 4;
+        // Loading and using transpose seems to be more efficient than set_float calls,
+        // which expand to numerous instructions.
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 4 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 4 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 4 + 8]);
+        __simd128_float m_v1_3 = simd128_load_float(&f1[k * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+        simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3,
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_dot_w)
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+	k = i + 2 * 4;
+        // Loading and using transpose seems to be more efficient than set_float calls,
+        // which expand to numerous instructions.
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 4 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 4 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 4 + 8]);
+        __simd128_float m_v1_3 = simd128_load_float(&f1[k * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+        simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3,
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_dot_w)
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+	k = i + 3 * 4;
+        // Loading and using transpose seems to be more efficient than set_float calls,
+        // which expand to numerous instructions.
+        {
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 4 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 4 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 4 + 8]);
+        __simd128_float m_v1_3 = simd128_load_float(&f1[k * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+        simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3,
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_dot_w)
+            );
+        simd128_store_float(&dot[k], m_result);
+        }
+    }
+#elif 1
+    for (; i + 15 < n; i += 16) {
+      for (int j = 0; j < 4; j++) {
+        int k = i + j * 4;
+        // Loading and using transpose seems to be more efficient than set_float calls,
+        // which expand to numerous instructions.
+        __simd128_float m_v1_0 = simd128_load_float(&f1[k * 4 + 0]);
+        __simd128_float m_v1_1 = simd128_load_float(&f1[k * 4 + 4]);
+        __simd128_float m_v1_2 = simd128_load_float(&f1[k * 4 + 8]);
+        __simd128_float m_v1_3 = simd128_load_float(&f1[k * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
+        simd128_transpose4to4_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3,
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        __simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+        __simd128_float m_result = simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_dot_w)
+            );
+        simd128_store_float(&dot[i + j * 4], m_result);
+      }
+    }
+#else
     for (; i + 3 < n; i += 4) {
         // Loading and using transpose seems to be more efficient than set_float calls,
         // which expand to numerous instructions.
@@ -263,6 +611,7 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
             );
         simd128_store_float(&dot[i], m_result);
     }
+#endif
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
         __simd128_float m_dot = simd128_mul_float(m_v1, m_v2);
@@ -280,9 +629,9 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 static inline_only void simd_inline_dot_product_nx1_vector3_storage3_float(int n,
 const float * __restrict f1, const __simd128_float m_v2, float * __restrict dot) {
     __simd128_float m_v2_x, m_v2_y, m_v2_z;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
     int i = 0;
     for (; i + 3 < n; i += 4) {
         __simd128_float m_v1_0 = simd128_load3_float(&f1[i * 3 + 0]);
@@ -325,9 +674,9 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 static inline_only void simd_inline_dot_product_nx1_vector3_storage4_vector4_float(int n,
 const float * __restrict f1, const __simd128_float m_v2, float * __restrict dot) {
     __simd128_float m_v2_x, m_v2_y, m_v2_z;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
     int i = 0;
     for (; i + 3 < n; i += 4) {
         __simd128_float m_v1_0 = simd128_load_float(&f1[i * 4 + 0]);
@@ -379,10 +728,10 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 static inline_only void simd_inline_dot_product_nx1_point3_storage4_vector4_float(int n,
 const float * __restrict f1, const __simd128_float m_v2, float * __restrict dot) {
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
-    m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
+    m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
     for (; i + 3 < n; i += 4) {
         __simd128_float m_v1_0 = simd128_load_float(&f1[i * 4 + 0]);
@@ -429,10 +778,10 @@ const float * __restrict f1, const float * __restrict f2, float * __restrict dot
 static inline_only void simd_inline_dot_product_nx1_point3_storage3_vector4_float(int n,
 const float * __restrict f1, const __simd128_float m_v2, float * __restrict dot) {
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
-    m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
+    m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
     for (; i + 3 < n; i += 4) {
         __simd128_float m_v1_0 = simd128_load3_float(&f1[i * 3 + 0]);
@@ -481,10 +830,10 @@ int n, const float * __restrict f1, const float * __restrict f2, float * __restr
 int& negative_count) {
     __simd128_float m_v2 = simd128_load_float(f2);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
-    m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
+    m_v2_w = simd128_replicate_float(m_v2, 3);
     __simd128_float m_zeros = simd128_set_zero_float();
     int count = 0;
     int i = 0;
@@ -534,10 +883,10 @@ int n, const float * __restrict f1, const float * __restrict f2, float * __restr
 int& negative_count) {
     __simd128_float m_v2 = simd128_load_float(f2);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
-    m_v2_x = simd128_select_float(m_v2, 0, 0, 0, 0);
-    m_v2_y = simd128_select_float(m_v2, 1, 1, 1, 1);
-    m_v2_z = simd128_select_float(m_v2, 2, 2, 2, 2);
-    m_v2_w = simd128_select_float(m_v2, 3, 3, 3, 3);
+    m_v2_x = simd128_replicate_float(m_v2, 0);
+    m_v2_y = simd128_replicate_float(m_v2, 1);
+    m_v2_z = simd128_replicate_float(m_v2, 2);
+    m_v2_w = simd128_replicate_float(m_v2, 3);
     __simd128_float m_zeros = simd128_set_zero_float();
     int count = 0;
     int i = 0;

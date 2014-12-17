@@ -16,8 +16,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
-#ifndef __DST_SSE2_H__
-#define __DST_SSE2_H__
+#ifndef __DST_SIMD_SSE2_H__
+#define __DST_SIMD_SSE2_H__
 
 // Provide a unifying set of SIMD primitives. This file implements primitives for
 // PC class processor with SSE2 enabled, which optionally use additional features
@@ -53,8 +53,18 @@ unsigned int word0, unsigned int word1, unsigned int word2, unsigned int word3) 
         word0, word1, word2, word3));
 }
 
+static inline_only __simd128_float simd128_replicate_float(__simd128_float s,
+const int i) {
+   return simd128_select_float(s, i, i, i, i);
+}
+
+static inline_only __simd128_int simd128_replicate_int(__simd128_int s,
+const int i) {
+    return simd128_select_int32(s, i, i, i, i);
+}
+
 // Return 128-bit SSE register with 32-bit values shuffled, starting from bit 0,
-// with two words from m1 (counting from LSB) and two words from m2.
+// with two words from s1 (counting from LSB) and two words from s2.
 
 static inline_only __simd128_float simd128_merge_float(__simd128_float s1, __simd128_float s2,
 unsigned int s1_word0, unsigned int s1_word1, unsigned int s2_word0,
@@ -120,6 +130,10 @@ static inline_only __simd128_float simd128_set_zero_float() {
 
 static inline_only float simd128_get_float(__simd128_float s) {
     return _mm_cvtss_f32(s);
+}
+
+static inline_only float simd128_get_float(__simd128_float s, const int i) {
+    return simd128_get_float(simd128_replicate_float(s, i));
 }
 
 // Load 16-byte-aligned float data.
@@ -607,6 +621,108 @@ __simd128_float& m_result_v3) {
     m_result_v3 = _mm_movehl_ps(m_tmp3, m_tmp2);
 }
 
+// Unpack four vectors of three floats that are stored in packed format (taking
+// the space of three regular four-float vectors), and store result in four three-float vectors,
+// of which the fourth component is ignored and may contain garbage.
+
+static inline_only void simd128_unpack3to4_float(const __simd128_float m_v0,
+const __simd128_float m_v1, const __simd128_float m_v2,__simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2,
+__simd128_float& m_result_v3) {
+	// m_v0 = v0[0], v0[1], v0[2], v1[0]
+	// m_v1 = v1[1], v1[2], v2[0], v2[1]
+	// m_v2 = v2[2], v3[0], v3[1], v3[2]
+	// result_v1 = v1[0], 0b, 0b, 0b
+	m_result_v1 = simd128_shift_right_float(m_v0, 3);
+	// result_v0 = (v0[0], v0[1], v0[2], Xb)
+	m_result_v0 = m_v0;
+	// result_v1 = v1[0], v1[1], v1[2], Xb
+	m_result_v1 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(simd128_shift_left_float(m_v1, 1)),
+			simd128_cast_float_int(m_result_v1)));
+	// result_v2 = (v2[0], v2[1], v2[2], Xb)
+	m_result_v2 = simd128_merge_float(m_v1, m_v2, 2, 3, 0, 0);
+	// result v3 = v3[0], v3[1], v3[2], 0b
+	m_result_v3 = simd128_shift_right_float(m_v2, 1);
+}
+
+// Unpack four vectors of three floats that are stored in packed format (taking
+// the space of three regular four-float vectors), and store result in four three-float vectors,
+// of which the fourth component is binary zero bits.
+
+static inline_only void simd128_unpack3to4_with_binary_zeros_float(const __simd128_float m_v0,
+const __simd128_float m_v1, const __simd128_float m_v2,__simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2,
+__simd128_float& m_result_v3) {
+	// m_v0 = v0[0], v0[1], v0[2], v1[0]
+	// m_v1 = v1[1], v1[2], v2[0], v2[1]
+	// m_v2 = v2[2], v3[0], v3[1], v3[2]
+	__simd128_int m_full_mask = simd128_set_same_int32(0xFFFFFFFF);
+	__simd128_int m_mask_012 = simd128_shift_right_int32(m_full_mask, 1);
+	// result_v1 = v1[0], 0b, 0b, 0b
+	m_result_v1 = simd128_shift_right_float(m_v0, 3);
+	// result_v0 = (v0[0], v0[1], v0[2], 0b)
+	m_result_v0 = simd128_cast_int_float(
+		simd128_and_int(simd128_cast_float_int(m_v0), m_mask_012));
+	// result_v1 = v1[0], v1[1], v1[2], Xb
+	m_result_v1 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(simd128_shift_left_float(m_v1, 1)),
+			simd128_cast_float_int(m_result_v1)));
+	// result_v2 = (v2[0], v2[1], v2[2], Xb)
+	m_result_v2 = simd128_merge_float(m_v1, m_v2, 2, 3, 0, 0);
+	// result_v1 = v1[0], v1[1], v1[2], 0b
+	m_result_v1 = simd128_cast_int_float(
+		simd128_and_int(simd128_cast_float_int(m_result_v1), m_mask_012));
+	// result v3 = v3[0], v3[1], v3[2], 0b
+	m_result_v3 = simd128_shift_right_float(m_v2, 1);
+	// result_v2 = v2[0], v2[1], v2[2], 0b
+	m_result_v2 = simd128_cast_int_float(
+		simd128_and_int(simd128_cast_float_int(m_result_v2), m_mask_012));
+}
+
+// Similar to the previous function but assign 0.0f to the fourth component in the result
+// vectors.
+
+static inline_only void simd128_unpack3to4_with_zero_float(const __simd128_float m_v0,
+const __simd128_float m_v1, const __simd128_float m_v2,__simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2,
+__simd128_float& m_result_v3) {
+	simd128_unpack3to4_with_binary_zeros_float(
+		m_v0, m_v1, m_v2, m_result_v0, m_result_v1, m_result_v2, m_result_v3);
+	__simd128_float m_zeros_float = simd128_set_zero_float();
+	// m_zero_float_3 has 0 bits in the first three components and 0.0f in the fourth.
+	__simd128_int m_zero_float_3 = simd128_cast_float_int(
+		simd128_shift_left_float(m_zeros_float, 3));
+        // Set the fourth component to 0.0f.
+	m_result_v0 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(m_result_v0), m_zero_float_3
+			));
+	m_result_v1 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(m_result_v1), m_zero_float_3
+			));
+	m_result_v2 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(m_result_v2), m_zero_float_3
+			));
+	m_result_v3 = simd128_cast_int_float(
+		simd128_or_int(
+			simd128_cast_float_int(m_result_v3), m_zero_float_3
+			));
+}
+
+// Transpose four vectors of three floats that are stored in packed format (taking
+// the space of three regular four-float vectors, and store result in four three-float vectors.
+
+static inline_only void simd128_unpack3to4_and_transpose4to3_float(const __simd128_float m_v0,
+const __simd128_float m_v1, const __simd128_float m_v2, __simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2) {
+	__simd128_float m_unpacked_v0, m_unpacked_v1, m_unpacked_v2, m_unpacked_v3;
+	simd128_unpack3to4_float(m_v0, m_v1, m_v2, m_unpacked_v0, m_unpacked_v1,
+		m_unpacked_v2, m_unpacked_v3);
+	simd128_transpose4to3_float(m_unpacked_v0, m_unpacked_v1, m_unpacked_v2, m_unpacked_v3,
+		m_result_v0, m_result_v1, m_result_v2);
+}
+
 // Double precision functions.
 
 static inline_only __simd128_int simd128_cast_double_int(__simd128_double s) {
@@ -665,5 +781,5 @@ static inline_only __simd128_double simd128_sqrt_double(__simd128_double s) {
     return _mm_sqrt_pd(s);
 }
 
-#endif // defined(__DST_SSE2_H__)
+#endif // !defined(__DST_SIMD_SSE2_H__)
 

@@ -143,6 +143,22 @@ const Vector3D * __restrict v2, float * __restrict dot) {
     simd128_store_float(dot, m_result);
 }
 
+// Calculate n dot products from two vector arrays, and store the result in an array of
+// floats. v1, v2 and dot must generally be 16 bytes-aligned.
+
+static inline_only void SIMDCalculateDotProducts(int n,
+const Vector4D * __restrict v1, const Vector4D * __restrict v2, float * __restrict dot) {
+    simd_dot_product_nxn_vector4_float(n, &v1[0].x, &v2[0].x, dot);
+}
+
+static inline_only void SIMDCalculateDotProducts(int n,
+const Vector3D * __restrict v1, const Vector3D * __restrict v2, float * __restrict dot) {
+    if (sizeof(Vector3D) == 16)
+        simd_dot_product_nxn_vector3_storage4_float(n, &v1[0].x, &v2[0].x, dot);
+    else
+        simd_dot_product_nxn_vector3_storage3_float(n, &v1[0].x, &v2[0].x, dot);
+}
+
 // Calculate n dot products from one vector array and one constant vector,
 // and store the result in an array of floats. v1, v2 and dot must generally be
 // 16 bytes-aligned.

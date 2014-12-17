@@ -100,7 +100,7 @@ LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h dstT
 	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h \
 	dstMath.h dstMemory.h \
 	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h
-TEST_PROGRAMS = test-random test-array
+TEST_PROGRAMS = test-random test-array test-simd
 
 LIBRARY_PKG_CONFIG_FILE = datasetturbo.pc
 
@@ -150,11 +150,14 @@ uninstall_libs :
 
 test : $(TEST_PROGRAMS)
 
-test-random :  $(LIBRARY_DEPENDENCY) test-random.cpp dstRandom.h
+test-random :  $(LIBRARY_DEPENDENCY) test-random.cpp
 	g++ $(CFLAGS_TEST) test-random.cpp -o test-random -lfgen $(TEST_PROGRAM_LFLAGS) -lm 
 
-test-array :  $(LIBRARY_DEPENDENCY) test-array.cpp dstDynamicArray.h
+test-array :  $(LIBRARY_DEPENDENCY) test-array.cpp
 	g++ $(CFLAGS_TEST) test-array.cpp -o test-array $(TEST_PROGRAM_LFLAGS) -lm
+
+test-simd :  $(LIBRARY_DEPENDENCY) test-simd.cpp
+	g++ $(CFLAGS_TEST) test-simd.cpp -o test-simd $(TEST_PROGRAM_LFLAGS) -lpthread -lm
 
 $(LIBRARY_PKG_CONFIG_FILE) : Makefile.conf Makefile
 	@echo Generating datasetturbo.pc.
@@ -200,5 +203,7 @@ dep :
 	echo $$x : Makefile.conf Makefile >> .depend; done
 	echo '# Module dependencies' >> .depend
 	g++ -MM test-random.cpp >> .depend
+	g++ -MM test-array.cpp >> .depend
+	g++ -MM test-simd.cpp >> .depend
 
 include .depend

@@ -444,7 +444,7 @@ class DST_API Point3DBase : public Vector3DBase <T>
 	    v.Normalize();
 	    return v;
 	}
-};
+} DST_ALIGNED(16);
 
 typedef Point3DBase <float> Point3D;
 typedef Point3DBase <double> PointDouble3D;
