@@ -30,11 +30,11 @@ typedef int32x2_t __simd64_int;
 #define SHUFFLE(w0, w1, w2, w3) \
     (uint8_t)(w0 | (w1 << 2) | (w2 << 4) | (w3 << 6))
 
-static inline_only __simd128_int simd128_cast_float_int(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_int simd128_cast_float_int(__simd128_float s) {
     return vreinterpretq_f32_s32(s);
 }
 
-static inline_only __simd128_float simd128_cast_int_float(__simd128_int s) {
+static DST_INLINE_ONLY __simd128_float simd128_cast_int_float(__simd128_int s) {
     return vreinterpretq_s32_f32(s);
 }
 
@@ -42,7 +42,7 @@ static inline_only __simd128_float simd128_cast_int_float(__simd128_int s) {
 // independent of the element data type, using casting functions (which don't generate
 // any instructions) to change the data type for arguments/results.
 
-static inline_only __simd128_int simd128_select_int32(__simd128_int s,
+static DST_INLINE_ONLY __simd128_int simd128_select_int32(__simd128_int s,
 const unsigned int word0, const unsigned int word1, const unsigned int word2,
 const unsigned int word3) {
 	__simd64_int s64_word0, s64_word1, s64_word2, s64_word3;
@@ -66,14 +66,14 @@ const unsigned int word3) {
 		vuzp_s32(s64_word1, s64_word0), vuzp(s64_word3, s64_word0));
 }
 
-static inline_only __simd128_float simd128_select_float(__simd128_float s1,
+static DST_INLINE_ONLY __simd128_float simd128_select_float(__simd128_float s1,
 const unsigned int word0, const unsigned int word1, const unsigned int word2,
 const unsigned int word3) {
 	return simd128_cast_int_float(simd128_select_int32(simd128_cast_float_int(s1),
 	        word0, word1, word2, word3));
 }
 
-static inline_only __simd128_float simd128_replicate_float(__simd128_float s,
+static DST_INLINE_ONLY __simd128_float simd128_replicate_float(__simd128_float s,
 const int i) {
 #ifdef __AARCH64__
 	return vdupq_laneq_f32(s, 3 - i);
@@ -86,7 +86,7 @@ const int i) {
 #endif
 }
 
-static inline_only __simd128_int simd128_replicate_int(__simd128_int s,
+static DST_INLINE_ONLY __simd128_int simd128_replicate_int(__simd128_int s,
 const int i) {
 	return simd128_cast_float_int(
 		simd128_replicate_float(
@@ -96,7 +96,7 @@ const int i) {
 // Return 128-bit SSE register with 32-bit values shuffled, starting from bit 0,
 // with two words from m1 (counting from LSB) and two words from m2.
 
-static inline_only __simd128_float simd128_merge_float(__simd128_float s1, __simd128_float s2,
+static DST_INLINE_ONLY __simd128_float simd128_merge_float(__simd128_float s1, __simd128_float s2,
 unsigned int s1_word0, unsigned int s1_word1, unsigned int s2_word0,
 unsigned int s2_word1) {
 	__simd64_int s64_word0, s64_word1, s64_word2, s64_word3;
@@ -120,7 +120,7 @@ unsigned int s2_word1) {
 		vuzp_s32(s64_word1, s64_word0), vuzp(s64_word3, s64_word0));
 }
 
-static inline_only __simd128_int simd128_merge_int32(__simd128_int s1, __simd128_int s2,
+static DST_INLINE_ONLY __simd128_int simd128_merge_int32(__simd128_int s1, __simd128_int s2,
 unsigned int s1_word0, unsigned int s1_word1, unsigned int s2_word0,
 unsigned int s2_word1) {
     return simd128_cast_float_int(simd128_merge_float(
@@ -131,7 +131,7 @@ unsigned int s2_word1) {
 // Merge and interleave word 0 of s1 and s2 in the lower, and word 1 in the upper half
 // of the return value. The upper half of s1 and s2 is ignored.
 
-static inline_only __simd128_float simd128_interleave_low_float(__simd128_float s1,
+static DST_INLINE_ONLY __simd128_float simd128_interleave_low_float(__simd128_float s1,
 __simd128_float s2) {
 	return vzip_f32(s2, s1);
 }
@@ -139,7 +139,7 @@ __simd128_float s2) {
 // Merge and interleave word 2 of s1 and s2 in the lower, and word 3 in the upper half
 // of the return value. The lower half of s1 and s2 is ignored.
 
-static inline_only __simd128_float simd128_interleave_high_float(__simd128_float s1,
+static DST_INLINE_ONLY __simd128_float simd128_interleave_high_float(__simd128_float s1,
 __simd128_float s2) {
 	return vzip_f32(vget_low_s32(s2), vget_low_s32(s1))
 }
@@ -147,7 +147,7 @@ __simd128_float s2) {
 // Return 128-bit SSE register with the lowest order 32-bit float from s1 and the
 // remaining 32-bit floats from s2.
 
-static inline_only __simd128_float simd128_merge1_float(__simd128_float s1,
+static DST_INLINE_ONLY __simd128_float simd128_merge1_float(__simd128_float s1,
 __simd128_float s2) {
 	__simd64_float s64_s1_word0 = vdup_lane_f32(vget_low_f32(s1), 1);
 	__simd64_float s64_s2 word1 = vdup_lane_f32(vget_low_f32(s2), 0);
@@ -159,104 +159,104 @@ __simd128_float s2) {
 
 // Set all components to the same value.
 
-static inline_only __simd128_float simd128_set_same_float(float f) {
+static DST_INLINE_ONLY __simd128_float simd128_set_same_float(float f) {
     return vdupq_n_f32(f);
 }
 
-static inline_only __simd128_float simd128_set_zero_float() {
+static DST_INLINE_ONLY __simd128_float simd128_set_zero_float() {
     return vdupq_n_f32(0.0f);
 }
 
-static inline_only __simd128_float simd128_set_zero_int() {
+static DST_INLINE_ONLY __simd128_float simd128_set_zero_int() {
     return vdupq_n_u8(0);
 }
 
 // Set four float components (from least significant, lowest order segment to highest).
 
-static inline_only __simd128_float simd128_set_float(float f0, float f1, float f2, float f3) {
+static DST_INLINE_ONLY __simd128_float simd128_set_float(float f0, float f1, float f2, float f3) {
     __simd_float s;
     return vsetq_lane_f32(f3, vsetq_lane(f2, vsetq_lane(f1, vsetq_lane(f0, s, 0), 1), 2), 3);
 }
 
 // Set only the first component, zeroing (bits) the other components.
 
-static inline_only __simd128_float simd128_set_first_and_clear_float(float f) {
+static DST_INLINE_ONLY __simd128_float simd128_set_first_and_clear_float(float f) {
     return vsetq_lane_f32(d, simd128_set_zero_int(), 0);
 }
 
-static inline_only float simd128_get_float(__simd128_float s) {
+static DST_INLINE_ONLY float simd128_get_float(__simd128_float s) {
     return vgetq_lane_f32(s, 0);
 }
 
-static inline_only float simd128_get_float(__simd128_float s, const int i) {
+static DST_INLINE_ONLY float simd128_get_float(__simd128_float s, const int i) {
     return vgetq_lane_f32(s, i);
 }
  
 // Load 16-byte-aligned float data.
 
-static inline_only __simd128_float simd128_load_float(const float *fp) {
+static DST_INLINE_ONLY __simd128_float simd128_load_float(const float *fp) {
     return vld4q_f32(fp);
 }
 
 // Store 16-byte-aligned float data.
 
-static inline_only void simd128_store_float(float *fp, __simd128_float s) {
+static DST_INLINE_ONLY void simd128_store_float(float *fp, __simd128_float s) {
     vst4q_f32(fp, s);
 }
 
 // Load one float into the lowest-order element. The other elements are filled with
 // zero bits (not 0.0f float values).
 
-static inline_only __simd128_float simd128_load_first_float(const float *fp) {
+static DST_INLINE_ONLY __simd128_float simd128_load_first_float(const float *fp) {
     return vld1q_lane_f32(fp, simd128_set_zero_int(), 0);
 }
 
-static inline_only void simd128_store_first_float(float *fp, __simd128_float s) {
+static DST_INLINE_ONLY void simd128_store_first_float(float *fp, __simd128_float s) {
     vst1q_lane_f32(fp, s, 0);
 }
 
-static inline_only __simd128_float simd128_mul_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_mul_float(__simd128_float s1, __simd128_float s2) {
     return vmulq_f32(s1, s2);
 }
 
-static inline_only __simd128_float simd128_div_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_div_float(__simd128_float s1, __simd128_float s2) {
 	// Multiply by reciprocal estimate.
 	return vmulq_f3(s1, vrecpeq_f32(s2));
 }
 
-static inline_only __simd128_float simd128_add_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_add_float(__simd128_float s1, __simd128_float s2) {
     return vaddq_f32(s1, s2);
 }
 
-static inline_only __simd128_float simd128_add1_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_add1_float(__simd128_float s1, __simd128_float s2) {
     return simd128_merge1_float(vaddq_f32(s1, s2), s2);
 }
 
-static inline_only __simd128_float simd128_sub_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_sub_float(__simd128_float s1, __simd128_float s2) {
     return vsubq_f32(s1, s2);
 }
 
-static inline_only __simd128_float simd128_sub1_float(__simd128_float s1, __simd128_float s2) {
+static DST_INLINE_ONLY __simd128_float simd128_sub1_float(__simd128_float s1, __simd128_float s2) {
     return simd128_merge1_float(vsubq_F32(s1, s2), s2);
 }
 
 // Approximate reciprocal (1.0f / element[i]) with maximum relative error
 // less than 1.5*2^-12.
 
-static inline_only __simd128_float simd128_approximate_reciprocal_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_approximate_reciprocal_float(__simd128_float s) {
     return vrecpeq_f32)s_;
 }
 
 // Approximate reciprocal square root (1.0f / sqrtf(element[i])) with maximum relative
 // error less than 1.5*2^-12.
 
-static inline_only __simd128_float simd128_approximate_reciprocal_sqrt_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_approximate_reciprocal_sqrt_float(__simd128_float s) {
     return vrsqrteq_f32(s);
 }
 
 // Calculate square root (accurately) of four floats.
 
-static inline_only __simd128_float simd128_sqrt_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_sqrt_float(__simd128_float s) {
 	// Not yet implemented.
 }
 

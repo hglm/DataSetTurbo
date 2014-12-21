@@ -93,17 +93,34 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //     __simd128_double dv1;
 // Convert two floats in the first two elements of fv1 to two doubles:
 //     dv1 = simd128_convert_float_double(fv1);
+//
 
-// Compile-time definitions:
-//
-// DST_NO_SIMD disables automatic detection of SIMD capabilities. SIMD will still be
-// used when DST_USE_SSE2, DST_USE_SSE3, DST_USE_ARM_NEON etc is explicitly defined.
-// DST_USE_SSE2 forces the use of SSE2 SIMD extensions.
-// DST_USE_SSE3 forces the use of SSE2 and SSE3 SIMD extensions.
-// DST_USE_ARM_NEON forces the use of ARM NEON SIMD extensions.
-//
-// DST_USE_SIMD will be defined when SIMD functions are available. This should be used
-// for testing the availability of SIMD primitives.
+// Set macro to generate unique function identifiers for each SIMD type this file is compiled with.
+
+#ifdef DST_NO_SIMD
+#define SIMD_FUNC(f) f ## NoSIMD
+#else
+#if defined(DST_SIMD_MODE_SSE2)
+#define SIMD_FUNC(f) f ## SSE2
+#elif defined(DST_SIMD_MODE_SSE3)
+#define SIMD_FUNC(f) f ## SSE3
+#elif defined(DST_SIMD_MODE_SSSE3)
+#define SIMD_FUNC(f) f ## SSSE3
+#elif defined(DST_SIMD_MODE_SSE4A)
+#define SIMD_FUNC(f) f ## SSE4A
+#elif defined(DST_SIMD_MODE_SSE41)
+#define SIMD_FUNC(f) f ## SSE41
+#elif defined(DST_SIMD_MODE_SSE42)
+#define SIMD_FUNC(f) f ## SSE42
+#elif defined(DST_SIMD_MODE_AVX)
+#define SIMD_FUNC(f) f ## AVX
+#elif defined(DST_SIMD_MODE_NEON)
+#define SIMD_FUNC(f) f ## NEON
+#else
+#endif
+#endif
+#define SIMD_VAR(f) SIMD_FUNC(f)
+
 
 #if defined(_MSC_VEC)
 /* Microsoft C/C++-compatible compiler */
@@ -119,44 +136,31 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <mmintrin.h>
 #endif
 
-// DST_USE_SSE2, DST_USE_SSE3 etc. are added as build flags in the Makefile.
-// However, when SSE2 or SSE3 is a default platform feature (such as
-// SSE2 on x86_64), always use it, unless all SIMD support is explicitly
-// disabled.
+// Set special SIMD functinons that are implemented. They may not actually be available
+// depending the capabilities of the machine the library is used on.
 
-// DST_USE_SSE3, when specified, implies DST_USE_SSE2.
-#if defined(DST_USE_SSE3) && !defined(DST_USE_SSE2)
-#define DST_USE_SSE2
-#endif
-
-#ifndef DST_NO_SIMD
-#if !defined(DST_USE_SSE2) && defined(__SSE2__)
-#define DST_USE_SSE2
-#endif
-#if !defined(DST_USE_SSE3) && defined(__SSE3__)
-#define DST_USE_SSE3
-#endif
-#if !defined(DST_USE_ARM_NEON) && defined(__ARM_NEON_FP)
-#define DST_USE_ARM_NEON
-#endif
-#endif
-
-// Set SIMD features that are implemented.
-
-#ifdef DST_USE_SSE2
+#ifdef __SSE2__
+// PC architecture (based on SSE2)
 #define SIMD_HAVE_TRANSPOSE_4TO3
 #define SIMD_HAVE_TRANSPOSE_3TO4
 // Accurate square root calculation
 #define SIMD_HAVE_ACCURATE_SQRT
-#define DST_USE_SIMD
-// SSE3 is a superset of SSE2.
-#ifdef DST_USE_SSE3
+#ifdef __SSE3__
 // Horizontal pair-wise addition instruction.
 #define SIMD_HAVE_HORIZONTAL_ADD2
 #endif
-#else // Not SSE2
-#ifdef DST_USE_ARM_NEON
-// When implemented, define DST_USE_SIMD and define feature flags.
+#if defined(__FMA4__) || defined(__FMA__) || defined(__AVX__)
+// 256-bit SIMD registers.
+#define SIMD_HAVE_256
+#endif
+#if defined(__FMA4__) || defined(__FMA__)
+// Fused multiply-add.
+#define SIMD_HAVE_FMA
+#endif
+
+#else // Not SSE2-based
+#ifdef __ARM_NEON_FP
+// When implemented, define feature flags for NEON.
 #else
 // No SIMD.
 #endif
@@ -168,34 +172,24 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_HAVE_MATRIX4X3_VECTOR_MULTIPLICATION
 #endif
 
-// Define a macro for always-inlining attributes that work with recent versions
-// of gcc.
-
-#ifdef __GNUC__
-#define inline_only __attribute__((always_inline)) inline
-#else
-#define inline_only inline
-#endif
-
 // Define a unifying set of SIMD intrinsic functions.
 
-#ifdef DST_USE_SSE2
+#ifdef __SSE2__
 
 // PC class processor with SSE2 enabled. Optionally use additional features
-// such as SSE3.
+// such as SSE3 and later extensions.
 
 #include "dstSIMDSSE2.h"
 
+#else
+#error __SSE2__ not defined.
 #endif
 
-#ifdef DST_USE_ARM_NEON
+#ifdef __ARM_NEON_FP
 
 // Not yet implemented.
 
 #endif
-
-
-#ifdef DST_USE_SIMD
 
 // Define shared set of generic SIMD functions shared between different platforms
 // that are implemented using lower-level SIMD functions.
@@ -216,14 +210,14 @@ static const char sre_simd_internal_bit_count4[16] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4
 };
 
-static inline_only int simd_count_bits_int4(int i) {
+static DST_INLINE_ONLY int simd_count_bits_int4(int i) {
     return sre_simd_internal_bit_count4[i];
 }
 
 // Calculate the minimum of the four components of a vector, and store result in the
 // first component.
 
-static inline_only __simd128_float simd128_horizonal_min_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_horizontal_min_float(__simd128_float s) {
     __simd128_float m_shifted_float1, m_shifted_float2, m_shifted_float3;
     __simd128_float m_min_01, m_min_23;
     m_shifted_float1 = simd128_shift_right_float(s, 1);
@@ -237,7 +231,7 @@ static inline_only __simd128_float simd128_horizonal_min_float(__simd128_float s
 // Calculate the maximum of the four components of a vector, and store result in the
 // first component.
 
-static inline_only __simd128_float simd128_horizonal_max_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_horizontal_max_float(__simd128_float s) {
     __simd128_float m_shifted_float1, m_shifted_float2, m_shifted_float3;
     __simd128_float m_max_01, m_max_23;
     m_shifted_float1 = simd128_shift_right_float(s, 1);
@@ -253,7 +247,7 @@ static inline_only __simd128_float simd128_horizonal_max_float(__simd128_float s
 // Implement higher-level pair-wise addition when not available as a low-level
 // primitive.
 
-static inline_only __simd128_float simd128_horizontal_add2_float(__simd128_float s1,
+static DST_INLINE_ONLY __simd128_float simd128_horizontal_add2_float(__simd128_float s1,
 __simd128_float s2) {
     __simd128_float e0 = simd128_merge_float(s1, s2, 0, 2, 0, 2);
     __simd128_float e1 = simd128_merge_float(s1, s2, 1, 3, 1, 3);
@@ -269,7 +263,7 @@ __simd128_float s2) {
 // not efficient even when achievable with two hadd instructions (SSE3), and should
 // be avoided when possible.
 
-static inline_only __simd128_float simd128_horizontal_add4_float(__simd128_float s) {
+static DST_INLINE_ONLY __simd128_float simd128_horizontal_add4_float(__simd128_float s) {
 #ifdef SIMD_HAVE_HORIZONTAL_ADD2
     __simd128_float m_zeros = simd128_set_zero_float();
     return simd128_horizontal_add2_float(
@@ -289,14 +283,63 @@ static inline_only __simd128_float simd128_horizontal_add4_float(__simd128_float
 
 #endif // !defined(SIMD_HAVE_HORIZONTAL_ADD4)
 
-// The following more elaborate functions, for matrix multiplication and
-// dot products, are provided both as an inline functions and as regular functions
-// that are implemented with the inline function.
+// Calculate four dot products vertically (with the matching coordinates of each vector already
+// packed into the same SIMD registers).
 
-#include "dstSIMDMatrix.h"
-#include "dstSIMDDot.h"
+static DST_INLINE_ONLY __simd128_float simd128_four_dot_products_vector4_vertical_float(
+const __simd128_float& m_v1_x, const __simd128_float& m_v1_y, const __simd128_float& m_v1_z,
+const __simd128_float& m_v1_w, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
+const __simd128_float& m_v2_z, const __simd128_float& m_v2_w) {
+	// Note: This is a good place to take advantage of FMA (fused multiply-add)
+	// instructions in recent SIMD implementations.
+#ifdef SIMD_HAVE_FMA
+	__simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+	__simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+	__simd128_float m_dot_xy = simd128_multiply_add_float(m_v1_y, m_v2_y, m_dot_x);
+	__simd128_float m_dot_zw = simd128_multiply_add_float(m_v1_w, m_w_y, m_dot_z);
+	return simd128_add_float(m_dot_xy, m_dot_zw);
+#else
+	__simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+	__simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+	__simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+	__simd128_float m_dot_w = simd128_mul_float(m_v1_w, m_v2_w);
+	return simd128_add_float(
+		simd128_add_float(m_dot_x, m_dot_y),
+		simd128_add_float(m_dot_z, m_dot_w)
+		);
+#endif
+}
 
-#endif // defined(DST_USE_SIMD)
+// For vectors with three components.
+
+static DST_INLINE_ONLY __simd128_float simd128_four_dot_products_vector3_vertical_float(
+const __simd128_float& m_v1_x, const __simd128_float& m_v1_y, const __simd128_float& m_v1_z,
+const __simd128_float& m_v2_x, const __simd128_float& m_v2_y, const __simd128_float& m_v2_z) {
+	__simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+	__simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+	__simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+	return simd128_add_float(
+	        simd128_add_float(m_dot_x, m_dot_y),
+	        m_dot_z
+	        );
+}
+
+// Dot products of a point with a four-component vector. The fourth component of the point is
+// implicitly 1.0f.
+
+static DST_INLINE_ONLY __simd128_float simd128_four_dot_products_point3_vector4_vertical_float(
+const __simd128_float& m_v1_x, const __simd128_float& m_v1_y, const __simd128_float& m_v1_z,
+const __simd128_float& m_v2_x, const __simd128_float& m_v2_y, const __simd128_float& m_v2_z,
+const __simd128_float& m_v2_w) {
+        __simd128_float m_dot_x = simd128_mul_float(m_v1_x, m_v2_x);
+        __simd128_float m_dot_y = simd128_mul_float(m_v1_y, m_v2_y);
+        __simd128_float m_dot_z = simd128_mul_float(m_v1_z, m_v2_z);
+        // m_v1_w would contain only 1.0f so m_dot_w is equal to m_v2_w.
+        return simd128_add_float(
+            simd128_add_float(m_dot_x, m_dot_y),
+            simd128_add_float(m_dot_z, m_v2_w)
+            );
+}
 
 #endif // defined(__DST_SIMD_H__)
 

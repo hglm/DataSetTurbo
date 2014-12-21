@@ -24,111 +24,148 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // Calculate an array of dot products.
 // v1, v2, and dot are generally expected to be aligned to a 16-byte boundary.
 
-void CalculateDotProducts(int n, const Vector3D *v1, const Vector3D *v2,
-float *dot) {
-#ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
-        if (sizeof(Vector3D) == 16)
-            simd_inline_dot_product_nxn_vector3_storage4_float(n, &v1[0].x, &v2[0].x, dot);
-        else
-            simd_inline_dot_product_nxn_vector3_storage3_float(n, &v1[0].x, &v2[0].x, dot);
-        return;
-    }
-#endif
-    int i = 0;
-    for (; i + 3 < n; i += 4) {
-        dot[i] = Dot(v1[i], v2[i]);
-        dot[i + 1] = Dot(v1[i + 1], v2[i + 1]);
-        dot[i + 2] = Dot(v1[i + 2], v2[i + 2]);
-        dot[i + 3] = Dot(v1[i + 3], v2[i + 3]);
-    }
-    for (; i < n; i++)
-        dot[i] = Dot(v1[i], v2[i]);
+template <class T>
+static DST_INLINE_ONLY void dstCalculateDotProductsTemplate(int n, const T * DST_RESTRICT v1,
+const T * DST_RESTRICT v2, float * DST_RESTRICT dot) {
+	int i = 0;
+	for (; i + 3 < n; i += 4) {
+		dot[i] = Dot(v1[i], v2[i]);
+		dot[i + 1] = Dot(v1[i + 1], v2[i + 1]);
+		dot[i + 2] = Dot(v1[i + 2], v2[i + 2]);
+		dot[i + 3] = Dot(v1[i + 3], v2[i + 3]);
+	}
+	for (; i < n; i++)
+		dot[i] = Dot(v1[i], v2[i]);
 }
 
-void CalculateDotProducts(int n, const Vector4D *v1, const Vector4D *v2,
+void dstCalculateDotProducts(int n, const Vector4D * DST_RESTRICT v1, const Vector4D * DST_RESTRICT v2,
 float *dot) {
-#ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
-        simd_inline_dot_product_nxn_vector4_float(n, &v1[0].x, &v2[0].x, dot);
-        return;
-    }
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nxn_vector4_float(n, &v1[0].x, &v2[0].x, dot);
+		return;
+	}
 #endif
-    int i = 0;
-    for (; i + 3 < n; i += 4) {
-        dot[i] = Dot(v1[i], v2[i]);
-        dot[i + 1] = Dot(v1[i + 1], v2[i + 1]);
-        dot[i + 2] = Dot(v1[i + 2], v2[i + 2]);
-        dot[i + 3] = Dot(v1[i + 3], v2[i + 3]);
-    }
-    for (; i < n; i++)
-        dot[i] = Dot(v1[i], v2[i]);
+	dstCalculateDotProductsTemplate(n, v1, v2, dot);
+}
+
+void dstCalculateDotProducts(int n, const Vector3DPadded * DST_RESTRICT v1,
+const Vector3DPadded * DST_RESTRICT v2, float *dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nxn_vector3_storage4_float(n, &v1[0].x, &v2[0].x, dot);
+		return;
+	}
+#endif
+	dstCalculateDotProductsTemplate(n, v1, v2, dot);
+}
+
+void dstCalculateDotProducts(int n, const Vector3D * DST_RESTRICT v1,
+const Vector3D * DST_RESTRICT v2, float *dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)v2 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nxn_vector3_storage3_float(n, &v1[0].x, &v2[0].x, dot);
+		return;
+	}
+#endif
+	dstCalculateDotProductsTemplate(n, v1, v2, dot);
 }
 
 // Calculate array of dot products of vector array v1 with constant vector v2.
 
-void CalculateDotProductsWithConstantVector(int n, const Vector3D *v1, const Vector3D& v2,
-float *dot) {
-    int i = 0;
-#ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0 && sizeof(Vector3D) == 16) {
-        SIMDCalculateDotProductsWithConstantVector(n, &v1[0], v2, &dot[0]);
-        return;
-    }
-#endif
-    for (; i + 3 < n; i += 4) {
-        dot[i] = Dot(v1[i], v2);
-        dot[i + 1] = Dot(v1[i + 1], v2);
-        dot[i + 2] = Dot(v1[i + 2], v2);
-        dot[i + 3] = Dot(v1[i + 3], v2);
-    }
-    for (; i < n; i++)
-        dot[i] = Dot(v1[i], v2);
+template <class T, class U>
+static DST_INLINE_ONLY void dstCalculateDotProductsWithConstantVectorTemplate(int n,
+const T * DST_RESTRICT v1, const U& v2, float * DST_RESTRICT dot) {
+	int i = 0;
+	// When T is Point3D or Point3DPadded and U is Vector4D, Dot() will do the right
+	// thing.
+	for (; i + 3 < n; i += 4) {
+		dot[i] = Dot(v1[i], v2);
+		dot[i + 1] = Dot(v1[i + 1], v2);
+		dot[i + 2] = Dot(v1[i + 2], v2);
+		dot[i + 3] = Dot(v1[i + 3], v2);
+	}
+	for (; i < n; i++)
+		dot[i] = Dot(v1[i], v2);
 }
 
-void CalculateDotProductsWithConstantVector(int n, const Vector4D *v1, const Vector4D& v2,
-float *dot) {
-#ifdef DST_USE_SIMD
-    if ((((uintptr_t)v1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0) {
-        SIMDCalculateDotProductsWithConstantVector(n, &v1[0], v2, &dot[0]);
-        return;
-    }
+void dstCalculateDotProductsWithConstantVector(int n, const Vector4D * DST_RESTRICT v1,
+const Vector4D& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)dot) & 0xF) == 0) {
+		// v1 and dot need to be 16-byte aligned, v2 not.
+		simd_inline_dot_product_nx1_vector4_float(n, &v1[0].x, &v2.x, dot);
+		return;
+	}
 #endif
-    int i = 0;
-    for (; i + 3 < n; i += 4) {
-        dot[i] = Dot(v1[i], v2);
-        dot[i + 1] = Dot(v1[i + 1], v2);
-        dot[i + 2] = Dot(v1[i + 2], v2);
-        dot[i + 3] = Dot(v1[i + 3], v2);
-    }
-    for (; i < n; i++)
-        dot[i] = Dot(v1[i], v2);
+	dstCalculateDotProductsWithConstantVectorTemplate(n, v1, v2, dot);
+
 }
 
-void CalculateDotProductsWithConstantVector(int n, const Point3D *p1, const Vector4D& v2,
-float *dot) {
-    int i = 0;
-#ifdef DST_USE_SIMD
-    if ((((uintptr_t)p1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0) {
-        SIMDCalculateDotProductsWithConstantVector(n, &p1[i], v2, &dot[i]);
-        return;
-    }
+void dstCalculateDotProductsWithConstantVector(int n, const Vector3DPadded * DST_RESTRICT v1,
+const Vector3DPadded& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nx1_vector3_storage4_vector4_float(n,
+			&v1[0].x, &v2.x, dot);
+		return;
+	}
 #endif
-    for (; i + 3 < n; i += 4) {
-        dot[i] = Dot(p1[i], v2);
-        dot[i + 1] = Dot(p1[i + 1], v2);
-        dot[i + 2] = Dot(p1[i + 2], v2);
-        dot[i + 3] = Dot(p1[i + 3], v2);
-    }
-    for (; i < n; i++)
-        dot[i] = Dot(p1[i], v2);
+	dstCalculateDotProductsWithConstantVectorTemplate(n, v1, v2, dot);
+
 }
+
+void dstCalculateDotProductsWithConstantVector(int n, const Vector3D * DST_RESTRICT v1,
+const Vector3D& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nx1_vector3_storage3_float(n, &v1[0].x, &v2.x, dot);
+		return;
+	}
+#endif
+	dstCalculateDotProductsWithConstantVectorTemplate(n, v1, v2, dot);
+
+}
+
+void dstCalculateDotProductsWithConstantVector(int n, const Point3DPadded * DST_RESTRICT v1,
+const Vector4D& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nx1_point3_storage4_vector4_float(n,
+			&v1[0].x, &v2.x, dot);
+		return;
+	}
+#endif
+	dstCalculateDotProductsWithConstantVectorTemplate(n, v1, v2, dot);
+}
+
+void dstCalculateDotProductsWithConstantVector(int n, const Point3D * DST_RESTRICT v1,
+const Vector4D& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+#ifndef DST_NO_SIMD
+	if (dstCheckFlag(DST_FLAG_SIMD_ENABLED) &&
+	(((uintptr_t)v1 | (uintptr_t)dot) & 0xF) == 0) {
+		simd_inline_dot_product_nx1_point3_storage3_vector4_float(n,
+			&v1[0].x, &v2.x, dot);
+		return;
+	}
+#endif
+	dstCalculateDotProductsWithConstantVectorTemplate(n, v1, v2, dot);
+}
+
+// Also count negative dot products.
 
 void CalculateDotProductsWithConstantVectorAndCountNegative(int n, const Point3D *p1,
 const Vector4D& v2, float *dot, int& count) {
     int i = 0;
     count = 0;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if ((((uintptr_t)p1 | (uintptr_t)&v2 | (uintptr_t)dot) & 0xF) == 0 && sizeof(Point3D) == 16) {
         SIMDCalculateDotProductsWithConstantVectorAndCountNegative(n, &p1[i], v2,
             &dot[i], count);
@@ -157,7 +194,7 @@ const Vector4D& v2, float *dot, int& count) {
 void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
 const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
     int i = 0;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
         __simd128_float m_v2_x = simd128_set_same_float(v2.x);
         __simd128_float m_v2_y = simd128_set_same_float(v2.y);
@@ -223,7 +260,7 @@ const Vector3D& v2, float& min_dot_product, float& max_dot_product) {
 void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
 const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
     int i = 0;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0) {
         __simd128_float m_v2_x = simd128_set_same_float(v2.x);
         __simd128_float m_v2_y = simd128_set_same_float(v2.y);
@@ -298,7 +335,7 @@ const Vector4D& v2, float& min_dot_product, float& max_dot_product) {
 void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
 const Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_dot_product) {
     int i = 0;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
         __simd128_float m_v2_0_x = simd128_set_same_float(C[0].x);
         __simd128_float m_v2_0_y = simd128_set_same_float(C[0].y);
@@ -419,7 +456,7 @@ const Vector3D *vertex, const Vector3D *C, float *min_dot_product, float *max_do
 void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
 const Vector4D *vertex, const Vector4D *C, float *min_dot_product, float *max_dot_product) {
     int i = 0;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0) {
     __simd128_float m_v2_0_x = simd128_set_same_float(C[0].x);
     __simd128_float m_v2_0_y = simd128_set_same_float(C[0].y);
@@ -559,7 +596,7 @@ const Vector3D& v2, int& i_Pmin, int& i_Pmax) {
     int i = 0;
     float min_dot_product;
     float max_dot_product;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
     __simd128_float m_v2_x = simd128_set_same_float(v2.x);
     __simd128_float m_v2_y = simd128_set_same_float(v2.y);
@@ -656,7 +693,7 @@ const Vector4D& v2, int& i_Pmin, int& i_Pmax) {
     int i = 0;
     float min_dot_product;
     float max_dot_product;
-#ifdef DST_USE_SIMD
+#ifndef DST_NO_SIMD
     if (((uintptr_t)vertex & 0xF) == 0) {
     __simd128_float m_v2_x = simd128_set_same_float(v2.x);
     __simd128_float m_v2_y = simd128_set_same_float(v2.y);

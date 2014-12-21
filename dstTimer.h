@@ -109,9 +109,9 @@ public :
 		pthread_join(thread, NULL);
 	}
 	bool StopSignalled() {
-		pthread_mutex_lock(&mutex);
+//		pthread_mutex_lock(&mutex);
 		bool b = *stop_signalled;
-		pthread_mutex_unlock(&mutex);
+//		pthread_mutex_unlock(&mutex);
 		return b;
 	}
 };

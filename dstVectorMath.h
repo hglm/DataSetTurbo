@@ -209,6 +209,8 @@ public:
 	union {
 		T z;
 		T b;
+		// Marker to recognize that the type is not Vector4D.
+		T w_marker;
 	};
 
 	Vector3DBase() {}
@@ -388,14 +390,19 @@ public:
 	char *GetString() const;
 };
 
-typedef Vector3DBase <float> Vector3D;
-typedef Vector3DBase <double> VectorDouble3D;
+template <class T>
+class DST_API Vector3DBasePadded : public Vector3DBase <T> {
+} DST_ALIGNED(sizeof(T) *4);
 
+typedef Vector3DBase <float> Vector3D;
+typedef Vector3DBasePadded <float> Vector3DPadded;
+typedef Vector3DBase <double> VectorDouble3D;
+typedef Vector3DBasePadded <double> VectorDouble3DPadded;
 
 template <class T>
 class DST_API Point3DBase : public Vector3DBase <T>
 {
-	public:
+public:
 		
 	Point3DBase() {}
 	Point3DBase(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
@@ -444,19 +451,27 @@ class DST_API Point3DBase : public Vector3DBase <T>
 	    v.Normalize();
 	    return v;
 	}
-} DST_ALIGNED(16);
-
-typedef Point3DBase <float> Point3D;
-typedef Point3DBase <double> PointDouble3D;
+};
 
 template <class T>
+class DST_API Point3DBasePadded : public Point3DBase <T> {
+} DST_ALIGNED(sizeof(T) *4);
 
+typedef Point3DBase <float> Point3D;
+typedef Point3DBasePadded <float> Point3DPadded;
+typedef Point3DBase <double> Point3DDouble;
+typedef Point3DBasePadded <double> Point3DDoublePadded;
+
+template <class T>
 class DST_API Vector4DBase {
 public:
 	T x;
 	T y;
 	T z;
-	T w;
+	union {
+		T w;
+		T w_marker;
+	};
 
 	Vector4DBase() {}
 
@@ -796,9 +811,8 @@ public:
 	}
 };
 
-typedef Vector4DBase <float> Vector4D DST_ALIGNED(16);
-typedef Vector4DBase <double> VectorDouble4D DST_ALIGNED(32);
-
+typedef Vector4DBase <float> Vector4D;
+typedef Vector4DBase <double> Vector4DDouble;
 
 template <class T>
 inline Vector4DBase <T> dstPlaneFromPoints(const Point3DBase <T>& v1, const Point3DBase <T>& v2,
@@ -874,60 +888,131 @@ static inline Vector3D maxf(const Vector3D& V1, const Vector3D& V2) {
 }
 
 // Vector functions with optional SIMD (SSE, NEON etc) support.
+// All arrays of vectors as well as resulting dot products must be aligned
+// on a 16-byte boundary.
+
+#ifdef DST_FIXED_SIMD
+#define SIMD_FUNC(f) DST_FUNC_LOOKUP(f)
+#include "dstSIMDFuncs.h"
+#endif
 
 // Calculate an array of dot products.
 
-DST_API void CalculateDotProducts(int n, const Vector3D *v1, const Vector3D *v2,
-float *dot);
+template <class T>
+DST_INLINE_ONLY void dstCalculateDotProductsNxN(int n, const T * DST_RESTRICT v1,
+const T * DST_RESTRICT v2, float * DST_RESTRICT dot) {
+	if (__builtin_offsetof(T, w_marker) == 12)
+		return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV4)(n,
+			(const float *)v1,(const float *)v2, dot);
+	else if (sizeof(T) == 16)
+		return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3P)(n,
+			(const float *)v1, (const float *)v2, dot);
+	else
+		return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3)(n,
+			(const float *)v1, (const float *)v2, dot);
+}
 
-DST_API void CalculateDotProducts(int n, const Vector4D *v1, const Vector4D *v2,
-float *dot);
+// Calculate array of dot products of vector array v1 with vector v2.
 
-// Calculate array of dot products of vector array v1 with constant vector v2.
-
-DST_API void CalculateDotProductsWithConstantVector(int n, const Vector3D *v1, const Vector3D& v2,
-float *dot);
-
-DST_API void CalculateDotProductsWithConstantVector(int n, const Vector4D *v1, const Vector4D& v2,
-float *dot);
-
-// Calculate array of dot products of point vector array v1 with constant vector v2.
-
-DST_API void CalculateDotProductsWithConstantVector(int n, const Point3D *p1, const Vector4D& v2,
-float *dot);
+template <class T, class U>
+DST_INLINE_ONLY void dstCalculateDotProductsNx1(int n,
+const T * DST_RESTRICT v1, const U& DST_RESTRICT v2, float * DST_RESTRICT dot) {
+	if (__builtin_offsetof(T, w_marker) == 12)
+		// T is Vector4D.
+		return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V4)(n,
+			(const float *)v1, (const float *)&v2, dot);
+	else if (sizeof(T) == 16)
+		// T is Vector3DPadded or Point3DPadded.
+		if (__builtin_offsetof(U, w_marker) == 12)
+			// U is Vector4D. In this case, we assume T is Point3DPadded (with
+			// implicit w of 1.0f) because Vector3DPadded doesn't make sense.
+			return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3PV4)(n,
+				(const float *)v1, (const float *)&v2, dot);
+		else
+			// U (v2) is assumed to be Vector3D. It doesn't matter if T is
+			// Point3DPadded.
+			return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3PV3)(n,
+				(const float *)v1, (const float *)&v2, dot);
+	else
+		// T is Vector3D or Point3D.
+		if (__builtin_offsetof(U, w_marker) == 12)
+			// U is Vector4D. In this case, we assume T is Point3D (with
+			// implicit w of 1.0f) because Vector3D doesn't make sense.
+			return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3V4)(n,
+				(const float *)v1, (const float *)&v2, dot);
+		else
+			// U (v2) is assumed to be Vector3D.
+			return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3)(n,
+				(const float *)v1, (const float *)&v2, dot);
+}
 
 // Calculate array of dot products of point vector array v1 with constant vector v2,
 // and count the number of dot products < 0.
 
-DST_API void CalculateDotProductsWithConstantVectorAndCountNegative(int n, const Point3D *p1,
-const Vector4D& v2, float *dot, int& negative_count);
+DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1(
+int n, const Point3D * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
+float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
+	DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3V4)(n, (const float *)p1,
+		(const float *)&v2, dot, negative_count);
+}
+
+DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1(
+int n, const Point3DPadded * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
+float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
+	DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(n, (const float *)p1,
+		(const float *)&v2, dot, negative_count);
+}
 
 // Determine the minimum and maximum dot product of an array of vertices with a
 // given constant vector.
 
-DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
-const Vector3D& v2, float& min_dot_product, float& max_dot_product);
+DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
+const Vector3D * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V3)(n, (const float *)v1,
+		(const float *)&v2, min_dot_product, max_dot_product);
+}
 
-DST_API void CalculateMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
-const Vector4D& v2, float& min_dot_product, float& max_dot_product);
+DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
+const Vector4D * DST_RESTRICT v1, const Vector4D& DST_RESTRICT v2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V4)(n, (const float *)v1,
+		(const float *)&v2, min_dot_product, max_dot_product);
+}
 
 // Determine the minimum and maximum dot products of an array of vertices with three
 // constant vectors.
 
-DST_API void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-const Vector3D *vertex, const Vector3D *v2, float *min_dot_product, float *max_dot_product);
+DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx3(int n,
+const Vector3D * DST_RESTRICT v1, const Vector3D * DST_RESTRICT v2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V3)(n, (const float *)v1,
+		(const float *)v2, min_dot_product, max_dot_product);
+}
 
-DST_API void CalculateMinAndMaxDotProductWithThreeConstantVectors(int nu_vertices,
-const Vector4D *vertex, const Vector4D *v2, float *min_dot_product, float *max_dot_product);
+DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx3(int n,
+const Vector4D * DST_RESTRICT v1, const Vector4D * DST_RESTRICT v2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V4)(n, (const float *)v1,
+		(const float *)v2, min_dot_product, max_dot_product);
+}
 
 // Determine the indices within an array of vertices that have the minimum and
 // maximum dot product with a given constant vector.
 
-DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector3D *vertex,
-const Vector3D& v2, int& i_Pmin, int& i_Pmax);
+DST_INLINE_ONLY void dstGetIndicesWithMinAndMaxDotProductNx1(int n,
+const Vector3D * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+	DST_FUNC_LOOKUP(dstGetIndicesWithMinAndMaxDotProductNx1V3)(n, (const float *)v1,
+		(const float *)&v2, i_Pmin, i_Pmax);
+}
 
-DST_API void GetIndicesWithMinAndMaxDotProduct(int nu_vertices, const Vector4D *vertex,
-const Vector4D& v2, int& i_Pmin, int& i_Pmax);
+DST_INLINE_ONLY void dstGetIndicesWithMinAndMaxDotProductNx1(int n,
+const Vector4D * DST_RESTRICT v1, const Vector4D& DST_RESTRICT v2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+	DST_FUNC_LOOKUP(dstGetIndicesWithMinAndMaxDotProductNx1V4)(n, (const float *)v1,
+		(const float *)&v2, i_Pmin, i_Pmax);
+}
 
 #endif // defined(__DST_VECTOR_MATH__)
 

@@ -19,6 +19,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_SIMD_MATRIX_H__
 #define __DST_SIMD_MATRIX_H__
 
+// This file is included by dstSIMD.h. When including that file directly, DST_SIMD_MODE
+// must be set to the SIMD type, which will be appended to exported function names.
+
 // The following SIMD functions for matrix multiplication have been implemented.
 //
 // SIMD 4x4 float matrix multiplication for matrices in column-major order.
@@ -74,10 +77,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // SIMD 4x4 float matrix multiplication for matrices in column-major order.
 // Requires 16-byte alignment of the matrices.
 
-void simd_matrix_multiply_4x4CM_float(const float * __restrict m1,
+void SIMD_FUNC(dstMatrixMultiply4x4CM)(const float * __restrict m1,
 const float * __restrict__ m2, float * __restrict m3);
 
-static inline_only void simd_inline_matrix_multiply_4x4CM_float(const float * __restrict m1,
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM(const float * __restrict m1,
 const float * __restrict__ m2, float * __restrict m3) {
     // m.n[column][row]
     // First value (row = 0, column = 0):
@@ -119,10 +122,10 @@ const float * __restrict__ m2, float * __restrict m3) {
 // Multiply 4x3 (4 rows, 3 rows) matrices in row-major order. The fourth
 // row is implicitly defined as (0.0f, 0.0f, 0.0f, 1.0f).
 
-void simd_matrix_multiply_4x3RM_float(const float * __restrict m1,
+void SIMD_FUNC(dstMatrixMultiply4x4RM)(const float * __restrict m1,
 const float * __restrict__ m2, float * __restrict m3);
 
-static inline_only void simd_inline_matrix_multiply_4x3RM_float(const float * __restrict m1,
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4RM(const float * __restrict m1,
 const float * __restrict__ m2, float * __restrict m3) {
     __simd128_float row0 = simd128_load_float(&m2[0]);
     __simd128_float row1 = simd128_load_float(&m2[4]);
@@ -152,11 +155,11 @@ const float * __restrict__ m2, float * __restrict m3) {
 // Multiply 4x4 (column-major) and 4x3 (4 rows, 3 rows, row-major order) matrices.
 // The fourth row of the 4x3 matrix is implicitly defined as (0.0f, 0.0f, 0.0f, 1.0f).
 
-void simd_matrix_multiply_4x4CM_4x3RM_float(const float * __restrict m1,
+void SIMD_FUNC(dstMatrixMultiply4x4CM_4x3RM)(const float * __restrict m1,
 const float * __restrict__ m2, float * __restrict m3);
 
-static inline_only void simd_inline_matrix_multiply_4x4CM_4x3RM_float(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3) {
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM_4x3RM(
+const float * __restrict m1, const float * __restrict__ m2, float * __restrict m3) {
     __simd128_float col0 = simd128_load_float(&m1[0]);
     __simd128_float col1 = simd128_load_float(&m1[4]);
     __simd128_float col2 = simd128_load_float(&m1[8]);
@@ -196,6 +199,8 @@ const float * __restrict__ m2, float * __restrict m3) {
 }
 
 // Classes for using SIMD to multiply a specific matrix with one or more vertices.
+// Because these classes are inline and not exported, there is no problem when the
+// library code is compiled multiple times for different SIMD implementations.
 
 // The following class is for a 4x4 matrix and can be initialized with matrices
 // (float arrays) in both row-major or column-major format.
@@ -208,7 +213,7 @@ public :
     __simd128_float m_row3;
 
     // Set row-major matrix data.
-    inline_only void SetRM(const float *f) {
+    DST_INLINE_ONLY void SetRM(const float *f) {
         // Load rows.
         m_row0 = simd128_load_float(&f[0]);
         m_row1 = simd128_load_float(&f[4]);
@@ -216,14 +221,14 @@ public :
         m_row3 = simd128_load_float(&f[12]);
     }
     // Set column-major matrix data.
-    inline_only void SetCM(const float *f) {
+    DST_INLINE_ONLY void SetCM(const float *f) {
         // Load columns, then transpose to rows.
         SetRM(f);
         simd128_transpose4_float(m_row0, m_row1, m_row2, m_row3);
     }
     // Multiply with a four-float SIMD vector.
     // Note: This uses the inefficient horizontal addition primitive.
-    inline_only void MultiplyVector4(const __simd128_float m_v, __simd128_float& m_result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, __simd128_float& m_result) const {
         __simd128_float m_mul0  = simd128_mul_float(m_row0, m_v);
         __simd128_float m_mul1  = simd128_mul_float(m_row1, m_v);
         __simd128_float m_mul2  = simd128_mul_float(m_row2, m_v);
@@ -233,7 +238,7 @@ public :
                 simd128_horizontal_add2_float(m_mul0, m_mul1),
                 simd128_horizontal_add2_float(m_mul2, m_mul3));
     }
-    inline_only void MultiplyVector4(const __simd128_float m_v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, float &result_x,
     float &result_y, float &result_z, float& result_w) const {
         __simd128_float m_result;
         MultiplyVector4(m_v, m_result);
@@ -242,21 +247,21 @@ public :
         result_z = simd128_get_float(simd128_shift_right_float(m_result, 2));
         result_w = simd128_get_float(simd128_shift_right_float(m_result, 3));
     }
-    inline_only void MultiplyVector4(const __simd128_float m_v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, float *result) const {
         __simd128_float m_result;
         MultiplyVector4(m_v, m_result);
         simd128_store_float(result, m_result);
     }
-    inline_only void MultiplyVector4(const float *v, __simd128_float m_result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, __simd128_float m_result) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, m_result);
     }
-    inline_only void MultiplyVector4(const float *v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, float &result_x,
     float &result_y, float &result_z, float& result_w) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, result_x, result_y, result_z, result_w);
     }
-    inline_only void MultiplyVector4(const float *v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, float *result) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, result);
     }
@@ -276,14 +281,14 @@ public :
     __simd128_float m_row2;
 
     // Set row-major matrix data.
-    inline_only void SetRM(const float *f) {
+    DST_INLINE_ONLY void SetRM(const float *f) {
         // Load rows.
         m_row0 = simd128_load_float(&f[0]);
         m_row1 = simd128_load_float(&f[4]);
         m_row2 = simd128_load_float(&f[8]);
     }
     // Set column-major matrix data.
-    inline_only void SetCM(const float *f) {
+    DST_INLINE_ONLY void SetCM(const float *f) {
         // Load columns, then transpose to rows.
         __simd128_float m_col0 = simd128_load3_float(&f[0]);
         __simd128_float m_col1 = simd128_load3_float(&f[3]);
@@ -295,7 +300,7 @@ public :
     // Multiply with a three-float SIMD vector.
     // Note: This uses the inefficient horizontal addition primitive.
     // The fourth component of m_v (0.0f or 1.0f) makes a difference.
-    inline_only void MultiplyVector3(const __simd128_float m_v, __simd128_float& m_result) const {
+    DST_INLINE_ONLY void MultiplyVector3(const __simd128_float m_v, __simd128_float& m_result) const {
         __simd128_float m_mul0  = simd128_mul_float(m_row0, m_v);
         __simd128_float m_mul1  = simd128_mul_float(m_row1, m_v);
         __simd128_float m_mul2  = simd128_mul_float(m_row2, m_v);
@@ -306,7 +311,7 @@ public :
                 simd128_horizontal_add2_float(m_mul2, m_zeros));
     }
     // The fourth component of m_v (0.0f or 1.0f) makes a difference.
-    inline_only void MultiplyVector3(const __simd128_float m_v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector3(const __simd128_float m_v, float &result_x,
     float &result_y, float &result_z) const {
         __simd128_float m_result;
         MultiplyVector3(m_v, m_result);
@@ -316,53 +321,53 @@ public :
     }
     // Unpacked three-float result vector (16-byte aligned, with four bytes padding).
     // The fourth component of source vector m_v (0.0f or 1.0f) makes a difference.
-    inline_only void MultiplyVector3(const __simd128_float m_v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector3(const __simd128_float m_v, float *result) const {
         __simd128_float m_result;
         MultiplyVector3(m_v, m_result);
         simd128_store_float(result, m_result);
     }
     // Unpacked three-float source vector (16-byte aligned, with four bytes padding).
-    inline_only void MultiplyVector3(const float *v, __simd128_float m_result) const {
+    DST_INLINE_ONLY void MultiplyVector3(const float *v, __simd128_float m_result) const {
         // Make sure the fourth element is zero after loading.
         __simd128_float m_v = simd128_set_last_zero_float(simd128_load_float(&v[0]));
         MultiplyVector3(m_v, m_result);
     }
     // Unpacked three-float source vector (16-byte aligned, with four bytes padding).
-    inline_only void MultiplyVector3(const float *v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector3(const float *v, float &result_x,
     float &result_y, float &result_z) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector3(m_v, result_x, result_y, result_z);
     }
     // Unpacked three-float source and result vectors (16-byte aligned, with four bytes padding).
-    inline_only void MultiplyVector3(const float *v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector3(const float *v, float *result) const {
         __simd128_float m_v = simd128_set_last_zero_float(simd128_load_float(&v[0]));
         MultiplyVector3(m_v, result);
     }
     // Packed three-float result vector (unaligned).
     // The fourth component of source vector m_v (0.0f or 1.0f) makes a difference.
-    inline_only void MultiplyVector3Packed(const __simd128_float m_v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector3Packed(const __simd128_float m_v, float *result) const {
         __simd128_float m_result;
         MultiplyVector3(m_v, m_result);
         simd128_store3_float(result, m_result);
     }
     // Packed three-float source vector (unaligned).
-    inline_only void MultiplyVector3Packed(const float *v, __simd128_float m_result) const {
+    DST_INLINE_ONLY void MultiplyVector3Packed(const float *v, __simd128_float m_result) const {
         __simd128_float m_v = simd128_load3_float(&v[0]);
         MultiplyVector3(m_v, m_result);
     }
     // Packed three-float source vector (unaligned).
-    inline_only void MultiplyVector3Packed(const float *v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector3Packed(const float *v, float &result_x,
     float &result_y, float &result_z) const {
         __simd128_float m_v = simd128_load3_float(&v[0]);
         MultiplyVector3(m_v, result_x, result_y, result_z);
     }
     // Packed three-float source and result vectors (unaligned).
-    inline_only void MultiplyVector3Packed(const float *v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector3Packed(const float *v, float *result) const {
         __simd128_float m_v = simd128_load3_float(&v[0]);
         MultiplyVector3Packed(m_v, result);
     }
     // Four-float vectors including (fourth) w component.
-    inline_only void MultiplyVector4(const __simd128_float m_v, __simd128_float& m_result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, __simd128_float& m_result) const {
         __simd128_float m_mul0  = simd128_mul_float(m_row0, m_v);
         __simd128_float m_mul1  = simd128_mul_float(m_row1, m_v);
         __simd128_float m_mul2  = simd128_mul_float(m_row2, m_v);
@@ -376,7 +381,7 @@ public :
                 simd128_horizontal_add2_float(m_mul2, m_mul3));
     }
     // Result is stored in three seperate floats.
-    inline_only void MultiplyVector4(const __simd128_float m_v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, float &result_x,
     float &result_y, float &result_z) const {
         __simd128_float m_result;
         MultiplyVector4(m_v, m_result);
@@ -385,7 +390,7 @@ public :
         result_z = simd128_get_float(simd128_shift_right_float(m_result, 2));
     }
     // Result is stored in four seperate floats.
-    inline_only void MultiplyVector4(const __simd128_float m_v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, float &result_x,
     float &result_y, float &result_z, float& result_w) const {
         __simd128_float m_result;
         MultiplyVector4(m_v, m_result);
@@ -395,40 +400,40 @@ public :
         result_w = simd128_get_float(simd128_shift_right_float(m_result, 3));
     }
     // Four-float result vector.
-    inline_only void MultiplyVector4(const __simd128_float m_v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const __simd128_float m_v, float *result) const {
         __simd128_float m_result;
         MultiplyVector4(m_v, m_result);
         simd128_store_float(result, m_result);
     }
-    inline_only void MultiplyVector4(const float *v, __simd128_float m_result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, __simd128_float m_result) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, m_result);
     }
-    inline_only void MultiplyVector4(const float *v, float &result_x,
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, float &result_x,
     float &result_y, float &result_z, float& result_w) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, result_x, result_y, result_z, result_w);
     }
     // Four-float result vector.
-    inline_only void MultiplyVector4(const float *v, float *result) const {
+    DST_INLINE_ONLY void MultiplyVector4(const float *v, float *result) const {
         __simd128_float m_v = simd128_load_float(&v[0]);
         MultiplyVector4(m_v, result);
     }
     // Unpacked three-float source point vector (16-byte aligned, with four bytes padding).
     // Point vector has implicit w component of 1.0f.
-    inline_only void MultiplyPoint3(const float *v, __simd128_float m_result) const {
+    DST_INLINE_ONLY void MultiplyPoint3(const float *v, __simd128_float m_result) const {
         // Make sure the fourth element is 1.0f after loading.
         __simd128_float m_v = simd128_set_last_float(simd128_load_float(&v[0]), 1.0f);
         MultiplyVector3(m_v, m_result);
     }
     // Unpacked three-float source vector (16-byte aligned, with four bytes padding).
-    inline_only void MultiplyPoint3(const float *v, float &result_x,
+    DST_INLINE_ONLY void MultiplyPoint3(const float *v, float &result_x,
     float &result_y, float &result_z) const {
         __simd128_float m_v = simd128_set_last_float(simd128_load_float(&v[0]), 1.0f);
         MultiplyVector3(m_v, result_x, result_y, result_z);
     }
     // Unpacked three-float source and result vectors (16-byte aligned, with four bytes padding).
-    inline_only void MultiplyPoint3(const float *v, float *result) const {
+    DST_INLINE_ONLY void MultiplyPoint3(const float *v, float *result) const {
         __simd128_float m_v = simd128_set_last_float(simd128_load_float(&v[0]), 1.0f);
         MultiplyVector3(m_v, result);
     }

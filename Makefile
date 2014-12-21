@@ -30,20 +30,85 @@ ARM_ASSEMBLER_FLAGS_THUMB = -march=armv7-a -Wa,-march=armv7-a -mthumb -Wa,-mthum
  -Wa,-mimplicit-it=always -mthumb-interwork -DCONFIG_THUMB
 ARM_ASSEMBLER_FLAGS_NON_THUMB = 
 
-# SIMD configuration (SSE on x86).
-ifeq ($(TARGET_SIMD), X86_SSE3)
-OPTCFLAGS += -msse3 -DDST_USE_SSE2 -DDST_USE_SSE3
+# SIMD configuration (SSE on x86, NEON on ARM).
+SIMD_TYPES = SSE2 SSE3 SSSE3 SSE4A # SSE41 SSE42 AVX NEON AVX_SSE4A_FMA4 X86_AVX_FMA
+
+# Select the compiled in SIMD types.
+ifneq ($(TARGET_ARCH),)
+# When no fixed SIMD architecture is specified, many will be supported and autodetected.
+ifeq ($(TARGET_ARCH), X86)
+# All types should be configured by default.
+SIMD_MODULES = dstSIMDSSE2.o dstSIMDSSE3.o dstSIMDSSSE3.o dstSIMDSSE4A.o # Add the rest.
 else
-ifeq ($(TARGET_SIMD), X86_SSE2)
-OPTCFLAGS += -msse2 -DDST_USE_SSE2
+ifeq ($(TARGET_ARCH), ARM)
+SIMD_MODULES = dstSIMDNEON.o
 endif
 endif
-ifeq ($(TARGET_SIMD), ARM_NEON)
-OPTCFLAGS +=-DDST_USE_ARM_NEON -mneon
 endif
+
+# Enforce a fixed SIMD level when indicated.
+FIXED_SIMD_TYPE =
+ifneq ($(TARGET_SIMD),)
 ifeq ($(TARGET_SIMD), NONE)
 OPTCFLAGS +=-DDST_NO_SIMD
+else
+# OPTCFLAGS += -DDST_FIXED_SIMD
+
+ifeq ($(TARGET_SIMD), X86_SSE2)
+OPTCFLAGS += -msse2
+FIXED_SIMD_TYPE = SSE2
+else
+ifeq ($(TARGET_SIMD), X86_SSE3)
+OPTCFLAGS += -msse3
+FIXED_SIMD_TYPE = SSE3
+else
+ifeq ($(TARGET_SIMD), X86_SSSE3)
+OPTCFLAGS += -mssse3
+FIXED_SIMD_TYPE = SSE3
+else
+ifeq ($(TARGET_SIMD), X86_SSE4A)
+# AMD's SSE4A does not support SSSE3.
+OPTCFLAGS += -msse4a
+FIXED_SIMD_TYPE = SSE4A
+else
+ifeq ($(TARGET_SIMD), X86_SSE41)
+OPTCFLAGS += -mssse41
+FIXED_SIMD_TYPE = SSE41
+else
+ifeq ($(TARGET_SIMD), X86_SSE42)
+OPTCFLAGS += -msse42
+FIXED_SIMD_TYPE = SSE42
+else
+ifeq ($(TARGET_SIMD), X86_AVX)
+OPTCFLAGS += -mavx
+FIXED_SIMD_TYPE = AVX
 endif
+ifeq ($(TARGET_SIMD), ARM_NEON)
+OPTCFLAGS += -mneon
+FIXED_SIMD_TYPE = NEON
+endif
+ifeq ($(TARGET_SIMD), X86_AVX_SSE4A_FMA4)
+OPTCFLAGS += -mavx -msse4a -mfma4
+FIXED_SIMD_TYPE = AVX_SSE4A_FMA4
+endif
+ifeq ($(TARGET_SIMD), X86_AVX_FMA)
+OPTCFLAGS += -mavx -mfma
+FIXED_SIMD_TYPE = AVX_FMA
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+# OPTFLAGS += -DDST_FIXED_SIMD_$(FIXED_SIMD_TYPE)
+SIMD_MODULES = dstSIMD$(FIXED_SIMD_TYPE).o
+
+endif	# TARGET_SIMD != NONE
+endif	# TARGET_SIMD != <empty>
+# When certain SIMD support is guaranteed to be available, the library will be compiled
+# as such. When DST_NO_SIMD is defined, SIMD code is excluded entirely.
+# Otherwise, SIMD support is auto-detected.
 
 # Compile time configuration definitions
 OPT_DEFINES =
@@ -92,15 +157,20 @@ endif
 
 LIBRARY_LIBS = -lpthread -lm -lc
 
-LIBRARY_CPP_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o dstSIMDDotMatrix.o \
-	dstVectorMath.o dstVectorMathSIMD.o dstMatrixMath.o dstMatrixMathSIMD.o
+LIBRARY_CPP_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o \
+	dstVectorMath.o dstMatrixMath.o dstCpuInfo.o dstDotMatrixNoSIMD.o \
+	$(SIMD_MODULES) # dstMatrixMathSIMD.o
 LIBRARY_ASM_MODULE_OBJECTS = dstARMMemset.o
 LIBRARY_MODULE_OBJECTS = $(LIBRARY_CPP_MODULE_OBJECTS) $(LIBRARY_ASM_MODULE_OBJECTS)
 LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h dstThread.h \
 	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h \
 	dstMath.h dstMemory.h \
-	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h
-TEST_PROGRAMS = test-random test-array test-simd
+	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h \
+	dstConfigParams.h
+TEST_PROGRAMS = test-random test-array
+ifneq ($(TARGET_SIMD), NONE)
+TEST_PROGRAMS += test-simd
+endif
 
 LIBRARY_PKG_CONFIG_FILE = datasetturbo.pc
 
@@ -139,7 +209,7 @@ install_static : $(LIBRARY_OBJECT)
 	install -m 0644 $(LIBRARY_OBJECT) $(STATIC_LIB_DIR)/$(LIBRARY_OBJECT)
 
 install_pkgconfig : $(LIBRARY_PKG_CONFIG_FILE)
-	install -m 0644 datasetturbo.pc $(PKG_CONFIG_INSTALL_DIR)/pkgconfig/$(LIBRARY_PKG_CONFIG_FILE) 
+	install -m 0644 datasetturbo.pc $(PKG_CONFIG_INSTALL_DIR)/pkgconfig/$(LIBRARY_PKG_CONFIG_FILE)
 
 uninstall_libs :
 	@echo Removing all versions of libdatasetturbo in /usr/lib.
@@ -158,6 +228,13 @@ test-array :  $(LIBRARY_DEPENDENCY) test-array.cpp
 
 test-simd :  $(LIBRARY_DEPENDENCY) test-simd.cpp
 	g++ $(CFLAGS_TEST) test-simd.cpp -o test-simd $(TEST_PROGRAM_LFLAGS) -lpthread -lm
+
+dstConfigParams.h : Makefile.conf Makefile
+	{ echo '// Automatically generated'; \
+	for x in $(FIXED_SIMD_TYPE); do \
+		echo '#define DST_FIXED_SIMD'; \
+		echo '#define DST_FIXED_SIMD_$(FIXED_SIMD_TYPE)'; \
+	done; } > dstConfigParams.h
 
 $(LIBRARY_PKG_CONFIG_FILE) : Makefile.conf Makefile
 	@echo Generating datasetturbo.pc.
@@ -178,11 +255,20 @@ clean :
 	rm -f $(LIBRARY_NAME)_dbg.a
 
 .cpp.o :
-	g++ -c $(CFLAGS_LIB) $< -o $@
+	@for y in $(SIMD_TYPES); do \
+		SSEMATCH=`echo $\$< | grep $$y | wc -l`;  \
+		if [ $$SSEMATCH != 0 ]; then \
+			TOLOWERCMD='tr '\''[:upper:]'\'' '\''[:lower:]'\'''; \
+			SSENAMELOWER=`echo $$y | $$TOLOWERCMD`; \
+			SSEFLAGS='-m'$$SSENAMELOWER' -DDST_SIMD_MODE_'$$y; \
+		fi; \
+	done; \
+	CMD='g++ -c '$$SSEFLAGS' $(CFLAGS_LIB) $< -o $@'; \
+	echo $$CMD; $$CMD
 
 .S.o :
-	ARM=`cat /proc/cpuinfo | grep ARMv | wc -l`; \
-if [ ARM > 0 ]; then \
+	@ARM=`cat /proc/cpuinfo | grep ARMv | wc -l`; \
+	if [ ARM > 0 ]; then \
 	THUMB=`echo | gcc -dM -E - | grep __thumb2__ | wc -l`; \
 	if [ THUMB > 0 ]; then \
 		x=$(ARM_THUMB ASSEMBLER_FLAGS); else \
@@ -195,7 +281,7 @@ dep :
 	rm -f .depend
 	make .depend
 
-.depend: Makefile.conf Makefile
+.depend: Makefile.conf Makefile dstConfigParams.h
 	g++ -MM $(patsubst %.o,%.cpp,$(LIBRARY_CPP_MODULE_OBJECTS)) >> .depend
 	g++ -MM $(patsubst %.o,%.S,$(LIBRARY_ASM_MODULE_OBJECTS)) >> .depend
         # Make sure Makefile.conf and Makefile are dependency for all modules.
