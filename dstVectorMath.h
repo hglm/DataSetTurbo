@@ -891,7 +891,7 @@ static inline Vector3D maxf(const Vector3D& V1, const Vector3D& V2) {
 // All arrays of vectors as well as resulting dot products must be aligned
 // on a 16-byte boundary.
 
-#ifdef DST_FIXED_SIMD
+#if defined(DST_FIXED_SIMD) || defined(DST_NO_SIMD)
 #define SIMD_FUNC(f) DST_FUNC_LOOKUP(f)
 #include "dstSIMDFuncs.h"
 #endif

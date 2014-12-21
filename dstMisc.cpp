@@ -148,7 +148,9 @@ void dstInit() {
 		printf("Error -- no support required SIMD extensions, aborting.\n");
 		raise(SIGABRT);
 	}
-#else	// !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
+#endif // defined(DST_FIXED_SIMD)
+
+#if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
 	// Auto-detect SIMD type.
 	dst_config.simd_type = DST_SIMD_NONE;
 	// Check availability of SIMD types from most advanced (recent) to oldest.
@@ -184,6 +186,8 @@ void dstInit() {
 #endif
 }
 
+
+#ifndef DST_NO_SIMD
 static const dstSIMDFuncs *dst_simd_funcs_table[] = {
 	&dst_simd_funcs_NoSIMD,
 #ifdef DST_SSE2_SUPPORT
@@ -237,6 +241,7 @@ static const dstSIMDFuncs *dst_simd_funcs_table[] = {
 	NULL,
 #endif
 };
+#endif
 
 void dstSetSIMDType(int simd_type) {
 #if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)

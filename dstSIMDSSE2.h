@@ -155,7 +155,19 @@ static DST_INLINE_ONLY __simd128_float simd128_load_float(const float *fp) {
 // Load non-aligned float data.
 
 static DST_INLINE_ONLY __simd128_float simd128_load_unaligned_float(const float *fp) {
-    return _mm_loadu_ps(fp);
+#if defined(__SSE3__)
+	// This is likely to be faster with SSE3.
+	// On a SSE4a platform (Phenom II), which includes SSE3, this use of these instruction
+	// seems to slightly increase performance of NX1Vector4D dot products (which uses a
+	// single unaligned load at the start of the function to the load the constant vector),
+	// while being slightly slower for Nx1Vector3D (which repeatedly uses overlapping unaligned
+	// loads). For regular dot products there is a similar but smalller difference.
+	return simd128_cast_int_float(
+		_mm_lddqu_si128((const __simd128_int *)fp)
+		);
+#else
+	return _mm_loadu_ps(fp);
+#endif
 }
 
 // Store 16-byte-aligned float data.
@@ -290,8 +302,8 @@ static DST_INLINE_ONLY __simd128_int simd128_load_int(const int *ip) {
 // Load unaligned integer data.
 
 static DST_INLINE_ONLY __simd128_int simd128_load_unaligned_int(const int *ip) {
-#ifdef __SSSE3__
-	// This is likely to be faster with SSSE3.
+#ifdef __SSE3__
+	// This is likely to be faster with SSE3.
 	return _mm_lddqu_si128((const __simd128_int *)ip);
 #else
 	return _mm_loadu_si128((const __simd128_int *)ip);

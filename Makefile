@@ -101,6 +101,7 @@ endif
 endif
 endif
 endif
+# This flag has been moved to the automatically generated file dstConfigParams.h.
 # OPTFLAGS += -DDST_FIXED_SIMD_$(FIXED_SIMD_TYPE)
 SIMD_MODULES = dstSIMD$(FIXED_SIMD_TYPE).o
 
@@ -168,9 +169,7 @@ LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h dstT
 	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h \
 	dstConfigParams.h
 TEST_PROGRAMS = test-random test-array
-ifneq ($(TARGET_SIMD), NONE)
 TEST_PROGRAMS += test-simd
-endif
 
 LIBRARY_PKG_CONFIG_FILE = datasetturbo.pc
 

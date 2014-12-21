@@ -110,7 +110,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // x86 platform.
 
-#ifndef DST_FIXED_SIMD
+#if !defined(DST_FIXED_SIMD) && !defined(DST_NO_SIMD)
 #define DST_SSE2_SUPPORT
 #define DST_SSE3_SUPPORT
 #define DST_SSSE3_SUPPORT
@@ -119,7 +119,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //#define DST_SSE42_SUPPORT
 //#define DST_AVX_SUPPORT
 //#define DST_AVX_SSE4A_FMA4_SUPPORT
-//#define DST_X86_AVX_FMA_SUPPORT
+//#define DST_AVX_FMA_SUPPORT
 #endif
 
 #ifdef DST_FIXED_SIMD
@@ -136,15 +136,22 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DST_FUNC_LOOKUP(f) f ## SSE4A
 #define DST_SSE4A_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE41)
-#define DST_FUNC_LOOKUP dst_simd_funcs_SSE41
+#define DST_FUNC_LOOKUP(f) f ## SSE41
 #define DST_SSE41_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE42)
-#define DST_FUNC_LOOKUP dst_simd_funcs_SSE42
+#define DST_FUNC_LOOKUP(f) ## SSE42
 #define DST_SSE42_SUPPORT
 #elif defined(DST_FIXED_SIMD_AVX)
-#define DST_FUNC_LOOKUP dst_simd_funcs_AVX
+#define DST_FUNC_LOOKUP(f) ## AVX
 #define DST_AVX_SUPPORT
+#elif defined(DST_FIXED_SIMD_AVX_SSE4A_FMA4)
+#define DST_FUNC_LOOKUP(f) ## AVX_SSE4A_FMA4
+#define DST_AVX_SSE4A_FMA4_SUPPORT
+#elif defined(DST_FIXED_SIMD_AVX_FMA)
+#define DST_FUNC_LOOKUP(f) ## AVX_FMA
+#define DST_AVX_FMA_SUPPORT
 #else
+
 #error Unspecified SIMD type for DST_FIXED_SIMD for x86.
 #endif
 #endif // defined(DST_FIXED_SIMD)
@@ -314,6 +321,10 @@ static DST_INLINE_ONLY bool dstCheckFlag(uint32_t flag) {
 	if (flag == DST_FLAG_SIMD_ENABLED)
 		return true;
 #endif
+#ifdef DST_NO_SIMD
+	if (flag == DST_FLAG_SIMD_ENABLED)
+		return false;
+#endif
 #if defined(DST_FIXED_SIMD_AVX) || defined(DST_AVX_SSE4A_FMA4) || defined(DST_AVX_FMA)
 	// When 256-bit SIMD is guaranteed, just return true.
 	if (flag == DST_FLAG_SIMD_256)
@@ -331,7 +342,7 @@ static DST_INLINE_ONLY bool dstCheckSIMDCPUFlag(uint32_t flag) {
 		return false;
 #endif
 #ifdef DST_FIXED_SIMD_SSE3
-	if (flags == DST_SIMD_SSE2 || flag == DST_SIMD_FLAG_SSE3)
+	if (flag == DST_SIMD_SSE2 || flag == DST_SIMD_FLAG_SSE3)
 		return true;
 	else
 		return false;
