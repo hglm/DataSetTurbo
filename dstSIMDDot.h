@@ -19,6 +19,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_SIMD_DOT_H__
 #define __DST_SIMD_DOT_H__
 
+#include "dstMath.h"
+
 // Calculate dot products of four four-component float vectors stored at f1 and f2.
 //
 // void dstCalculateFourDotProductsV4(
@@ -194,7 +196,6 @@ static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV3(const float * DS
     simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
     m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
         m_v2_z);
-
 }
 
 static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV3(
@@ -637,10 +638,10 @@ int& negative_count) {
     int count = 0;
     int i = 0;
     for (; i + 3 < n; i += 4) {
-        __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
-        __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
-        __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
-        __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
+        __simd128_float m_v1_0 = simd128_load_float(&f1[i * 3]);
+        __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
+        __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
+        __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[i * 3 + 9]);
         __simd128_float m_v1_x, m_v1_y, m_v1_z;
         simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
 	__simd128_float m_result = simd128_four_dot_products_point3_vector4_vertical_float(
@@ -663,6 +664,17 @@ int& negative_count) {
     negative_count = count;
 }
 
+// Non-SIMD helper functions for dot product calculation.
+
+static DST_INLINE_ONLY float dstDotVector3(const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2) {
+	return f1[0] * f2[0] + f1[1] * f2[1] + f1[2] * f2[2];
+}
+
+static DST_INLINE_ONLY float dstDotVector4(const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2) {
+	return f1[0] * f2[0] + f1[1] * f2[1] + f1[2] * f2[2] + f1[3] * f2[3];
+}
 
 // Determine the minimum and maximum dot product of an array of vertices with a
 // given constant vector.
@@ -673,31 +685,25 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product);
 
 static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx1V3(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
-    if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
-        __simd128_float m_v2_x = simd128_set_same_float(v2.x);
-        __simd128_float m_v2_y = simd128_set_same_float(v2.y);
-        __simd128_float m_v2_z = simd128_set_same_float(v2.z);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+        __simd128_float m_v2_x = simd128_set_same_float(f2[0]);
+        __simd128_float m_v2_y = simd128_set_same_float(f2[1]);
+        __simd128_float m_v2_z = simd128_set_same_float(f2[2]);
         __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
         __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
-        for (; i + 3 < nu_vertices; i += 4) {
-            __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-            __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-            __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-            __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-            __simd128_float m_vertex_x, m_vertex_y, m_vertex_z;
+        for (; i + 3 < n; i += 4) {
+            __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
+            __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
+            __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
+            __simd128_float m_vertex3 = simd128_load_unaligned_float(&f1[i * 3 + 9]);
+            __simd128_float m_v1_x, m_v1_y, m_v1_z;
             simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-                m_vertex_x, m_vertex_y, m_vertex_z);
-            __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot;
-            m_dot_x = simd128_mul_float(m_vertex_x, m_v2_x);
-            m_dot_y = simd128_mul_float(m_vertex_y, m_v2_y);
-            m_dot_z = simd128_mul_float(m_vertex_z, m_v2_z);
-            m_dot = simd128_add_float(
-                simd128_add_float(m_dot_x, m_dot_y), m_dot_z);
+                m_v1_x, m_v1_y, m_v1_z);
+            __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+                m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z);
             m_min_dot = simd128_min_float(m_min_dot, m_dot);
             m_max_dot = simd128_max_float(m_max_dot, m_dot);
         }
@@ -725,10 +731,9 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
         max_dot_product = - FLT_MAX;
     }
     for (; i < n; i++) {
-        min_dot_product = minf(min_dot_product, Dot(vertex[i], v2));
-        max_dot_product = maxf(max_dot_product, Dot(vertex[i], v2));
+        min_dot_product = minf(min_dot_product, dstDotVector3(&f1[i * 3], f2));
+        max_dot_product = maxf(max_dot_product, dstDotVector3(&f1[i * 3], f2));
     }
-#endif
 }
 
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4)(int n,
@@ -736,35 +741,28 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product);
 
 static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx1V4(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
-    if (((uintptr_t)vertex & 0xF) == 0) {
-        __simd128_float m_v2_x = simd128_set_same_float(v2.x);
-        __simd128_float m_v2_y = simd128_set_same_float(v2.y);
-        __simd128_float m_v2_z = simd128_set_same_float(v2.z);
-        __simd128_float m_v2_w = simd128_set_same_float(v2.w);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+	__simd128_float m_v2 = simd128_load_float(f2);
+        __simd128_float m_v2_x = simd128_replicate_float(m_v2, 0);
+        __simd128_float m_v2_y = simd128_replicate_float(m_v2, 1);
+        __simd128_float m_v2_z = simd128_replicate_float(m_v2, 2);
+        __simd128_float m_v2_w = simd128_replicate_float(m_v2, 3);
         __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
         __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
         for (; i + 3 < n; i += 4) {
-            __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-            __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-            __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-            __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-            __simd128_float m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w;
+            __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+            __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+            __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+            __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
+            __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
             simd128_transpose4to4_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-                m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w);
-            __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot_w, m_dot;
-            m_dot_x = simd128_mul_float(m_vertex_x, m_v2_x);
-            m_dot_y = simd128_mul_float(m_vertex_y, m_v2_y);
-            m_dot_z = simd128_mul_float(m_vertex_z, m_v2_z);
-            m_dot_w = simd128_mul_float(m_vertex_w, m_v2_w);
-            m_dot = simd128_add_float(
-                simd128_add_float(m_dot_x, m_dot_y),
-                simd128_add_float(m_dot_z, m_dot_w)
-                );
+                m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+	    __simd128_float m_dot = simd128_four_dot_products_vector4_vertical_float(
+		m_v1_x, m_v1_y, m_v1_z, m_v1_w,
+		m_v2_x, m_v2_y, m_v2_z, m_v2_w);
             m_min_dot = simd128_min_float(m_min_dot, m_dot);
             m_max_dot = simd128_max_float(m_max_dot, m_dot);
         }
@@ -792,10 +790,9 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
         max_dot_product = - FLT_MAX;
     }
     for (; i < n; i++) {
-        min_dot_product = minf(min_dot_product, Dot(vertex[i], v2));
-        max_dot_product = maxf(max_dot_product, Dot(vertex[i], v2));
+        min_dot_product = minf(min_dot_product, dstDotVector4(&f1[i * 4], f2));
+        max_dot_product = maxf(max_dot_product, dstDotVector4(&f1[i * 4], f2));
     }
-#endif
 }
 
 // Determine the minimum and maximum dot products of an array of vertices with three
@@ -806,55 +803,43 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product);
 
 static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx3V3(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
-    if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
-        __simd128_float m_v2_0_x = simd128_set_same_float(C[0].x);
-        __simd128_float m_v2_0_y = simd128_set_same_float(C[0].y);
-        __simd128_float m_v2_0_z = simd128_set_same_float(C[0].z);
-        __simd128_float m_v2_1_x = simd128_set_same_float(C[1].x);
-        __simd128_float m_v2_1_y = simd128_set_same_float(C[1].y);
-        __simd128_float m_v2_1_z = simd128_set_same_float(C[1].z);
-        __simd128_float m_v2_2_x = simd128_set_same_float(C[2].x);
-        __simd128_float m_v2_2_y = simd128_set_same_float(C[2].y);
-        __simd128_float m_v2_2_z = simd128_set_same_float(C[2].z);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+        __simd128_float m_v2_0_x = simd128_set_same_float(f2[0]);
+        __simd128_float m_v2_0_y = simd128_set_same_float(f2[1]);
+        __simd128_float m_v2_0_z = simd128_set_same_float(f2[2]);
+        __simd128_float m_v2_1_x = simd128_set_same_float(f2[3]);
+        __simd128_float m_v2_1_y = simd128_set_same_float(f2[4]);
+        __simd128_float m_v2_1_z = simd128_set_same_float(f2[5]);
+        __simd128_float m_v2_2_x = simd128_set_same_float(f2[6]);
+        __simd128_float m_v2_2_y = simd128_set_same_float(f2[7]);
+        __simd128_float m_v2_2_z = simd128_set_same_float(f2[8]);
         __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_min_dot_C1 = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_min_dot_C2 = simd128_set_same_float(FLT_MAX);
+        __simd128_float m_min_dot_C1 = simd128_replicate_float(m_min_dot_C0, 0);
+        __simd128_float m_min_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
         __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
-        __simd128_float m_max_dot_C1 = simd128_set_same_float(- FLT_MAX);
-        __simd128_float m_max_dot_C2 = simd128_set_same_float(- FLT_MAX);
-        for (; i + 3 < nu_vertices; i += 4) {
-            __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-            __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-            __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-            __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-            __simd128_float m_vertex_x, m_vertex_y, m_vertex_z;
+        __simd128_float m_max_dot_C1 = simd128_replicate_float(m_min_dot_C1, 0);
+        __simd128_float m_max_dot_C2 = simd128_replicate_float(m_min_dot_C1, 0);
+        for (; i + 3 < n; i += 4) {
+            __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
+            __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
+            __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
+            __simd128_float m_vertex3 = simd128_load_unaligned_float(&f1[i * 3 + 9]);
+            __simd128_float m_v1_x, m_v1_y, m_v1_z;
             simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-                m_vertex_x, m_vertex_y, m_vertex_z);
-            __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot;
-            m_dot_x = simd128_mul_float(m_vertex_x, m_v2_0_x);
-            m_dot_y = simd128_mul_float(m_vertex_y, m_v2_0_y);
-            m_dot_z = simd128_mul_float(m_vertex_z, m_v2_0_z);
-            m_dot = simd128_add_float(
-               simd128_add_float(m_dot_x, m_dot_y), m_dot_z);
+                m_v1_x, m_v1_y, m_v1_z);
+            __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_0_x, m_v2_0_y, m_v2_0_z);
             m_min_dot_C0 = simd128_min_float(m_min_dot_C0, m_dot);
             m_max_dot_C0 = simd128_max_float(m_max_dot_C0, m_dot);
-            m_dot_x = simd128_mul_float(m_vertex_x, m_v2_1_x);
-            m_dot_y = simd128_mul_float(m_vertex_y, m_v2_1_y);
-            m_dot_z = simd128_mul_float(m_vertex_z, m_v2_1_z);
-            m_dot = simd128_add_float(
-                simd128_add_float(m_dot_x, m_dot_y), m_dot_z);
+            m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_1_x, m_v2_1_y, m_v2_1_z);
             m_min_dot_C1 = simd128_min_float(m_min_dot_C1, m_dot);
             m_max_dot_C1 = simd128_max_float(m_max_dot_C1, m_dot);
-            m_dot_x = simd128_mul_float(m_vertex_x, m_v2_2_x);
-            m_dot_y = simd128_mul_float(m_vertex_y, m_v2_2_y);
-            m_dot_z = simd128_mul_float(m_vertex_z, m_v2_2_z);
-            m_dot = simd128_add_float(
-                simd128_add_float(m_dot_x, m_dot_y), m_dot_z);
+            m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_2_x, m_v2_2_y, m_v2_2_z);
             m_min_dot_C2 = simd128_min_float(m_min_dot_C2, m_dot);
             m_max_dot_C2 = simd128_max_float(m_max_dot_C2, m_dot);
         }
@@ -911,12 +896,11 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         max_dot_product[j] = - FLT_MAX;
     }
     // Process the remaining vertices.
-    for (; i < nu_vertices; i++)
+    for (; i < n; i++)
         for (int j = 0; j < 3; j++) {
-            min_dot_product[j] = minf(min_dot_product[j], Dot(vertex[i], C[j]));
-            max_dot_product[j] = maxf(max_dot_product[j], Dot(vertex[i], C[j]));
+            min_dot_product[j] = minf(min_dot_product[j], dstDotVector3(&f1[i * 3], &f2[j * 3]));
+            max_dot_product[j] = maxf(max_dot_product[j], dstDotVector3(&f1[i * 3], &f2[j * 3]));
         }
-#endif
 }
 
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V4)(int n,
@@ -924,67 +908,50 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product);
 
 static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx3V4(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
-    if (((uintptr_t)vertex & 0xF) == 0) {
-    __simd128_float m_v2_0_x = simd128_set_same_float(C[0].x);
-    __simd128_float m_v2_0_y = simd128_set_same_float(C[0].y);
-    __simd128_float m_v2_0_z = simd128_set_same_float(C[0].z);
-    __simd128_float m_v2_0_w = simd128_set_same_float(C[0].w);
-    __simd128_float m_v2_1_x = simd128_set_same_float(C[1].x);
-    __simd128_float m_v2_1_y = simd128_set_same_float(C[1].y);
-    __simd128_float m_v2_1_z = simd128_set_same_float(C[1].z);
-    __simd128_float m_v2_1_w = simd128_set_same_float(C[1].w);
-    __simd128_float m_v2_2_x = simd128_set_same_float(C[2].x);
-    __simd128_float m_v2_2_y = simd128_set_same_float(C[2].y);
-    __simd128_float m_v2_2_z = simd128_set_same_float(C[2].z);
-    __simd128_float m_v2_2_w = simd128_set_same_float(C[2].w);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+        __simd128_float m_v2_0_x = simd128_set_same_float(f2[0]);
+        __simd128_float m_v2_0_y = simd128_set_same_float(f2[1]);
+        __simd128_float m_v2_0_z = simd128_set_same_float(f2[2]);
+        __simd128_float m_v2_0_w = simd128_set_same_float(f2[3]);
+        __simd128_float m_v2_1_x = simd128_set_same_float(f2[4]);
+        __simd128_float m_v2_1_y = simd128_set_same_float(f2[5]);
+        __simd128_float m_v2_1_z = simd128_set_same_float(f2[7]);
+        __simd128_float m_v2_1_w = simd128_set_same_float(f2[7]);
+        __simd128_float m_v2_2_x = simd128_set_same_float(f2[8]);
+        __simd128_float m_v2_2_y = simd128_set_same_float(f2[9]);
+        __simd128_float m_v2_2_z = simd128_set_same_float(f2[10]);
+        __simd128_float m_v2_2_w = simd128_set_same_float(f2[11]);
+
     __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_min_dot_C1 = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_min_dot_C2 = simd128_set_same_float(FLT_MAX);
+    __simd128_float m_min_dot_C1 = simd128_replicate_float(m_min_dot_C0, 0);
+    __simd128_float m_min_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
     __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
-    __simd128_float m_max_dot_C1 = simd128_set_same_float(- FLT_MAX);
-    __simd128_float m_max_dot_C2 = simd128_set_same_float(- FLT_MAX);
-    for (; i + 3 < nu_vertices; i += 4) {
-        __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-        __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-        __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-        __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-        __simd128_float m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w;
+    __simd128_float m_max_dot_C1 = simd128_replicate_float(m_max_dot_C0, 0);
+    __simd128_float m_max_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+        __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+        __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+        __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
         simd128_transpose4to4_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-            m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w);
-        __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot_w, m_dot;
-        m_dot_x = simd128_mul_float(m_vertex_x, m_v2_0_x);
-        m_dot_y = simd128_mul_float(m_vertex_y, m_v2_0_y);
-        m_dot_z = simd128_mul_float(m_vertex_z, m_v2_0_z);
-        m_dot_w = simd128_mul_float(m_vertex_w, m_v2_0_w);
-        m_dot = simd128_add_float(
-            simd128_add_float(m_dot_x, m_dot_y),
-            simd128_add_float(m_dot_z, m_dot_w)
-            );
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+	__simd128_float m_dot = simd128_four_dot_products_vector4_vertical_float(
+		m_v1_x, m_v1_y, m_v1_z, m_v1_w,
+		m_v2_0_x, m_v2_0_y, m_v2_0_z, m_v2_0_w);
         m_min_dot_C0 = simd128_min_float(m_min_dot_C0, m_dot);
         m_max_dot_C0 = simd128_max_float(m_max_dot_C0, m_dot);
-        m_dot_x = simd128_mul_float(m_vertex_x, m_v2_1_x);
-        m_dot_y = simd128_mul_float(m_vertex_y, m_v2_1_y);
-        m_dot_z = simd128_mul_float(m_vertex_z, m_v2_1_z);
-        m_dot_w = simd128_mul_float(m_vertex_w, m_v2_1_w);
-        m_dot = simd128_add_float(
-            simd128_add_float(m_dot_x, m_dot_y),
-            simd128_add_float(m_dot_z, m_dot_w)
-            );
+        m_dot = simd128_four_dot_products_vector4_vertical_float(
+	    m_v1_x, m_v1_y, m_v1_z, m_v1_w,
+	    m_v2_1_x, m_v2_1_y, m_v2_1_z, m_v2_1_w);
         m_min_dot_C1 = simd128_min_float(m_min_dot_C1, m_dot);
         m_max_dot_C1 = simd128_max_float(m_max_dot_C1, m_dot);
-        m_dot_x = simd128_mul_float(m_vertex_x, m_v2_2_x);
-        m_dot_y = simd128_mul_float(m_vertex_y, m_v2_2_y);
-        m_dot_z = simd128_mul_float(m_vertex_z, m_v2_2_z);
-        m_dot_w = simd128_mul_float(m_vertex_w, m_v2_2_w);
-        m_dot = simd128_add_float(
-            simd128_add_float(m_dot_x, m_dot_y),
-            simd128_add_float(m_dot_z, m_dot_w)
-            );
+        m_dot = simd128_four_dot_products_vector4_vertical_float(
+	    m_v1_x, m_v1_y, m_v1_z, m_v1_w,
+	    m_v2_2_x, m_v2_2_y, m_v2_2_z, m_v2_2_w);
         m_min_dot_C2 = simd128_min_float(m_min_dot_C2, m_dot);
         m_max_dot_C2 = simd128_max_float(m_max_dot_C2, m_dot);
     }
@@ -1041,12 +1008,11 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         max_dot_product[j] = - FLT_MAX;
     }
     // Process the remaining vertices.
-    for (; i < nu_vertices; i++)
+    for (; i < n; i++)
         for (int j = 0; j < 3; j++) {
-            min_dot_product[j] = minf(min_dot_product[j], Dot(vertex[i], C[j]));
-            max_dot_product[j] = maxf(max_dot_product[j], Dot(vertex[i], C[j]));
+            min_dot_product[j] = minf(min_dot_product[j], dstDotVector4(&f1[i * 4], &f2[j * 4]));
+            max_dot_product[j] = maxf(max_dot_product[j], dstDotVector4(&f1[i * 4], &f2[j * 4]));
         }
-#endif
 }
 
 // Determine the indices within an array of vertices that have the minimum and
@@ -1057,37 +1023,31 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax);
 
 static DST_INLINE_ONLY void dstInlineGetIndicesWithMinAndMaxDotProductNx1V3(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
     float min_dot_product;
     float max_dot_product;
-    if (((uintptr_t)vertex & 0xF) == 0 && sizeof(Vector3D) == 16) {
-    __simd128_float m_v2_x = simd128_set_same_float(v2.x);
-    __simd128_float m_v2_y = simd128_set_same_float(v2.y);
-    __simd128_float m_v2_z = simd128_set_same_float(v2.z);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+    __simd128_float m_v2_x = simd128_set_same_float(f2[0]);
+    __simd128_float m_v2_y = simd128_set_same_float(f2[1]);
+    __simd128_float m_v2_z = simd128_set_same_float(f2[2]);
     __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
     __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
     __simd128_int m_min_dot_index = simd128_set_zero_int();
     __simd128_int m_max_dot_index = simd128_set_zero_int();
     // Keep track of four minimum and four maximum dot products (each representing the
     // min/max for a quarter of the vertices).
-    for (; i + 3 < nu_vertices; i += 4) {
-        __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-        __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-        __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-        __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-        __simd128_float m_vertex_x, m_vertex_y, m_vertex_z;
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
+        __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
+        __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
+        __simd128_float m_vertex3 = simd128_load_unaligned_float(&f1[i * 3 + 9]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
         simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-            m_vertex_x, m_vertex_y, m_vertex_z);
-        __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot;
-        m_dot_x = simd128_mul_float(m_vertex_x, m_v2_x);
-        m_dot_y = simd128_mul_float(m_vertex_y, m_v2_y);
-        m_dot_z = simd128_mul_float(m_vertex_z, m_v2_z);
-        m_dot = simd128_add_float(
-            simd128_add_float(m_dot_x, m_dot_y), m_dot_z);
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+            m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y, m_v2_z);
         m_min_dot = simd128_min_float(m_min_dot, m_dot);
         m_max_dot = simd128_max_float(m_max_dot, m_dot);
         // Update the index for each component for which the min or max was updated.
@@ -1132,8 +1092,8 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
         min_dot_product = FLT_MAX;
         max_dot_product = - FLT_MAX;
     }
-    for (; i < nu_vertices; i++) {
-        float dot = Dot(vertex[i], v2);
+    for (; i < n; i++) {
+        float dot = dstDotVector3(&f1[i * 3], f2);
         if (dot < min_dot_product) {
             min_dot_product = dot;
             i_Pmin = i;
@@ -1143,7 +1103,6 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
             i_Pmax = i;
         }
     }
-#endif
 }
 
 DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V4)(int n,
@@ -1151,41 +1110,34 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax);
 
 static DST_INLINE_ONLY void dstInlineGetIndicesWithMinAndMaxDotProductNx1V4(int n,
-const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
-// XXX Have to convert from Vector types to float pointers.
-#if 0
     int i = 0;
     float min_dot_product;
     float max_dot_product;
-    if (((uintptr_t)vertex & 0xF) == 0) {
-    __simd128_float m_v2_x = simd128_set_same_float(v2.x);
-    __simd128_float m_v2_y = simd128_set_same_float(v2.y);
-    __simd128_float m_v2_z = simd128_set_same_float(v2.z);
-    __simd128_float m_v2_w = simd128_set_same_float(v2.w);
+    if (((uintptr_t)f1 & 0xF) == 0) {
+    __simd128_float m_v2 = simd128_load_unaligned_float(f2);
+    __simd128_float m_v2_x = simd128_replicate_float(m_v2, 0);
+    __simd128_float m_v2_y = simd128_replicate_float(m_v2, 1);
+    __simd128_float m_v2_z = simd128_replicate_float(m_v2, 2);
+    __simd128_float m_v2_w = simd128_replicate_float(m_v2, 3);
     __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
     __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
     __simd128_int m_min_dot_index = simd128_set_zero_int();
     __simd128_int m_max_dot_index = simd128_set_zero_int();
     // Keep track of four minimum and four maximum dot products (each representing the
     // min/max for a quarter of the vertices).
-    for (; i + 3 < nu_vertices; i += 4) {
-        __simd128_float m_vertex0 = simd128_load(&vertex[i]);
-        __simd128_float m_vertex1 = simd128_load(&vertex[i + 1]);
-        __simd128_float m_vertex2 = simd128_load(&vertex[i + 2]);
-        __simd128_float m_vertex3 = simd128_load(&vertex[i + 3]);
-        __simd128_float m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w;
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+        __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+        __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+        __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z, m_v1_w;
         simd128_transpose4to4_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
-            m_vertex_x, m_vertex_y, m_vertex_z, m_vertex_w);
-       __simd128_float m_dot_x, m_dot_y, m_dot_z, m_dot_w, m_dot;
-        m_dot_x = simd128_mul_float(m_vertex_x, m_v2_x);
-        m_dot_y = simd128_mul_float(m_vertex_y, m_v2_y);
-        m_dot_z = simd128_mul_float(m_vertex_z, m_v2_z);
-        m_dot_w = simd128_mul_float(m_vertex_w, m_v2_w);
-        m_dot = simd128_add_float(
-            simd128_add_float(m_dot_x, m_dot_y),
-            simd128_add_float(m_dot_z, m_dot_w)
-            );
+            m_v1_x, m_v1_y, m_v1_z, m_v1_w);
+	__simd128_float m_dot = simd128_four_dot_products_vector4_vertical_float(
+		m_v1_x, m_v1_y, m_v1_z, m_v1_w,
+		m_v2_x, m_v2_y, m_v2_z, m_v2_w);
         m_min_dot = simd128_min_float(m_min_dot, m_dot);
         m_max_dot = simd128_max_float(m_max_dot, m_dot);
         // Update the index for each component for which the min or max was updated.
@@ -1230,8 +1182,8 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
         min_dot_product = FLT_MAX;
         max_dot_product = - FLT_MAX;
     }
-    for (; i < nu_vertices; i++) {
-        float dot = Dot(vertex[i], v2);
+    for (; i < n; i++) {
+        float dot = dstDotVector4(&f1[i * 4], f2);;
         if (dot < min_dot_product) {
             min_dot_product = dot;
             i_Pmin = i;
@@ -1241,7 +1193,6 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
             i_Pmax = i;
         }
     }
-#endif
 }
 
 #endif // defined(__DST_SIMD_DOT_H__)

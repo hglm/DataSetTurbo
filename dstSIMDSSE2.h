@@ -160,8 +160,12 @@ static DST_INLINE_ONLY __simd128_float simd128_load_unaligned_float(const float 
 	// On a SSE4a platform (Phenom II), which includes SSE3, this use of these instruction
 	// seems to slightly increase performance of NX1Vector4D dot products (which uses a
 	// single unaligned load at the start of the function to the load the constant vector),
-	// while being slightly slower for Nx1Vector3D (which repeatedly uses overlapping unaligned
+	// while being slightly slower for NxNVector3D (which repeatedly uses overlapping unaligned
 	// loads). For regular dot products there is a similar but smalller difference.
+	//
+	// For an old Intel Pentium-D processor, an early example of a processor implementing SSE3,
+	// _mm_loadu seems induce a significant performance penalty and there is a large performance
+	// improvement with the use of _mm_lddqu.
 	return simd128_cast_int_float(
 		_mm_lddqu_si128((const __simd128_int *)fp)
 		);
@@ -180,7 +184,7 @@ static DST_INLINE_ONLY void simd128_store_float(float *fp, __simd128_float s) {
 // zero bits (not 0.0f float values).
 
 static DST_INLINE_ONLY __simd128_float simd128_load_first_float(const float *fp) {
-    return _mm_load_ps(fp);
+    return _mm_load_ss(fp);
 }
 
 static DST_INLINE_ONLY void simd128_store_first_float(float *fp, __simd128_float s) {
@@ -546,7 +550,7 @@ __simd128_float s2) {
 #ifdef __SSSE3__
 
 // Combine s1 (lower 128 bits) and s2 (high 128 bits) and shift right by count bytes,
-// returing the resulting lower 128 bits.
+// returning the resulting lower 128 bits.
 
 static DST_INLINE_ONLY __simd128_int simd128_align_right_bytes_int(
 __simd128_int s1, __simd128_int s2, const int count) {
