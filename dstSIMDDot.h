@@ -257,9 +257,9 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST
 	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
 	__simd128_float m_v1_x, m_v1_y, m_v1_z;
 	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
-	__simd128_float m_v2_0 = simd128_load_float(&f1[0]);
-	__simd128_float m_v2_1 = simd128_load_float(&f1[4]);
-	__simd128_float m_v2_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+	__simd128_float m_v2_1 = simd128_load_float(&f2[4]);
+	__simd128_float m_v2_2 = simd128_load_float(&f2[8]);
 	__simd128_float m_v2_x, m_v2_y, m_v2_z;
 	simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_x, m_v2_y, m_v2_z);
 #else

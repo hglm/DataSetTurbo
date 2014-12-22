@@ -556,14 +556,14 @@ __simd128_float s2) {
 
 static DST_INLINE_ONLY __simd128_int simd128_align_right_bytes_int(
 __simd128_int s1, __simd128_int s2, const int count) {
-	return _mm_alignr_epi8(s1, s2, count);
+	return _mm_alignr_epi8(s2, s1, count);
 }
 
 static DST_INLINE_ONLY __simd128_float simd128_align_right_float(
 __simd128_float s1, __simd128_float s2, const int count) {
 	return simd128_cast_int_float(
 		_mm_alignr_epi8(
-			simd128_cast_float_int(s1), simd128_cast_float_int(s2), count * 4));
+			simd128_cast_float_int(s2), simd128_cast_float_int(s1), count * 4));
 }
 
 #endif
@@ -732,7 +732,7 @@ __simd128_float& m_result_v3) {
 static DST_INLINE_ONLY void simd128_unpack3to4_float(const __simd128_float m_v0,
 const __simd128_float m_v1, const __simd128_float m_v2,__simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2,
 __simd128_float& m_result_v3) {
-#ifdef __SSSE3__
+#if defined(__SSSE3__)
 	m_result_v0 = m_v0;
 	m_result_v1 = simd128_align_right_float(m_v0, m_v1, 3);
 	m_result_v2 = simd128_align_right_float(m_v1, m_v2, 2);
