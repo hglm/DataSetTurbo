@@ -166,6 +166,8 @@ static DST_INLINE_ONLY __simd128_float simd128_load_unaligned_float(const float 
 	// For an old Intel Pentium-D processor, an early example of a processor implementing SSE3,
 	// _mm_loadu seems induce a significant performance penalty and there is a large performance
 	// improvement with the use of _mm_lddqu.
+	//
+	// However, on an Intel Core 2 Duo with SSSE3, any kind of unaligned loads seem to be very slow.
 	return simd128_cast_int_float(
 		_mm_lddqu_si128((const __simd128_int *)fp)
 		);
@@ -730,6 +732,12 @@ __simd128_float& m_result_v3) {
 static DST_INLINE_ONLY void simd128_unpack3to4_float(const __simd128_float m_v0,
 const __simd128_float m_v1, const __simd128_float m_v2,__simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2,
 __simd128_float& m_result_v3) {
+#ifdef __SSSE3__
+	m_result_v0 = m_v0;
+	m_result_v1 = simd128_align_right_float(m_v0, m_v1, 3);
+	m_result_v2 = simd128_align_right_float(m_v1, m_v2, 2);
+	m_result_v3 = simd128_shift_right_float(m_v2, 1);
+#else
 	// m_v0 = v0[0], v0[1], v0[2], v1[0]
 	// m_v1 = v1[1], v1[2], v2[0], v2[1]
 	// m_v2 = v2[2], v3[0], v3[1], v3[2]
@@ -746,6 +754,7 @@ __simd128_float& m_result_v3) {
 	m_result_v2 = simd128_merge_float(m_v1, m_v2, 2, 3, 0, 0);
 	// result v3 = v3[0], v3[1], v3[2], 0b
 	m_result_v3 = simd128_shift_right_float(m_v2, 1);
+#endif
 }
 
 // Unpack four vectors of three floats that are stored in packed format (taking
@@ -814,7 +823,7 @@ __simd128_float& m_result_v3) {
 }
 
 // Transpose four vectors of three floats that are stored in packed format (taking
-// the space of three regular four-float vectors, and store result in four three-float vectors.
+// the space of three regular four-float vectors, and store result in three four-float vectors.
 
 static DST_INLINE_ONLY void simd128_unpack3to4_and_transpose4to3_float(const __simd128_float m_v0,
 const __simd128_float m_v1, const __simd128_float m_v2, __simd128_float& m_result_v0, __simd128_float& m_result_v1, __simd128_float& m_result_v2) {

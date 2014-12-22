@@ -16,7 +16,12 @@ ARM_ASSEMBLER_FLAGS_THUMB = -march=armv7-a -Wa,-march=armv7-a -mthumb -Wa,-mthum
 ARM_ASSEMBLER_FLAGS_NON_THUMB = 
 
 # SIMD configuration (SSE on x86, NEON on ARM).
+ifeq ($(TARGET_ARCH), X86)
 SIMD_TYPES = SSE2 SSE3 SSSE3 SSE4A # SSE41 SSE42 AVX NEON AVX_SSE4A_FMA4 X86_AVX_FMA
+endif
+ifeq ($TARGET_ARCH), ARM)
+SIMD_TYPES = NEON
+endif
 
 # Select the compiled in SIMD types.
 ifneq ($(TARGET_ARCH),)

@@ -249,6 +249,20 @@ DST_API void SIMD_FUNC(dstCalculateDotProducts4x4V3)(const float * DST_RESTRICT 
 const float * DST_RESTRICT f2, __simd128_float& result);
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+	__simd128_float m_v2_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v2_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v2_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v2_x, m_v2_y, m_v2_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_x, m_v2_y, m_v2_z);
+#else
     __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
     __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
     __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
@@ -261,6 +275,7 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST
     __simd128_float m_v2_3 = simd128_load_unaligned_float(&f2[9]);
     __simd128_float m_v2_x, m_v2_y, m_v2_z;
     simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
+#endif
     m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
         m_v2_z);
 }
@@ -381,12 +396,22 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z,
 __simd128_float& m_result) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+#else
     __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
     __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
     __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
     __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
     __simd128_float m_v1_x, m_v1_y, m_v1_z;
     simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+#endif
     m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
         m_v2_z);
 }
@@ -547,12 +572,22 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
     m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
     for (; i + 3 < n; i += 4) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+#else
         __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
         __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
         __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
         __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
         __simd128_float m_v1_x, m_v1_y, m_v1_z;
         simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+#endif
 	__simd128_float m_result = simd128_four_dot_products_point3_vector4_vertical_float(
 		m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z, m_v2_w);
         simd128_store_float(&dot[i], m_result);
@@ -642,12 +677,22 @@ int& negative_count) {
     int count = 0;
     int i = 0;
     for (; i + 3 < n; i += 4) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+#else
         __simd128_float m_v1_0 = simd128_load_float(&f1[i * 3]);
         __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
         __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
         __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[i * 3 + 9]);
         __simd128_float m_v1_x, m_v1_y, m_v1_z;
         simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+#endif
 	__simd128_float m_result = simd128_four_dot_products_point3_vector4_vertical_float(
 		m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z, m_v2_w);
         simd128_store_float(&dot[i], m_result);

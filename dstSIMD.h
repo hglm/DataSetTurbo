@@ -149,6 +149,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // Horizontal pair-wise addition instruction.
 #define SIMD_HAVE_HORIZONTAL_ADD2
 #endif
+#if defined(DST_SIMD_MODE_SSSE3) || defined (DST_FIXED_SSSE3)
+// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+#define SIMD_UNALIGNED_LOADS_EXPENSIVE
+#endif
 #if defined(__FMA4__) || defined(__FMA__) || defined(__AVX__)
 // 256-bit SIMD registers.
 #define SIMD_HAVE_256
