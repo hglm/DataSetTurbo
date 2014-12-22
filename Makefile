@@ -9,22 +9,7 @@ SO_VERSION = 0.3
 MAJOR_VERSION = 0
 
 # CFLAGS with optional tuning for CPU
-OPTCFLAGS =
-ifeq ($(TARGET_CPU), CORTEX_A7)
-OPTCFLAGS += -mcpu=cortex-a7 -mfpu=vfpv4
-endif
-ifeq ($(TARGET_CPU), CORTEX_A15)
-OPTCFLAGS += -mcpu=cortex-a15 -mfpu=vfpv4
-endif
-ifeq ($(TARGET_CPU), CORTEX_A5)
-OPTCFLAGS += -mcpu=cortex-a5
-endif
-ifeq ($(TARGET_CPU), CORTEX_A8)
-OPTCFLAGS += -mcpu=cortex-a8
-endif
-ifeq ($(TARGET_CPU), CORTEX_A9)
-OPTCFLAGS += -mcpu=cortex-a9
-endif
+OPTCFLAGS = $(TARGET_CPU_FLAGS)
 
 ARM_ASSEMBLER_FLAGS_THUMB = -march=armv7-a -Wa,-march=armv7-a -mthumb -Wa,-mthumb \
  -Wa,-mimplicit-it=always -mthumb-interwork -DCONFIG_THUMB

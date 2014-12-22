@@ -112,10 +112,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // Calculate dot products of four four-component float vectors stored at f1 and f2. Both f1 and
 // f2 must be 16-byte aligned.
 
-DST_API void SIMD_FUNC(dstCalculateFourDotProductsV4)(
+DST_API void SIMD_FUNC(dstCalculateDotProducts4x4V4)(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& result);
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V4(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
     // Loading and using transpose seems to be more efficient than set_float calls, which
     // expand to numerous instructions.
@@ -135,84 +135,20 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m
         m_v2_x, m_v2_y, m_v2_z, m_v2_w);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V4(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateFourDotProductsV4(f1, f2, m_result);
+    dstInlineCalculateDotProducts4x4V4(f1, f2, m_result);
     simd128_store_float(dot, m_result);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculate16DotProductsV4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x16V4(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    dstInlineCalculateFourDotProductsV4(&f1[0 * 16], &f2[0 * 16], &dot[0]);
-    dstInlineCalculateFourDotProductsV4(&f1[1 * 16], &f2[1 * 16], &dot[4]);
-    dstInlineCalculateFourDotProductsV4(&f1[2 * 16], &f2[2 * 16], &dot[8]);
-    dstInlineCalculateFourDotProductsV4(&f1[3 * 16], &f2[3 * 16], &dot[12]);
+    dstInlineCalculateDotProducts4x4V4(&f1[0 * 16], &f2[0 * 16], &dot[0]);
+    dstInlineCalculateDotProducts4x4V4(&f1[1 * 16], &f2[1 * 16], &dot[4]);
+    dstInlineCalculateDotProducts4x4V4(&f1[2 * 16], &f2[2 * 16], &dot[8]);
+    dstInlineCalculateDotProducts4x4V4(&f1[3 * 16], &f2[3 * 16], &dot[12]);
 }
-
-// Calculate dot products of four three-component float vectors stored at f1 and f2. The
-// vectors are assumed to be stored in 128-bit fields (the last four bytes are unused).
-// Both f1 and f2 must be 16-byte aligned.
-
-DST_API void SIMD_FUNC(dstCalculateFourDotProductsV3P)(const float * DST_RESTRICT f1,
-const float * DST_RESTRICT f2, __simd128_float& result);
-
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV3P(
-const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
-    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
-    __simd128_float m_v1_1 = simd128_load_float(&f1[4]);
-    __simd128_float m_v1_2 = simd128_load_float(&f1[8]);
-    __simd128_float m_v1_3 = simd128_load_float(&f1[12]);
-    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
-    __simd128_float m_v2_1 = simd128_load_float(&f2[4]);
-    __simd128_float m_v2_2 = simd128_load_float(&f2[8]);
-    __simd128_float m_v2_3 = simd128_load_float(&f2[12]);
-    __simd128_float m_v1_x, m_v1_y, m_v1_z;
-    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
-    __simd128_float m_v2_x, m_v2_y, m_v2_z;
-    simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
-    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
-        m_v2_z);
-}
-
-// Calculate dot products of four three-component float vectors stored at f1 and f2. The
-// vectors are assumed to be stored consecutively in packed 12-byte format.
-
-DST_API void SIMD_FUNC(dstCalculateFourDotProductsV3)(const float * DST_RESTRICT f1,
-const float * DST_RESTRICT f2, __simd128_float& result);
-
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV3(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
-    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
-    __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
-    __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
-    __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
-    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
-    __simd128_float m_v1_x, m_v1_y, m_v1_z;
-    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
-    __simd128_float m_v2_1 = simd128_load_unaligned_float(&f2[3]);
-    __simd128_float m_v2_2 = simd128_load_unaligned_float(&f2[6]);
-    __simd128_float m_v2_3 = simd128_load_unaligned_float(&f2[9]);
-    __simd128_float m_v2_x, m_v2_y, m_v2_z;
-    simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
-    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
-        m_v2_z);
-}
-
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsV3(
-const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    __simd128_float m_result;
-    dstInlineCalculateFourDotProductsV3(f1, f2, m_result);
-    simd128_store_float(dot, m_result);
-}
-
-static DST_INLINE_ONLY void dstInlineCalculate16DotProductsV3(
-const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    dstInlineCalculateFourDotProductsV3(&f1[0 * 12], &f2[0 * 12], &dot[0]);
-    dstInlineCalculateFourDotProductsV3(&f1[1 * 12], &f2[1 * 12], &dot[4]);
-    dstInlineCalculateFourDotProductsV3(&f1[2 * 12], &f2[2 * 12], &dot[8]);
-    dstInlineCalculateFourDotProductsV3(&f1[3 * 12], &f2[3 * 12], &dot[12]);
-}
-
 
 // Calculate n dot products from two arrays of n vectors with four components,
 // and store the result in an array of floats. f1, f2 and dot must all be 16-bytes aligned.
@@ -224,9 +160,9 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProductsNxNV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     int i = 0;
     for (; i + 15 < n; i += 16)
-        dstInlineCalculate16DotProductsV4(&f1[i * 4], &f2[i * 4], &dot[i]);
+        dstInlineCalculateDotProducts16x16V4(&f1[i * 4], &f2[i * 4], &dot[i]);
     for (; i + 3 < n; i += 4)
-        dstInlineCalculateFourDotProductsV4(&f1[i * 4], &f2[i * 4], &dot[i]);
+        dstInlineCalculateDotProducts4x4V4(&f1[i * 4], &f2[i * 4], &dot[i]);
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
         __simd128_float m_v2 = simd128_load_float(&f2[i * 4]);
@@ -244,18 +180,56 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
         simd128_store_first_float(&dot[i], m_result);
     }
 }
+// Calculate dot products of four three-component float vectors stored at f1 and f2. The
+// vectors are assumed to be stored padded in 128-bit fields (the last four bytes are unused).
+// Both f1 and f2 must be 16-byte aligned.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNxNV3P)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot);
 
+DST_API void SIMD_FUNC(dstCalculateDotProducts4x4V3P)(const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2, __simd128_float& result);
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3P(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
+    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+    __simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+    __simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+    __simd128_float m_v1_3 = simd128_load_float(&f1[12]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+    __simd128_float m_v2_1 = simd128_load_float(&f2[4]);
+    __simd128_float m_v2_2 = simd128_load_float(&f2[8]);
+    __simd128_float m_v2_3 = simd128_load_float(&f2[12]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z;
+    simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
+    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
+        m_v2_z);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3P(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+    __simd128_float m_result;
+    dstInlineCalculateDotProducts4x4V3P(f1, f2, m_result);
+    simd128_store_float(dot, m_result);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x16V3P(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+    dstInlineCalculateDotProducts4x4V3P(&f1[0 * 16], &f2[0 * 16], &dot[0]);
+    dstInlineCalculateDotProducts4x4V3P(&f1[1 * 16], &f2[1 * 16], &dot[4]);
+    dstInlineCalculateDotProducts4x4V3P(&f1[2 * 16], &f2[2 * 16], &dot[8]);
+    dstInlineCalculateDotProducts4x4V3P(&f1[3 * 16], &f2[3 * 16], &dot[12]);
+}
+
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsNxNV3P(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     int i = 0;
-    for (; i + 3 < n; i += 4) {
-        __simd128_float m_result;
-        dstInlineCalculateFourDotProductsV3P(&f1[i * 4], &f2[i * 4], m_result);
-        simd128_store_float(&dot[i], m_result);
-    }
+    for (; i + 15 < n; i += 16)
+        dstInlineCalculateDotProducts16x16V3P(&f1[i * 4], &f2[i * 4], &dot[i]);
+    for (; i + 3 < n; i += 4)
+        dstInlineCalculateDotProducts4x4V3P(&f1[i * 4], &f2[i * 4], &dot[i]);
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
         __simd128_float m_v2 = simd128_load_float(&f2[i * 4]);
@@ -268,6 +242,44 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
     }
 }
 
+// Calculate dot products of four three-component float vectors stored at f1 and f2. The
+// vectors are assumed to be stored consecutively in packed 12-byte format.
+
+DST_API void SIMD_FUNC(dstCalculateDotProducts4x4V3)(const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2, __simd128_float& result);
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
+    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+    __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
+    __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
+    __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+    __simd128_float m_v2_1 = simd128_load_unaligned_float(&f2[3]);
+    __simd128_float m_v2_2 = simd128_load_unaligned_float(&f2[6]);
+    __simd128_float m_v2_3 = simd128_load_unaligned_float(&f2[9]);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z;
+    simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
+    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
+        m_v2_z);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+    __simd128_float m_result;
+    dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
+    simd128_store_float(dot, m_result);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x16V3(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+    dstInlineCalculateDotProducts4x4V3(&f1[0 * 12], &f2[0 * 12], &dot[0]);
+    dstInlineCalculateDotProducts4x4V3(&f1[1 * 12], &f2[1 * 12], &dot[4]);
+    dstInlineCalculateDotProducts4x4V3(&f1[2 * 12], &f2[2 * 12], &dot[8]);
+    dstInlineCalculateDotProducts4x4V3(&f1[3 * 12], &f2[3 * 12], &dot[12]);
+}
+
 DST_API void SIMD_FUNC(dstCalculateDotProductsNxNV3)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot);
 
@@ -275,10 +287,10 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProductsNxNV3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     int i = 0;
     for (; i + 15 < n; i += 16) {
-        dstInlineCalculate16DotProductsV3(&f1[i * 3], &f2[i * 3], &dot[i]);
+        dstInlineCalculateDotProducts16x16V3(&f1[i * 3], &f2[i * 3], &dot[i]);
     }
     for (; i + 3 < n; i += 4)
-        dstInlineCalculateFourDotProductsV3(&f1[i * 3], &f2[i * 3], &dot[i]);
+        dstInlineCalculateDotProducts4x4V3(&f1[i * 3], &f2[i * 3], &dot[i]);
     for (; i < n; i++) {
         /// Note: simd128_load3_float assigns 0.0f to the w component.
         __simd128_float m_v1 = simd128_load3_float(&f1[i * 3]);
@@ -293,10 +305,10 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 }
 
 // Calculate n dot products from one array of n vectors and one single vector,
-// and store the result in an array of floats.
-// f1, f2 and dot must all be 16-bytes aligned.
+// and store the result in an array of floats. Multiple variants based on the vector
+// storage types. f1, f2 and dot must all be 16-bytes aligned.
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsNx1V4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V4(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, const __simd128_float& m_v2_w,
 __simd128_float& m_result) {
@@ -311,26 +323,26 @@ __simd128_float& m_result) {
 		m_v2_x, m_v2_y, m_v2_z, m_v2_w);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsNx1V4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V4(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, const __simd128_float& m_v2_w,
 float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateFourDotProductsNx1V4(f1, m_v2_x, m_v2_y, m_v2_z,
+    dstInlineCalculateDotProducts4x1V4(f1, m_v2_x, m_v2_y, m_v2_z,
         m_v2_w, m_result);
     simd128_store_float(dot, m_result);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculate16DotProductsNx1V4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x1V4(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float& m_v2_z, const __simd128_float& m_v2_w, float * DST_RESTRICT dot) {
-        dstInlineCalculateFourDotProductsNx1V4(&f1[0 * 16], m_v2_x, m_v2_y, m_v2_z,
+        dstInlineCalculateDotProducts4x1V4(&f1[0 * 16], m_v2_x, m_v2_y, m_v2_z,
             m_v2_w, &dot[0]);
-        dstInlineCalculateFourDotProductsNx1V4(&f1[1 * 16], m_v2_x, m_v2_y, m_v2_z,
+        dstInlineCalculateDotProducts4x1V4(&f1[1 * 16], m_v2_x, m_v2_y, m_v2_z,
             m_v2_w, &dot[4]);
-        dstInlineCalculateFourDotProductsNx1V4(&f1[2 * 16], m_v2_x, m_v2_y, m_v2_z,
+        dstInlineCalculateDotProducts4x1V4(&f1[2 * 16], m_v2_x, m_v2_y, m_v2_z,
             m_v2_w, &dot[8]);
-        dstInlineCalculateFourDotProductsNx1V4(&f1[3 * 16], m_v2_x, m_v2_y, m_v2_z,
+        dstInlineCalculateDotProducts4x1V4(&f1[3 * 16], m_v2_x, m_v2_y, m_v2_z,
             m_v2_w, &dot[12]);
 }
 
@@ -347,10 +359,10 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
     m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
     for (; i + 15 < n; i += 16)
-        dstInlineCalculate16DotProductsNx1V4(&f1[i * 4], m_v2_x, m_v2_y, m_v2_z, m_v2_w,
+        dstInlineCalculateDotProducts16x1V4(&f1[i * 4], m_v2_x, m_v2_y, m_v2_z, m_v2_w,
             &dot[i]);
     for (; i + 3 < n; i += 4)
-        dstInlineCalculateFourDotProductsNx1V4(&f1[i * 4], m_v2_x, m_v2_y, m_v2_z, m_v2_w,
+        dstInlineCalculateDotProducts4x1V4(&f1[i * 4], m_v2_x, m_v2_y, m_v2_z, m_v2_w,
             &dot[i]);
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load_float(&f1[i * 4]);
@@ -365,7 +377,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 // When vectors of three floats are stored in packed format, simd128_load3_float
 // will make sure the fourth component of the SIMD register is set to 0.0f.
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsNx1V3(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z,
 __simd128_float& m_result) {
@@ -379,25 +391,25 @@ __simd128_float& m_result) {
         m_v2_z);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateFourDotProductsNx1V3(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateFourDotProductsNx1V3(f1, m_v2_x, m_v2_y, m_v2_z,
+    dstInlineCalculateDotProducts4x1V3(f1, m_v2_x, m_v2_y, m_v2_z,
         m_result);
     simd128_store_float(dot, m_result);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculate16DotProductsNx1V3(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float& m_v2_z, float * DST_RESTRICT dot) {
-        dstInlineCalculateFourDotProductsNx1V3(&f1[0 * 12],
+        dstInlineCalculateDotProducts4x1V3(&f1[0 * 12],
 		m_v2_x, m_v2_y, m_v2_z, &dot[0]);
-        dstInlineCalculateFourDotProductsNx1V3(&f1[1 * 12],
+        dstInlineCalculateDotProducts4x1V3(&f1[1 * 12],
 		m_v2_x, m_v2_y, m_v2_z, &dot[4]);
-        dstInlineCalculateFourDotProductsNx1V3(&f1[2 * 12],
+        dstInlineCalculateDotProducts4x1V3(&f1[2 * 12],
 		m_v2_x, m_v2_y, m_v2_z, &dot[8]);
-        dstInlineCalculateFourDotProductsNx1V3(&f1[3 * 12],
+        dstInlineCalculateDotProducts4x1V3(&f1[3 * 12],
 		m_v2_x, m_v2_y, m_v2_z, &dot[12]);
 }
 
@@ -412,10 +424,10 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
     m_v2_z = simd128_replicate_float(m_v2, 2);
     int i = 0;
     for (; i + 15 < n; i += 16)
-        dstInlineCalculate16DotProductsNx1V3(&f1[i * 3],
+        dstInlineCalculateDotProducts16x1V3(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, &dot[i]);
     for (; i + 3 < n; i += 4)
-        dstInlineCalculateFourDotProductsNx1V3(&f1[i * 3],
+        dstInlineCalculateDotProducts4x1V3(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, &dot[i]);
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load3_float(&f1[i * 3]);
@@ -437,7 +449,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 // When vectors of three floats are stored in 16-byte aligned format,
 // simd128_load_float can be used but the fourth element of the SIMD register
 // needs to be initialized with 0.0f (v2 only).
-// f1, f2 and dot must all be 16-bytes aligned.
+// f1 and dot must be 16-bytes aligned.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNx1V3PV3)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot);
@@ -471,22 +483,14 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsNx1V3PV3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     __simd128_float m_v2 = simd128_load3_float(f2);
-    // The w component as loaded is undefined.
-    // Set w to 0.0f.
-    __simd128_float m_zeros = simd128_set_zero_float();
-    __simd128_int m_mask_012x = simd128_shift_right_bytes_int(
-        simd128_set_same_int32(0xFFFFFFFF), 4);
-    m_v2 = simd128_cast_int_float(simd128_or_int(
-        simd128_and_int(m_mask_012x, simd128_cast_float_int(m_v2)),
-        simd128_andnot_int(m_mask_012x, simd128_cast_float_int(m_zeros))
-        ));
+    // The w component as loaded has been set to 0.0f.
     dstInlineCalculateDotProductsNx1V3PV3(n, f1, m_v2, dot);
 }
 
 // The array of vectors is an array of points with implicit w coordinate of 1.0f,
 // and is stored aligned on 16-byte boundaries. The constant vector has four
 // components.
-// f1, f2 and dot must all be 16-bytes aligned.
+// f1 and dot must all be 16-bytes aligned.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNx1P3PV4)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot);
@@ -522,13 +526,13 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsNx1P3PV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    __simd128_float m_v2 = simd128_load_float(f2);
+    __simd128_float m_v2 = simd128_load_unaligned_float(f2);
     dstInlineCalculateDotProductsNx1P3PV4(n, f1, m_v2, dot);
 }
 
 // The array of vectors is an array of points with implicit w coordinate of 1.0f,
 // and is stored unaligned on 12-byte boundaries (but starting on a 16-byte boundary).
-// The constant vector has four components. f1, f2 and dot must be 16-bytes aligned.
+// The constant vector has four components. f1 and dot must be 16-bytes aligned.
 
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNx1P3V4)(int n,
@@ -565,14 +569,14 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsNx1P3V4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    __simd128_float m_v2 = simd128_load_float(f2);
+    __simd128_float m_v2 = simd128_load_unaligned_float(f2);
     dstInlineCalculateDotProductsNx1P3V4(n, f1, m_v2, dot);
 }
 
 // Calculate n dot products from one array of n point vectors stored on 16-byte
 // boundaries and one single four-element vector, store the result in an array of
 // floats, and count the number of dot products that is smaller than zero.
-// f1, f2 and dot must all be 16-bytes aligned.
+// f1 and dot must both be 16-bytes aligned.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(
 int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot,
@@ -581,7 +585,7 @@ int& negative_count);
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsAndCountNegativeNx1P3PV4(
 int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot,
 int& negative_count) {
-    __simd128_float m_v2 = simd128_load_float(f2);
+    __simd128_float m_v2 = simd128_load_unaligned_float(f2);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
     m_v2_x = simd128_replicate_float(m_v2, 0);
     m_v2_y = simd128_replicate_float(m_v2, 1);
@@ -619,7 +623,7 @@ int& negative_count) {
 
 // Similar to the previous function, but the point vectors are packed at 12-byte
 // boundaries.
-// f1, f2 and dot must be 16-bytes aligned.
+// f1 and dot must be 16-bytes aligned.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3V4)(
 int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot,
@@ -628,7 +632,7 @@ int& negative_count);
 static DST_INLINE_ONLY void dstInlineCalculateDotProductsAndCountNegativeNx1P3V4(
 int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot,
 int& negative_count) {
-    __simd128_float m_v2 = simd128_load_float(f2);
+    __simd128_float m_v2 = simd128_load_unaligned_float(f2);
     __simd128_float m_v2_x, m_v2_y, m_v2_z, m_v2_w;
     m_v2_x = simd128_replicate_float(m_v2, 0);
     m_v2_y = simd128_replicate_float(m_v2, 1);
@@ -745,7 +749,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
     int i = 0;
     if (((uintptr_t)f1 & 0xF) == 0) {
-	__simd128_float m_v2 = simd128_load_float(f2);
+	__simd128_float m_v2 = simd128_load_unaligned_float(f2);
         __simd128_float m_v2_x = simd128_replicate_float(m_v2, 0);
         __simd128_float m_v2_y = simd128_replicate_float(m_v2, 1);
         __simd128_float m_v2_z = simd128_replicate_float(m_v2, 2);

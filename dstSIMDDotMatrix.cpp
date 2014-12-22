@@ -50,17 +50,17 @@ const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
 
 void SIMD_FUNC(dstCalculateFourDotProductsV4)(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
-	dstInlineCalculateFourDotProductsV4(f1, f2, m_result);
+	dstInlineCalculateDotProducts4x4V4(f1, f2, m_result);
 }
 
-void SIMD_FUNC(dstCalculateFourDotProductsV3P)(const float * DST_RESTRICT f1,
+void SIMD_FUNC(dstCalculateDotProducts4x4V3P)(const float * DST_RESTRICT f1,
 const float * DST_RESTRICT f2, __simd128_float& m_result) {
-	dstInlineCalculateFourDotProductsV3P(f1, f2, m_result);
+	dstInlineCalculateDotProducts4x4V3P(f1, f2, m_result);
 }
 
-void SIMD_FUNC(dstCalculateFourDotProductsV3)(const float * DST_RESTRICT f1,
+void SIMD_FUNC(dstCalculateDotProducts4x4V3)(const float * DST_RESTRICT f1,
 const float * DST_RESTRICT f2, __simd128_float& m_result) {
-	dstInlineCalculateFourDotProductsV3(f1, f2, m_result);
+	dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
 }
 
 // Dot products (NxN).

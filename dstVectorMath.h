@@ -896,7 +896,8 @@ static inline Vector3D maxf(const Vector3D& V1, const Vector3D& V2) {
 #include "dstSIMDFuncs.h"
 #endif
 
-// Calculate an array of dot products.
+// Calculate an array of dot products. v1, v2 and dot must be aligned on a 16-byte
+// boundary.
 
 template <class T>
 DST_INLINE_ONLY void dstCalculateDotProductsNxN(int n, const T * DST_RESTRICT v1,
@@ -912,7 +913,8 @@ const T * DST_RESTRICT v2, float * DST_RESTRICT dot) {
 			(const float *)v1, (const float *)v2, dot);
 }
 
-// Calculate array of dot products of vector array v1 with vector v2.
+// Calculate array of dot products of vector array v1 with vector v2. v1 and dot
+// must be aligned on a 16-byte boundary.
 
 template <class T, class U>
 DST_INLINE_ONLY void dstCalculateDotProductsNx1(int n,
@@ -946,8 +948,9 @@ const T * DST_RESTRICT v1, const U& DST_RESTRICT v2, float * DST_RESTRICT dot) {
 				(const float *)v1, (const float *)&v2, dot);
 }
 
-// Calculate array of dot products of point vector array v1 with constant vector v2,
-// and count the number of dot products < 0.
+// Calculate array of dot products of point vector array p1 with constant vector v2,
+// and count the number of dot products < 0. p1 must be aligned on a 16-byte
+// boundary.
 
 DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1(
 int n, const Point3D * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
@@ -964,7 +967,7 @@ float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
 }
 
 // Determine the minimum and maximum dot product of an array of vertices with a
-// given constant vector.
+// given constant vector. v1 must be aligned on a 16-byte boundary.
 
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
 const Vector3D * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
@@ -981,7 +984,7 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 }
 
 // Determine the minimum and maximum dot products of an array of vertices with three
-// constant vectors.
+// constant vectors. v1 must be aligned on a 16-byte boundary.
 
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx3(int n,
 const Vector3D * DST_RESTRICT v1, const Vector3D * DST_RESTRICT v2,
@@ -998,7 +1001,8 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
 }
 
 // Determine the indices within an array of vertices that have the minimum and
-// maximum dot product with a given constant vector.
+// maximum dot product with a given constant vector. v1 must be aligned on a 16-byte
+// boundary.
 
 DST_INLINE_ONLY void dstGetIndicesWithMinAndMaxDotProductNx1(int n,
 const Vector3D * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
