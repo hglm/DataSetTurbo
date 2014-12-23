@@ -22,7 +22,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "dstMatrixMath.h"
 #include "dstSIMD.h"
 
-// Non-inline member funtions for Matrix3D, Matrix4D and MatrixTransform classes,
+// Non-inline member funtions for Matrix3D, Matrix4D and Matrix4x3RM classes,
 // in that order. This is all C++ code, when SIMD can be taken advantage of the following
 // matrix multiplication functions are excluded and will be defined in serMatrixMathSIMD.cpp
 // instead:
@@ -356,7 +356,7 @@ Matrix4D::Matrix4D(float n00, float n01, float n02, float n03, float n10, float 
 	Set(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23, n30, n31, n32, n33);
 }
 
-Matrix4D::Matrix4D(const MatrixTransform& m) {
+Matrix4D::Matrix4D(const Matrix4x3RM& m) {
 	Set(m.GetColumn(0), m.GetColumn(1), m.GetColumn(2), m.GetColumn(3));
 }
 
@@ -756,13 +756,13 @@ Matrix4D Transpose(const Matrix4D& m)
 }
 
 
-// MatrixTransform class
+// Matrix4x3RM class
 
-// MatrixTransform class. Transform matrices are zero in row 3 at n30, n31 and n32 and
+// Matrix4x3RM class. Transform matrices are zero in row 3 at n30, n31 and n32 and
 // 1.0 at n33. Unlike other matrices, they are stored in row-major formated. They
 // have to be transposed when uploaded as a shader uniform.
 
-MatrixTransform& MatrixTransform::Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
+Matrix4x3RM& Matrix4x3RM::Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
 {
 	n[0][0] = n00;
 	n[0][1] = n01;
@@ -781,23 +781,23 @@ MatrixTransform& MatrixTransform::Set(float n00, float n01, float n02, float n03
 
 // Set columns.
 
-MatrixTransform& MatrixTransform::Set(const Vector3D& c1, const Vector3D& c2,
+Matrix4x3RM& Matrix4x3RM::Set(const Vector3D& c1, const Vector3D& c2,
 const Vector3D& c3, const Vector3D& c4) {
 	return Set(c1.x, c2.x, c3.x, c4.x, c1.y, c2.y, c3.y, c4.y, c1.z, c2.z, c3.z, c4.z);
 }
 
-MatrixTransform::MatrixTransform(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3,
+Matrix4x3RM::Matrix4x3RM(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3,
 const Vector3D& c4)
 {
 	Set(c1, c2, c3, c4);
 }
 
-MatrixTransform::MatrixTransform(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
+Matrix4x3RM::Matrix4x3RM(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
 {
 	Set(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23);
 }
 
-MatrixTransform& MatrixTransform::SetIdentity(void)
+Matrix4x3RM& Matrix4x3RM::SetIdentity(void)
 {
 	n[0][0] = n[1][1] = n[2][2]  = 1.0F;
 	n[0][1] = n[0][2] = n[0][3] = n[1][0] = n[1][2] = n[1][3] = n[2][0] = n[2][1] =
@@ -805,42 +805,42 @@ MatrixTransform& MatrixTransform::SetIdentity(void)
 	return (*this);
 }
 
-MatrixTransform& MatrixTransform::AssignRotationAlongXAxis(float angle) {
+Matrix4x3RM& Matrix4x3RM::AssignRotationAlongXAxis(float angle) {
         Set(1, 0, 0, 0,
 	    0, cosf(angle), - sinf(angle), 0,
             0, sinf(angle), cosf(angle), 0);
 	return (*this);
 }
 
-MatrixTransform& MatrixTransform::AssignRotationAlongYAxis(float angle) {
+Matrix4x3RM& Matrix4x3RM::AssignRotationAlongYAxis(float angle) {
     Set(cosf(angle), 0, sinf(angle), 0,
         0, 1, 0, 0,
         - sinf(angle), 0, cosf(angle), 0);
 	return (*this);
 }
 
-MatrixTransform& MatrixTransform::AssignRotationAlongZAxis(float angle) {
+Matrix4x3RM& Matrix4x3RM::AssignRotationAlongZAxis(float angle) {
 	Set(cosf(angle), - sinf(angle), 0, 0,
             sinf(angle), cosf(angle), 0, 0,
             0, 0, 1, 0);
     return (*this);
 }
 
-MatrixTransform& MatrixTransform::AssignTranslation(const Vector3D& translation) {
+Matrix4x3RM& Matrix4x3RM::AssignTranslation(const Vector3D& translation) {
     Set(1, 0, 0, translation.x,
         0, 1, 0, translation.y,
         0, 0, 1, translation.z);
     return (*this);
 }
 
-MatrixTransform& MatrixTransform::AssignScaling(float scaling) {
+Matrix4x3RM& Matrix4x3RM::AssignScaling(float scaling) {
     Set(scaling, 0, 0, 0,
         0, scaling, 0, 0,
         0, 0, scaling, 0);
     return (*this);
 }
 
-MatrixTransform& MatrixTransform::operator *=(const MatrixTransform& __restrict__ m) __restrict__
+Matrix4x3RM& Matrix4x3RM::operator *=(const Matrix4x3RM& __restrict__ m) __restrict__
 {
 	float x = Get(0, 0);
 	float y = Get(1, 0);
@@ -874,10 +874,10 @@ MatrixTransform& MatrixTransform::operator *=(const MatrixTransform& __restrict_
 
 #ifndef DST_USE_SIMD
 
-MatrixTransform operator *(const MatrixTransform& __restrict__ m1,
-const MatrixTransform& __restrict__ m2) {
+Matrix4x3RM operator *(const Matrix4x3RM& __restrict__ m1,
+const Matrix4x3RM& __restrict__ m2) {
     return
-        MatrixTransform(
+        Matrix4x3RM(
             m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
             m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
             m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
@@ -892,7 +892,7 @@ const MatrixTransform& __restrict__ m2) {
             m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) + m1.Get(3, 2));
 }
 
-Matrix4D operator *(const Matrix4D& __restrict__ m1, const MatrixTransform& __restrict__ m2)
+Matrix4D operator *(const Matrix4D& __restrict__ m1, const Matrix4x3RM& __restrict__ m2)
 {
     return
         Matrix4D(m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
@@ -915,7 +915,7 @@ Matrix4D operator *(const Matrix4D& __restrict__ m1, const MatrixTransform& __re
 
 #endif
 
-Vector4D operator *(const MatrixTransform&  __restrict__ m, const Vector4D& __restrict__ v)
+Vector4D operator *(const Matrix4x3RM&  __restrict__ m, const Vector4D& __restrict__ v)
 {
     return Vector4D(
         m.Get(0, 0) * v.x + m.Get(1, 0) * v.y + m.Get(2, 0) * v.z + m.Get(3, 0) * v.w,
@@ -924,7 +924,7 @@ Vector4D operator *(const MatrixTransform&  __restrict__ m, const Vector4D& __re
         v.w);
 }
 
-Vector4D operator *(const MatrixTransform& __restrict__ m, const Vector3D& __restrict__ v)
+Vector4D operator *(const Matrix4x3RM& __restrict__ m, const Vector3D& __restrict__ v)
 {
     return Vector4D(
         m.Get(0, 0) * v.x + m.Get(1, 0) * v.y + m.Get(2, 0) * v.z,
@@ -933,7 +933,7 @@ Vector4D operator *(const MatrixTransform& __restrict__ m, const Vector3D& __res
         0.0f);
 }
 
-Vector4D operator *(const MatrixTransform& __restrict__ m, const Point3D& __restrict__ p)
+Vector4D operator *(const Matrix4x3RM& __restrict__ m, const Point3D& __restrict__ p)
 {
     return Vector4D(
         m.Get(0, 0) * p.x + m.Get(1, 0) * p.y + m.Get(2, 0) * p.z + m.Get(3, 0),
@@ -943,7 +943,7 @@ Vector4D operator *(const MatrixTransform& __restrict__ m, const Point3D& __rest
 }
 
 
-bool operator ==(const MatrixTransform& m1, const MatrixTransform& m2)
+bool operator ==(const Matrix4x3RM& m1, const Matrix4x3RM& m2)
 {
     return ((m1.Get(0, 0) == m2.Get(0, 0)) && (m1.Get(0, 1) == m2.Get(0, 1)) &&
         (m1.Get(0, 2) == m2.Get(0, 2)) && (m1.Get(1, 0) == m2.Get(1, 0)) &&
@@ -953,7 +953,7 @@ bool operator ==(const MatrixTransform& m1, const MatrixTransform& m2)
         (m1.Get(3, 1) == m2.Get(3, 1)) && (m1.Get(3, 2) == m2.Get(3, 2)));
 }
 
-bool operator !=(const MatrixTransform& m1, const MatrixTransform& m2)
+bool operator !=(const Matrix4x3RM& m1, const Matrix4x3RM& m2)
 {
     return ((m1.Get(0, 0) != m2.Get(0, 0)) || (m1.Get(0, 1) != m2.Get(0, 1)) ||
         (m1.Get(0, 2) != m2.Get(0, 2)) || (m1.Get(1, 0) != m2.Get(1, 0)) ||
@@ -963,13 +963,13 @@ bool operator !=(const MatrixTransform& m1, const MatrixTransform& m2)
         (m1.Get(3, 1) != m2.Get(3, 1)) || (m1.Get(3, 2) != m2.Get(3, 2)));
 }
 
-Matrix4D Inverse(const MatrixTransform& m)
+Matrix4D Inverse(const Matrix4x3RM& m)
 {
 	Matrix4D m2 = Matrix4D(m);
 	return Inverse(m2);
 }
 
-Matrix4D Transpose(const MatrixTransform& m)
+Matrix4D Transpose(const Matrix4x3RM& m)
 {
 	return (Matrix4D(m(0,0), m(1,0), m(2,0), 0.0f,
 		m(0,1), m(1,1), m(2,1), 0.0f,
@@ -1021,9 +1021,9 @@ char *Matrix4D::GetString() const {
     return s;
 }
 
-char *MatrixTransform::GetString() const {
+char *Matrix4x3RM::GetString() const {
     char *s = new char[256];
-    sprintf(s, "MatrixTransform( ");
+    sprintf(s, "Matrix4x3RM( ");
     for (int i = 0; i < 4; i++) {
         Vector4D V;
         if (i < 3)

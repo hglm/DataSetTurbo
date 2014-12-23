@@ -36,14 +36,27 @@ const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
     dstInlineMatrixMultiply4x4CM(m1, m2, m3);
 }
 
-void SIMD_FUNC(dstMatrixMultiply4x4RM)(const float * DST_RESTRICT m1,
+void SIMD_FUNC(dstMatrixMultiply4x3RM)(const float * DST_RESTRICT m1,
 const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
-    dstInlineMatrixMultiply4x4RM(m1, m2, m3);
+    dstInlineMatrixMultiply4x3RM(m1, m2, m3);
 }
 
-void SIMD_FUNC(dstMatrixMultiply4x4CM_4x3RM)(const float * DST_RESTRICT m1,
+void SIMD_FUNC(dstMatrixMultiply4x4CM4x3RM)(const float * DST_RESTRICT m1,
 const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
-    dstInlineMatrixMultiply4x4CM_4x3RM(m1, m2, m3);
+    dstInlineMatrixMultiply4x4CM4x3RM(m1, m2, m3);
+}
+
+
+// Multiply matrix with vectors.
+
+void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float * DST_RESTRICT m,
+const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m, v, v_result);
+}
+
+void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float * DST_RESTRICT m,
+const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	dstInlineMatrixMultiplyVectors1xNM4x4CMV4(n, m, v, v_result);
 }
 
 // Dot products (4x4).

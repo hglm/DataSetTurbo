@@ -264,6 +264,14 @@ public :
 		const float *v2, int& i_Pmin, int& i_Pmax);
 	void (*dstGetIndicesWithMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 		const float *v2, int& i_Pmin, int& i_Pmax);
+
+	// Matrix mutiplication.	
+	void (*dstMatrixMultiply4x4CM)(const float *f1, const float *f2, float *f3);
+	void (*dstMatrixMultiply4x3RM)(const float *f1, const float *f2, float *f3);
+	void (*dstMatrixMultiply4x4CM4x3RM)(const float *f1, const float *f2, float *f3);
+
+	void (*dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v, float *v_result);
+	void (*dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float *m, const float *v, float *v_result);
 };
 
 extern const dstSIMDFuncs dst_simd_funcs_NoSIMD;

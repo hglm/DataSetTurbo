@@ -77,11 +77,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // SIMD 4x4 float matrix multiplication for matrices in column-major order.
 // Requires 16-byte alignment of the matrices.
 
-void SIMD_FUNC(dstMatrixMultiply4x4CM)(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3);
+DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM)(const float * DST_RESTRICT m1,
+const float * DST_RESTRICT m2, float * DST_RESTRICT m3);
 
-static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3) {
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM(const float * DST_RESTRICT m1,
+const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
     // m.n[column][row]
     // First value (row = 0, column = 0):
     // m1.n[0][0] * m2.n[0][0] + m1.n[1][0] * m2.n[0][1] +
@@ -119,14 +119,14 @@ const float * __restrict__ m2, float * __restrict m3) {
     }
 }
 
-// Multiply 4x3 (4 rows, 3 rows) matrices in row-major order. The fourth
+// Multiply 4x3 (3 rows, 4 columns) matrices in row-major order. The fourth
 // row is implicitly defined as (0.0f, 0.0f, 0.0f, 1.0f).
 
-void SIMD_FUNC(dstMatrixMultiply4x4RM)(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3);
+void SIMD_FUNC(dstMatrixMultiply4x3RM)(const float * DST_RESTRICT m1,
+const float * DST_RESTRICT m2, float * DST_RESTRICT m3);
 
-static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4RM(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3) {
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x3RM(const float * DST_RESTRICT m1,
+const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
     __simd128_float row0 = simd128_load_float(&m2[0]);
     __simd128_float row1 = simd128_load_float(&m2[4]);
     __simd128_float row2 = simd128_load_float(&m2[8]);
@@ -155,11 +155,11 @@ const float * __restrict__ m2, float * __restrict m3) {
 // Multiply 4x4 (column-major) and 4x3 (4 rows, 3 rows, row-major order) matrices.
 // The fourth row of the 4x3 matrix is implicitly defined as (0.0f, 0.0f, 0.0f, 1.0f).
 
-void SIMD_FUNC(dstMatrixMultiply4x4CM_4x3RM)(const float * __restrict m1,
-const float * __restrict__ m2, float * __restrict m3);
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors4x4CM4x3RM)(const float * DST_RESTRICT m1,
+const float * DST_RESTRICT m2, float * DST_RESTRICT m3);
 
-static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM_4x3RM(
-const float * __restrict m1, const float * __restrict__ m2, float * __restrict m3) {
+static DST_INLINE_ONLY void dstInlineMatrixMultiply4x4CM4x3RM(
+const float * DST_RESTRICT m1, const float * DST_RESTRICT m2, float * DST_RESTRICT m3) {
     __simd128_float col0 = simd128_load_float(&m1[0]);
     __simd128_float col1 = simd128_load_float(&m1[4]);
     __simd128_float col2 = simd128_load_float(&m1[8]);
@@ -196,6 +196,111 @@ const float * __restrict m1, const float * __restrict__ m2, float * __restrict m
             col3)
         );
     simd128_store_float(&m3[3 * 4], result_col3);
+}
+
+// Multiply a single matrix with an array of vertices.
+
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float * DST_RESTRICT m,
+float * DST_RESTRICT v, float * DST_RESTRICT v_result);
+
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float * DST_RESTRICT m,
+float * DST_RESTRICT v, float * DST_RESTRICT v_result);
+
+static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
+__simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2, __simd128_float m_row3,
+const float *v, __simd128_float& m_result_0, __simd128_float& m_result_1, __simd128_float& m_result_2,
+__simd128_float& m_result_3) {
+    // Load four vectors and transpose so that all similar coordinates are
+    // stored in a single vector.
+    __simd128_float m_v_x = simd128_load_float(&v[0]);
+    __simd128_float m_v_y = simd128_load_float(&v[4]);
+    __simd128_float m_v_z = simd128_load_float(&v[8]);
+    __simd128_float m_v_w = simd128_load_float(&v[12]);
+    simd128_transpose4_float(m_v_x, m_v_y, m_v_z, m_v_w);
+    __simd128_float m_mul0, m_mul1, m_mul2, m_mul3;
+    // Process the x coordinates.
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row0, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row0, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row0, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row0, 3), m_v_w);
+    __simd128_float m_result_x =
+        simd128_add_float(
+            simd128_add_float(m_mul0, m_mul1),
+            simd128_add_float(m_mul2, m_mul3));
+    // Process the y coordinates.
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row1, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row1, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row1, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row1, 3), m_v_w);
+    __simd128_float m_result_y =
+        simd128_add_float(
+            simd128_add_float(m_mul0, m_mul1),
+            simd128_add_float(m_mul2, m_mul3));
+    // Process the z coordinates.
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row2, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row2, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row2, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row2, 3), m_v_w);
+    __simd128_float m_result_z =
+        simd128_add_float(
+            simd128_add_float(m_mul0, m_mul1),
+            simd128_add_float(m_mul2, m_mul3));
+    // Process the w coordinates.
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row3, 0), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row3, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row3, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row3, 3), m_v_w);
+    __simd128_float m_result_w =
+        simd128_add_float(
+            simd128_add_float(m_mul0, m_mul1),
+            simd128_add_float(m_mul2, m_mul3));
+    // Transpose results so that each vector holds multiplication product.
+    simd128_transpose4to4_float(m_result_x, m_result_y, m_result_z, m_result_w,
+        m_result_0, m_result_1, m_result_2, m_result_3); 
+}
+
+static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
+__simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2, __simd128_float m_row3,
+const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	__simd128_float m_result_0, m_result_1, m_result_2, m_result_3;
+	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3, v,
+		m_result_0, m_result_1, m_result_2, m_result_3);
+	// Store the results.
+	simd128_store_float(&v_result[0], m_result_0);
+	simd128_store_float(&v_result[4], m_result_1);
+	simd128_store_float(&v_result[8], m_result_2);
+	simd128_store_float(&v_result[12], m_result_3);
+}
+
+static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	__simd128_float m_row0, m_row1, m_row2, m_row3;
+        m_row0 = simd128_load_float(&v[0]);
+        m_row1 = simd128_load_float(&v[4]);
+        m_row2 = simd128_load_float(&v[8]);
+        m_row3 = simd128_load_float(&v[12]);
+	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3,
+		v, v_result);
+}
+
+static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1xNM4x4CMV4(int n,
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	__simd128_float m_row0, m_row1, m_row2, m_row3;
+        m_row0 = simd128_load_float(&v[0]);
+        m_row1 = simd128_load_float(&v[4]);
+        m_row2 = simd128_load_float(&v[8]);
+        m_row3 = simd128_load_float(&v[12]);
+	int i = 0;
+	for (; i + 3 < n; i += 4)
+		dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3,
+			&v[i * 4], &v_result[i * 4]);
+	for (; i < n; i++) {
+	 	   __simd128_float m_v = simd128_load_float(&v[i * 4]);
+		__simd128_float m_result;
+		simd128_multiply_matrix4x4_vector4(m_row0, m_row1, m_row2, m_row3,
+			m_v, m_result);
+		simd128_store_float(&v_result[i * 4], m_result);
+	}
 }
 
 // Classes for using SIMD to multiply a specific matrix with one or more vertices.

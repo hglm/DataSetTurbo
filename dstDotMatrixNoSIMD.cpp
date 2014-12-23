@@ -20,7 +20,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // pointers back towards VectorMath types.
 
 #include "dstConfig.h"
-#include "dstVectorMath.h"
+#include "dstMatrixMath.h"
 
 #define SIMD_FUNC(f) f ## NoSIMD
 #define SIMD_VAR(f) SIMD_FUNC(f)
@@ -28,7 +28,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "dstSIMDFuncs.h"
 #include "dstSIMDFuncTable.cpp"
 
-// NxN.
+// NxN dot products.
 
 template <class T>
 static DST_INLINE_ONLY void dstCalculateDotProductsNxNNoSIMDTemplate(int n,
@@ -62,7 +62,7 @@ const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 		(const Vector3D *)f1, (const Vector3D *)f2, dot);
 }
 
-// Nx1.
+// Nx1 dot products.
 
 template <class T, class U>
 static DST_INLINE_ONLY void dstCalculateDotProductsNx1NoSIMDTemplate(int n,
@@ -110,7 +110,7 @@ const float * DST_RESTRICT f2, float *dot) {
 		*(const Vector4D *)f2, dot);
 }
 
-// Nx1 and count negative.
+// Nx1 dot products and count negative.
 
 template <class T, class U>
 static DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1Template(int n,
@@ -240,5 +240,45 @@ void dstGetIndicesWithMinAndMaxDotProductNx1V4NoSIMD(int n,
 const float * DST_RESTRICT v1, const float * DST_RESTRICT v2, int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 	dstGetIndicesWithMinAndMaxDotProductNx1Template(n,
 		(const Vector4D *)v1, *(const Vector4D *)v2, i_Pmin, i_Pmax);
+}
+
+// Matrix multiplication. Use Matrix class functions. This is relatively inefficient because
+// of the extra level of function class (matrix multiplication is not defined inline in the matrix
+// class).
+
+void dstMatrixMultiply4x4CMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT f3) {
+	Matrix4D m = *(Matrix4D *)f1;
+	*(Matrix4D *)f3 = m * *(Matrix4D *)f2;
+}
+
+void dstMatrixMultiply4x3RMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT f3) {
+	Matrix4x3RM m = *(Matrix4x3RM *)f1;
+	*(Matrix4x3RM *)f3 = m * *(Matrix4x3RM *)f2;
+}
+
+void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT f3) {
+	Matrix4D m = *(Matrix4D *)f1;
+	*(Matrix4D *)f3 = m * *(Matrix4x3RM *)f2;
+}
+
+void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	for (int i = 0; i < 4; i++) {
+		Vector4D result;
+		result = *((Matrix4D *)m) * *(Vector4D *)&v[i * 4];
+		*(Vector4D *)&v_result[i * 4] = result;
+	}
+}
+
+void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n,
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	for (int i = 0; i < n; i++) {
+		Vector4D result;
+		result = *((Matrix4D *)m) * *(Vector4D *)&v[i * 4];
+		*(Vector4D *)&v_result[i * 4] = result;
+	}
 }
 

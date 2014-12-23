@@ -58,7 +58,17 @@ DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3NoSIMD(int nu_vertices, co
 DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V4NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);
 
+DST_API void dstMatrixMultiply4x4CMNoSIMD(const float *f1, const float *f2, float *f3);
+DST_API void dstMatrixMultiply4x3RMNoSIMD(const float *f1, const float *f2, float *f3);
+DST_API void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float *f1, const float *f2, float *f3);
+
+DST_API void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(const float *m, const float *v, float *v_result);
+DST_API void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n, const float *m, const float *v,
+	float *v_result);
+
 // SIMD variant.
+
+// Dot products.
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNxNV4)(int n, const float *f1, const float *f2, float *dot);
 DST_API void SIMD_FUNC(dstCalculateDotProductsNxNV3P)(int n, const float *f1, const float *f2,
@@ -94,113 +104,13 @@ DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3)(int nu_vertice
 DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);
 
-#if 0
-// SSE2.
+// Matrix multiplication
 
-DST_API void dstCalculateDotProductsNxNV4SSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNxNV3PSSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNxNV3SSE3(int n, const float *f1, const float *f2, float *dot);
+DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM)(const float *f1, const float *f2, float *f3);
+DST_API void SIMD_FUNC(dstMatrixMultiply4x3RM)(const float *f1, const float *f2, float *f3);
+DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM4x3RM)(const float *f1, const float *f2, float *f3);
 
-DST_API void dstCalculateDotProductsNx1V4SSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3SSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3PV3SSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3PV4SSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3V4SSE3(int n, const float *f1, const float *f2,
-	float *dot);
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v, float *v_result);
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float *m, const float *v,
+	float *v_result);
 
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3PV4SSE3(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3V4SSE3(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-
-DST_API void dstCalculateMinAndMaxDotProductNx1V3SSE3(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx1V4SSE3(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-
-DST_API void dstCalculateMinAndMaxDotProductNx3V3SSE3(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx3V4SSE3(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3SSE3(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V4SSE3(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-
-// SSSE3.
-
-DST_API void dstCalculateDotProductsNxNV4SSSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNxNV3PSSSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNxNV3SSSE3(int n, const float *f1, const float *f2, float *dot);
-
-DST_API void dstCalculateDotProductsNx1V4SSSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3SSSE3(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3PV3SSSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3PV4SSSE3(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3V4SSSE3(int n, const float *f1, const float *f2,
-	float *dot);
-
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3PV4SSSE3(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3V4SSSE3(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-
-DST_API void dstCalculateMinAndMaxDotProductNx1V3SSSE3(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx1V4SSSE3(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-
-DST_API void dstCalculateMinAndMaxDotProductNx3V3SSSE3(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx3V4SSSE3(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3SSSE3(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V4SSSE3(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-
-// SSE4A.
-
-DST_API void dstCalculateDotProductsNxNV4SSE4A(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNxNV3PSSE4A(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNxNV3SSE4A(int n, const float *f1, const float *f2, float *dot);
-
-DST_API void dstCalculateDotProductsNx1V4SSE4A(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3SSE4A(int n, const float *f1, const float *f2, float *dot);
-DST_API void dstCalculateDotProductsNx1V3PV3SSE4A(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3PV4SSE4A(int n, const float *f1, const float *f2,
-	float *dot);
-DST_API void dstCalculateDotProductsNx1P3V4SSE4A(int n, const float *f1, const float *f2,
-	float *dot);
-
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3PV4SSE4A(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-DST_API void dstCalculateDotProductsAndCountNegativeNx1P3V4SSE4A(
-	int n, const float *f1, const float *f2, float *dot, int& negative_count);
-
-DST_API void dstCalculateMinAndMaxDotProductNx1V3SSE4A(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx1V4SSE4A(int nu_vertices, const float *v1,
-	const float *v2, float& min_dot_product, float& max_dot_product);
-
-DST_API void dstCalculateMinAndMaxDotProductNx3V3SSE4A(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-DST_API void dstCalculateMinAndMaxDotProductNx3V4SSE4A(int nu_vertices, const float *v1,
-	const float *v2, float *min_dot_product, float *max_dot_product);
-
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3SSE4A(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V4SSE4A(int nu_vertices, const float *v1,
-	const float *v2, int& i_Pmin, int& i_Pmax);
-
-#endif

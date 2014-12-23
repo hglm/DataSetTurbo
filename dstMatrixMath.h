@@ -133,11 +133,12 @@ DST_API Matrix3D Inverse(const Matrix3D& m);
 DST_API Matrix3D Adjugate(const Matrix3D& m);
 DST_API Matrix3D Transpose(const Matrix3D& m);
 
-class MatrixTransform;
+class Matrix4x3RM;
 
 class DST_API Matrix4D
 {
 	public:
+		// The internal storage is in column-major order.
 		float	n[4][4];
 	
 	public:
@@ -146,7 +147,7 @@ class DST_API Matrix4D
 		
 		Matrix4D(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3, const Vector4D& c4);
 		Matrix4D(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23, float n30, float n31, float n32, float n33);
-		Matrix4D(const MatrixTransform& m);
+		Matrix4D(const Matrix4x3RM& m);
 		
 		Matrix4D& Set(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3, const Vector4D& c4);
 		Matrix4D& Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23, float n30, float n31, float n32, float n33);
@@ -226,22 +227,22 @@ DST_API Matrix4D Inverse(const Matrix4D& m);
 DST_API Matrix4D Adjugate(const Matrix4D& m);
 DST_API Matrix4D Transpose(const Matrix4D& m);
 
-// Custom MatrixTransform class. Transform matrices are zero at n30, n31 and n32 and 1.0 at n33.
+// Custom Matrix4x3RM class. Transform matrices are zero at n30, n31 and n32 and 1.0 at n33.
 
-class DST_API MatrixTransform
+class DST_API Matrix4x3RM
 {
 	public:
 		// The interal storage format has been switched from column-major to
-		// row-major for MatrixTransform only.
+		// row-major for Matrix4x3RM only.
 		float n[3][4];
 
 	public:
-		MatrixTransform() {}
+		Matrix4x3RM() {}
 		
-		MatrixTransform(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23);
-		MatrixTransform(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3, const Vector3D& c4);
-		MatrixTransform& Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23);
-		MatrixTransform& Set(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3, const Vector3D& c4);
+		Matrix4x3RM(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23);
+		Matrix4x3RM(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3, const Vector3D& c4);
+		Matrix4x3RM& Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23);
+		Matrix4x3RM& Set(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3, const Vector3D& c4);
 
 		// Return element at row i, column j.
 		const float& operator ()(int i, int j) const
@@ -265,7 +266,7 @@ class DST_API MatrixTransform
 			return (*reinterpret_cast<const Vector4D *>(n[j]));
 		}
 
-		MatrixTransform& SetRow(int j, const Vector3D& row)
+		Matrix4x3RM& SetRow(int j, const Vector3D& row)
 		{
 			n[j][0] = row.x;
 			n[j][1] = row.y;
@@ -274,7 +275,7 @@ class DST_API MatrixTransform
 			return (*this);
 		}
 		
-		MatrixTransform& SetRow(int j, const Vector4D& row)
+		Matrix4x3RM& SetRow(int j, const Vector4D& row)
 		{
 			n[j][0] = row.x;
 			n[j][1] = row.y;
@@ -283,40 +284,69 @@ class DST_API MatrixTransform
 			return (*this);
 		}
 
-		DST_API MatrixTransform& operator *=(const MatrixTransform& m);
+		DST_API Matrix4x3RM& operator *=(const Matrix4x3RM& m);
 
-		DST_API MatrixTransform& SetIdentity(void);
-                DST_API MatrixTransform& AssignRotationAlongXAxis(float angle);
-                DST_API MatrixTransform& AssignRotationAlongYAxis(float angle);
-                DST_API MatrixTransform& AssignRotationAlongZAxis(float angle);
-                DST_API MatrixTransform& AssignTranslation(const Vector3D& translation);
-                DST_API MatrixTransform& AssignScaling(float scaling);
+		DST_API Matrix4x3RM& SetIdentity(void);
+                DST_API Matrix4x3RM& AssignRotationAlongXAxis(float angle);
+                DST_API Matrix4x3RM& AssignRotationAlongYAxis(float angle);
+                DST_API Matrix4x3RM& AssignRotationAlongZAxis(float angle);
+                DST_API Matrix4x3RM& AssignTranslation(const Vector3D& translation);
+                DST_API Matrix4x3RM& AssignScaling(float scaling);
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
 
-		friend DST_API MatrixTransform operator *(const MatrixTransform& m1, const MatrixTransform& m2);
-		friend DST_API Matrix4D operator *(const Matrix4D& m1, const MatrixTransform& m2);
-		friend DST_API Vector4D operator *(const MatrixTransform& m, const Vector4D& v);
-		friend DST_API Vector4D operator *(const Vector4D& v, const MatrixTransform& m);
-		friend DST_API Vector4D operator *(const MatrixTransform& m, const Vector3D& v);
-		friend DST_API Vector4D operator *(const Vector3D& v, const MatrixTransform& m);
-		friend DST_API Vector4D operator *(const MatrixTransform& m, const Point3D& p);
-		friend DST_API Vector4D operator *(const Point3D& p, const MatrixTransform& m);
-		friend DST_API bool operator ==(const MatrixTransform& m1, const MatrixTransform& m2);
-		friend DST_API bool operator !=(const MatrixTransform& m1, const MatrixTransform& m2);
+		friend DST_API Matrix4x3RM operator *(const Matrix4x3RM& m1, const Matrix4x3RM& m2);
+		friend DST_API Matrix4D operator *(const Matrix4D& m1, const Matrix4x3RM& m2);
+		friend DST_API Vector4D operator *(const Matrix4x3RM& m, const Vector4D& v);
+		friend DST_API Vector4D operator *(const Vector4D& v, const Matrix4x3RM& m);
+		friend DST_API Vector4D operator *(const Matrix4x3RM& m, const Vector3D& v);
+		friend DST_API Vector4D operator *(const Vector3D& v, const Matrix4x3RM& m);
+		friend DST_API Vector4D operator *(const Matrix4x3RM& m, const Point3D& p);
+		friend DST_API Vector4D operator *(const Point3D& p, const Matrix4x3RM& m);
+		friend DST_API bool operator ==(const Matrix4x3RM& m1, const Matrix4x3RM& m2);
+		friend DST_API bool operator !=(const Matrix4x3RM& m1, const Matrix4x3RM& m2);
 } DST_ALIGNED(16);
 
-DST_API Matrix4D Inverse(const MatrixTransform& m);
-DST_API Matrix4D Transpose(const MatrixTransform& m);
+DST_API Matrix4D Inverse(const Matrix4x3RM& m);
+DST_API Matrix4D Transpose(const Matrix4x3RM& m);
 
+
+// Matrix functions with optional SIMD support.
+// All matrices must be aligned on a 16-byte boundary.
+
+DST_INLINE_ONLY void dstMatrixMultiply(const Matrix4D & DST_RESTRICT m1, const Matrix4D & DST_RESTRICT m2,
+Matrix4D & DST_RESTRICT result) {
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x4CM)((const float *)&m1, (const float *)&m2, (float *)&result);
+}
+
+DST_INLINE_ONLY void dstMatrixMultiply(const Matrix4x3RM & DST_RESTRICT m1,
+const Matrix4x3RM & DST_RESTRICT m2, Matrix4D & DST_RESTRICT result) {
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x3RM)((const float *)&m1, (const float *)&m2, (float *)&result);
+}
+
+DST_INLINE_ONLY void dstMatrixMultiply(const Matrix4D & DST_RESTRICT m1,
+const Matrix4x3RM & DST_RESTRICT m2, Matrix4D & DST_RESTRICT result) {
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x4CM4x3RM)((const float *)&m1, (const float *)&m2,
+		(float *)&result);
+}
 
 // Multiply a constant matrix with an array of vectors.
 
-DST_API void MatrixMultiplyVectors(int n, const Matrix4D& m, const Vector4D *v1, Vector4D *v2);
+DST_INLINE_ONLY void dstMatrixMultiplyVectors1x4(const Matrix4D & DST_RESTRICT m,
+const Vector4D * DST_RESTRICT v1, Vector4D * DST_RESTRICT v2) {
+	DST_FUNC_LOOKUP(dstMatrixMultiplyVectors1x4M4x4CMV4)((const float *)&m,
+		(const float *)v1, (float *)v2);
+}
+
+DST_INLINE_ONLY void dstMatrixMultiplyVectors1xN(int n, const Matrix4D & DST_RESTRICT m,
+const Vector4D * DST_RESTRICT v1, Vector4D * DST_RESTRICT v2) {
+	DST_FUNC_LOOKUP(dstMatrixMultiplyVectors1xNM4x4CMV4)(n, (const float *)&m,
+		(const float *)v1, (float *)v2);
+}
 
 DST_API void MatrixMultiplyVectors(int n, const Matrix4D& m, const Point3D *p1, Point3D *p2);
 
-DST_API void MatrixMultiplyVectors(int n, const MatrixTransform& m, const Vector3D *v1,
+DST_API void MatrixMultiplyVectors(int n, const Matrix4x3RM& m, const Vector3D *v1,
 Vector3D *v2);
 
 #endif // __defined(__DST_MATRIX_MATH_H__)
