@@ -36,33 +36,24 @@ public :
 	TestFunc test_func;
 };
 
-static uint64_t TestSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt);
-static uint64_t TestNonSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt);
-static uint64_t TestSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt);
-static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt);
 static uint64_t TestSIMDCalculateDotProductsNxNVector4D(dstThreadedTimeout *tt);
 static uint64_t TestNonSIMDCalculateDotProductsNxNVector4D(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt);
 static uint64_t TestSIMDCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt);
 static uint64_t TestNonSIMDCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *tt);
+static uint64_t TestSIMDCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTimeout *tt);
+static uint64_t TestNonSIMDCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTimeout *tt);
 
 TestData test_data[] = {
-	{
-		"SIMD dstCalculateDotProductsNx1Vector4D",
-		TestSIMDCalculateDotProductsNx1Vector4D,
-	},
-	{
-		"Non-SIMD dstCalculateDotProductsNx1Vector4D",
-		TestNonSIMDCalculateDotProductsNx1Vector4D,
-	},
-	{
-		"SIMD dstCalculateDotProductsNx1Vector3D",
-		TestSIMDCalculateDotProductsNx1Vector3D,
-	},
-	{
-		"Non-SIMD dstCalculateDotProductsNx1Vector3D",
-		TestNonSIMDCalculateDotProductsNx1Vector3D,
-	},
-
 	{
 		"SIMD dstCalculateDotProductsVector4D",
 		TestSIMDCalculateDotProductsNxNVector4D,
@@ -72,12 +63,61 @@ TestData test_data[] = {
 		TestNonSIMDCalculateDotProductsNxNVector4D,
 	},
 	{
+		"SIMD dstCalculateDotProductsVector3DPadded",
+		TestSIMDCalculateDotProductsNxNVector3DPadded
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsVector3DPadded",
+		TestNonSIMDCalculateDotProductsNxNVector3DPadded
+	},
+	{
 		"SIMD dstCalculateDotProductsVector3D",
 		TestSIMDCalculateDotProductsNxNVector3D
 	},
 	{
 		"Non-SIMD dstCalculateDotProductsVector3D",
 		TestNonSIMDCalculateDotProductsNxNVector3D
+	},
+
+	{
+		"SIMD dstCalculateDotProductsNx1Vector4D",
+		TestSIMDCalculateDotProductsNx1Vector4D,
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsNx1Vector4D",
+		TestNonSIMDCalculateDotProductsNx1Vector4D,
+	},
+	{
+		"SIMD dstCalculateDotProductsNx1Vector3DPadded",
+		TestSIMDCalculateDotProductsNx1Vector3DPadded,
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsNx1Vector3DPadded",
+		TestNonSIMDCalculateDotProductsNx1Vector3DPadded,
+	},
+	{
+		"SIMD dstCalculateDotProductsNx1Vector3D",
+		TestSIMDCalculateDotProductsNx1Vector3D,
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsNx1Vector3D",
+		TestNonSIMDCalculateDotProductsNx1Vector3D,
+	},
+	{
+		"SIMD dstCalculateDotProductsNx1Point3DVector4D",
+		TestSIMDCalculateDotProductsNx1Point3DVector4D,
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsNx1Point3DVector4D",
+		TestNonSIMDCalculateDotProductsNx1Point3DVector4D,
+	},
+	{
+		"SIMD dstCalculateDotProductsNx1Point3DPaddedVector4D",
+		TestSIMDCalculateDotProductsNx1Point3DPaddedVector4D,
+	},
+	{
+		"Non-SIMD dstCalculateDotProductsNx1Point3DPaddedVector4D",
+		TestNonSIMDCalculateDotProductsNx1Point3DPaddedVector4D,
 	},
 };
 
@@ -86,6 +126,7 @@ TestData test_data[] = {
 #define NU_CORRECTNESS_ITERATIONS 1000
 
 Vector4D *vector4D_array[2];
+Vector3D *vector3D_padded_array[2];
 Vector3D *vector3D_array[2];
 float *dot_product_array[2];
 dstRNG *rng;
@@ -97,52 +138,6 @@ static void TypeSizeReport() {
         printf("sizeof(Point3D): %u\n", (unsigned int)sizeof(Vector3D));
         printf("sizeof(Vector3DPadded): %u\n", (unsigned int)sizeof(Vector3DPadded));
         printf("sizeof(Point3DPadded): %u\n", (unsigned int)sizeof(Point3DPadded));
-}
-
-// N x 1 dot products
-
-static uint64_t TestCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
-	uint64_t count = 0;
-	for (;;) {
-		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
-			vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
-		count += VECTOR_ARRAY_SIZE;
-		if (tt->StopSignalled())
-			break;
-	}
-	return count;
-}
-
-static uint64_t TestSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
-	dstSetSIMDType(simd_type);
-	return TestCalculateDotProductsNx1Vector4D(tt);
-}
-
-static uint64_t TestNonSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
-	dstSetSIMDType(DST_SIMD_NONE);
-	return TestCalculateDotProductsNx1Vector4D(tt);
-}
-
-static uint64_t TestCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
-	uint64_t count = 0;
-	for (;;) {
-		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
-			vector3D_array[0], vector3D_array[1][0], dot_product_array[0]);
-		count += VECTOR_ARRAY_SIZE;
-		if (tt->StopSignalled())
-			break;
-	}
-	return count;
-}
-
-static uint64_t TestSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
-	dstSetSIMDType(simd_type);
-	return TestCalculateDotProductsNx1Vector3D(tt);
-}
-
-static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
-	dstSetSIMDType(DST_SIMD_NONE);
-	return TestCalculateDotProductsNx1Vector3D(tt);
 }
 
 // N x N dot products
@@ -169,6 +164,28 @@ static uint64_t TestNonSIMDCalculateDotProductsNxNVector4D(dstThreadedTimeout *t
 	return TestCalculateDotProductsNxNVector4D(tt);
 }
 
+static uint64_t TestCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE,
+			vector3D_padded_array[0], vector3D_padded_array[1], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNxNVector3DPadded(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNxNVector3DPadded(tt);
+}
+
 static uint64_t TestCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt) {
 	uint64_t count = 0;
 	for (;;) {
@@ -189,6 +206,118 @@ static uint64_t TestSIMDCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt) 
 static uint64_t TestNonSIMDCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt) {
 	dstSetSIMDType(DST_SIMD_NONE);
 	return TestCalculateDotProductsNxNVector3D(tt);
+}
+
+// N x 1 dot products
+
+static uint64_t TestCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNx1Vector4D(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNx1Vector4D(tt);
+}
+
+static uint64_t TestCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNx1Vector3DPadded(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNx1Vector3DPadded(tt);
+}
+
+static uint64_t TestCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			vector3D_array[0], vector3D_array[1][0], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNx1Vector3D(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNx1Vector3D(tt);
+}
+
+static uint64_t TestCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNx1Point3DVector4D(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNx1Point3DVector4D(tt);
+}
+
+static uint64_t TestCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTimeout *tt) {
+	uint64_t count = 0;
+	for (;;) {
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3DPadded *)vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
+		count += VECTOR_ARRAY_SIZE;
+		if (tt->StopSignalled())
+			break;
+	}
+	return count;
+}
+
+static uint64_t TestSIMDCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(simd_type);
+	return TestCalculateDotProductsNx1Point3DPaddedVector4D(tt);
+}
+
+static uint64_t TestNonSIMDCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTimeout *tt) {
+	dstSetSIMDType(DST_SIMD_NONE);
+	return TestCalculateDotProductsNx1Point3DPaddedVector4D(tt);
 }
 
 Vector4D RandomVector4D() {
@@ -212,6 +341,13 @@ static void SetRandomVector4DArrays() {
 	for (int i = 0; i < VECTOR_ARRAY_SIZE; i++) {
 		vector4D_array[0][i] = RandomVector4D();
 		vector4D_array[1][i] = RandomVector4D();
+	}
+}
+
+static void SetRandomVector3DPaddedArrays() {
+	for (int i = 0; i < VECTOR_ARRAY_SIZE; i++) {
+		vector3D_padded_array[0][i] = RandomVector3D();
+		vector3D_padded_array[1][i] = RandomVector3D();
 	}
 }
 
@@ -255,6 +391,8 @@ int main(int argc, char *argv[]) {
 	vector4D_array[1] = dstNewAligned <Vector4D>(VECTOR_ARRAY_SIZE, 16);
 	vector3D_array[0] = dstNewAligned <Vector3D>(VECTOR_ARRAY_SIZE, 16);
 	vector3D_array[1] = dstNewAligned <Vector3D>(VECTOR_ARRAY_SIZE, 16);
+	vector3D_padded_array[0] = dstNewAligned <Vector3DPadded>(VECTOR_ARRAY_SIZE, 16);
+	vector3D_padded_array[1] = dstNewAligned <Vector3DPadded>(VECTOR_ARRAY_SIZE, 16);
 	dot_product_array[0] = dstNewAligned <float>(VECTOR_ARRAY_SIZE, 16);
 	dot_product_array[1] = dstNewAligned <float>(VECTOR_ARRAY_SIZE, 16);
 
@@ -264,11 +402,56 @@ int main(int argc, char *argv[]) {
 
 	rng = dstGetDefaultRNG();
 	SetRandomVector4DArrays();
+	SetRandomVector3DPaddedArrays();
 	SetRandomVector3DArrays();
 	
 	printf("Correctness of SIMD versions compared to non-SIMD:\n");
 	double deviation, avg_deviation, max_deviation;
 
+	deviation = 0.0d;
+	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
+		SetRandomVector4DArrays();
+		dstSetSIMDType(simd_type);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector4D_array[0], vector4D_array[1],
+			dot_product_array[0]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector4D_array[0],
+			vector4D_array[1], dot_product_array[1]);
+		deviation += DotProductArraysDeviation();
+	}
+	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
+        printf("CalculateDotProductsNxNVector4D: average deviation = %lE (%s)\n", avg_deviation,
+		CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
+		SetRandomVector3DPaddedArrays();
+		dstSetSIMDType(simd_type);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_padded_array[0],
+			vector3D_padded_array[1], dot_product_array[0]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_padded_array[0],
+			vector3D_padded_array[1], dot_product_array[1]);
+		deviation += DotProductArraysDeviation();
+	}
+	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
+        printf("CalculateDotProductNxNsVector3DPadded: average deviation = %lE (%s)\n", avg_deviation,
+		CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
+		SetRandomVector3DArrays();
+		dstSetSIMDType(simd_type);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_array[0], vector3D_array[1],
+			dot_product_array[0]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_array[0],
+			vector3D_array[1], dot_product_array[1]);
+		deviation += DotProductArraysDeviation();
+	}
+	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
+        printf("CalculateDotProductsNxNVector3D: average deviation = %lE (%s)\n", avg_deviation,
+		CorrectString(avg_deviation));
 
 	deviation = 0.0d;
 	max_deviation = 0.0d;
@@ -284,10 +467,26 @@ int main(int argc, char *argv[]) {
 		max_deviation = maxd(max_deviation, DotProductArraysMaxDeviation());
 	}
 	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
-        printf("CalculateDotProductsWithConstantVector4D: average deviation = %lE (%s), "
+        printf("CalculateDotProductsNx1Vector4D: average deviation = %lE (%s), "
 		"maximum deviation %lE (%s)\n",
 		avg_deviation, CorrectString(avg_deviation),
 		max_deviation, CorrectString(max_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
+		SetRandomVector3DPaddedArrays();
+		SetRandomVector3DArrays();
+		dstSetSIMDType(simd_type);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[0]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[1]);
+		deviation += DotProductArraysDeviation();
+	}
+	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
+        printf("CalculateDotProductsNx1Vector3DPadded: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
 
 	deviation = 0.0d;
 	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
@@ -301,38 +500,42 @@ int main(int argc, char *argv[]) {
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
-        printf("CalculateDotProductsWithConstantVector3D: average deviation = %lE (%s)\n",
+        printf("CalculateDotProductsNx1Vector3D: average deviation = %lE (%s)\n",
 		avg_deviation, CorrectString(avg_deviation));
 
 	deviation = 0.0d;
 	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
+		SetRandomVector3DArrays();
 		SetRandomVector4DArrays();
 		dstSetSIMDType(simd_type);
-		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector4D_array[0], vector4D_array[1],
-			dot_product_array[0]);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[0]);
 		dstSetSIMDType(DST_SIMD_NONE);
-		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector4D_array[0],
-			vector4D_array[1], dot_product_array[1]);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[1]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
-        printf("CalculateDotProductsVector4D: average deviation = %lE (%s)\n", avg_deviation,
-		CorrectString(avg_deviation));
+        printf("CalculateDotProductsNx1Point3DVector4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
 
 	deviation = 0.0d;
 	for (int i = 0; i < NU_CORRECTNESS_ITERATIONS; i++) {
-		SetRandomVector3DArrays();
+		SetRandomVector3DPaddedArrays();
+		SetRandomVector4DArrays();
 		dstSetSIMDType(simd_type);
-		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_array[0], vector3D_array[1],
-			dot_product_array[0]);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3DPadded *)vector3D_padded_array[0], vector4D_array[1][0],
+			 dot_product_array[0]);
 		dstSetSIMDType(DST_SIMD_NONE);
-		dstCalculateDotProductsNxN(VECTOR_ARRAY_SIZE, vector3D_array[0],
-			vector3D_array[1], dot_product_array[1]);
+		dstCalculateDotProductsNx1(VECTOR_ARRAY_SIZE,
+			(const Point3DPadded *)vector3D_padded_array[0], vector4D_array[1][0],
+			dot_product_array[1]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / NU_CORRECTNESS_ITERATIONS;
-        printf("CalculateDotProductsVector3D: average deviation = %lE (%s)\n", avg_deviation,
-		CorrectString(avg_deviation));
+        printf("CalculateDotProductsNx1Point3DPaddedVector4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
 
 	float timeout_secs = 1.0f;
 	dstTimer timer;

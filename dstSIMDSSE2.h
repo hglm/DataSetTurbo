@@ -570,19 +570,19 @@ __simd128_float s1, __simd128_float s2, const int count) {
 
 #ifdef __SSE41__
 
-// Copy one float component from one vector to another, with selectable component slots.
+// Copy one float component from s1 to s2, with selectable component slots.
 // Additionally, result components can be zeroed out (0 bits) with 4-bit mask.
 
 static DST_INLINE_ONLY __simd128_float simd128_insert_and_mask(__simd128_float s1,
 __simd128_float s2, const int word_source, const int word_dest, const int word_mask) {
-	return _mm_insert_ps(s1, s2, (word_source << 6) | (word_dest << 4) | word_mask);
+	return _mm_insert_ps(s2, s1, (word_source << 6) | (word_dest << 4) | word_mask);
 }
 
 #endif
 
 #ifdef __FMA4__
 
-// Fused multiply-add, multiple s1 and s2 and add s3.
+// Fused multiply-add, multiply s1 and s2 and add s3.
 
 __simd128_float simd128_multiply_add_float(__simd128_float s1, __simd128_float s2, __simd128_float s3) {
 	return _mm_macc_ps(s1, s2, s3);
