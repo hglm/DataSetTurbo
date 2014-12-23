@@ -126,7 +126,7 @@ TestData test_data[] = {
 #define NU_CORRECTNESS_ITERATIONS 1000
 
 Vector4D *vector4D_array[2];
-Vector3D *vector3D_padded_array[2];
+Vector3DPadded *vector3D_padded_array[2];
 Vector3D *vector3D_array[2];
 float *dot_product_array[2];
 dstRNG *rng;

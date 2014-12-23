@@ -392,7 +392,14 @@ public:
 
 template <class T>
 class DST_API Vector3DBasePadded : public Vector3DBase <T> {
-} DST_ALIGNED(sizeof(T) *4);
+public :
+	Vector3DBasePadded <T> & operator =(const Vector3DBase <T> & v) {
+		this->x = v.x;
+		this->y = v.y;
+		this->z = v.z;
+		return (*this);
+	}
+} DST_ALIGNED(sizeof(T) * 4);
 
 typedef Vector3DBase <float> Vector3D;
 typedef Vector3DBasePadded <float> Vector3DPadded;
@@ -455,6 +462,14 @@ public:
 
 template <class T>
 class DST_API Point3DBasePadded : public Point3DBase <T> {
+public :
+	Point3DBasePadded <T> & operator =(const Vector3DBase <T> & v) {
+		this->x = v.x;
+		this->y = v.y;
+		this->z = v.z;
+		return (*this);
+	}
+
 } DST_ALIGNED(sizeof(T) *4);
 
 typedef Point3DBase <float> Point3D;
