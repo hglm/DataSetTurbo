@@ -98,27 +98,54 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // Set macro to generate unique function identifiers for each SIMD type this file is compiled with.
 
 #ifdef DST_NO_SIMD
-#define SIMD_FUNC(f) f ## NoSIMD
+#define SIMD_FUNC_SIMD_TYPE(f) f ## NoSIMD
 #else
+#ifdef DST_SIMD_MODE_STREAM
+// Write results of SIMD-accelerated processing functions using non-temporal memory hint,
+// increasing performance for larger data sets by not polluting the L1 cache.
 #if defined(DST_SIMD_MODE_SSE2)
-#define SIMD_FUNC(f) f ## SSE2
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE2Stream
 #elif defined(DST_SIMD_MODE_SSE3)
-#define SIMD_FUNC(f) f ## SSE3
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE3Stream
 #elif defined(DST_SIMD_MODE_SSSE3)
-#define SIMD_FUNC(f) f ## SSSE3
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSSE3Stream
 #elif defined(DST_SIMD_MODE_SSE4A)
-#define SIMD_FUNC(f) f ## SSE4A
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE4AStream
 #elif defined(DST_SIMD_MODE_SSE41)
-#define SIMD_FUNC(f) f ## SSE41
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE41Stream
 #elif defined(DST_SIMD_MODE_SSE42)
-#define SIMD_FUNC(f) f ## SSE42
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE42Stream
 #elif defined(DST_SIMD_MODE_AVX)
-#define SIMD_FUNC(f) f ## AVX
+#define SIMD_FUNC_SIMD_TYPE(f) f ## AVXStream
 #elif defined(DST_SIMD_MODE_NEON)
-#define SIMD_FUNC(f) f ## NEON
-#else
+#define SIMD_FUNC_SIMD_TYPE(f) f ## NEONStream
+#elif !defined(__SSE2__) && !defined(__NEON_FP)
+#error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
+#else // No stream mode.
+#if defined(DST_SIMD_MODE_SSE2)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE2
+#elif defined(DST_SIMD_MODE_SSE3)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE3
+#elif defined(DST_SIMD_MODE_SSSE3)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSSE3
+#elif defined(DST_SIMD_MODE_SSE4A)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE4A
+#elif defined(DST_SIMD_MODE_SSE41)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE41
+#elif defined(DST_SIMD_MODE_SSE42)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## SSE42
+#elif defined(DST_SIMD_MODE_AVX)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## AVX
+#elif defined(DST_SIMD_MODE_NEON)
+#define SIMD_FUNC_SIMD_TYPE(f) f ## NEON
+#elif !defined(__SSE2__) && !defined(__NEON_FP)
+#error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
+#endif // !defined (DST_SIMD_MODE_STREAM)
+#endif // !defined (DST_NO_SIMD)
+
+#define SIMD_FUNC(f) SIMD_FUNC_SIMD_TYPE(f)
 #define SIMD_VAR(f) SIMD_FUNC(f)
 
 

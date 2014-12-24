@@ -20,7 +20,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define __DST_MEMORY_H__
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 #include "dstSIMD.h"
 
@@ -29,6 +34,20 @@ static inline T *dstNewAligned(size_t n, size_t alignment) {
    T *buffer;
    posix_memalign((void **)&buffer, alignment, n * sizeof(T));
    return buffer;
+}
+
+template <class T>
+static inline T *dstNewAlignedHugeTLB(size_t n) {
+	T *buffer;
+//	int fd = open("/dev/mem", O_RDWR);
+	buffer = (T *)mmap(NULL, n * sizeof(T), PROT_READ | PROT_WRITE,
+		MAP_ANONYMOUS | MAP_PRIVATE /* | MAP_HUGETLB */, 0, 0);
+	if (buffer == MAP_FAILED) {
+		printf("mmap failed.\n");
+		exit(1);
+	}
+//	close(fd);
+	return buffer;
 }
 
 #ifdef DST_PREFER_LIBC_MEMCPY

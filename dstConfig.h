@@ -95,12 +95,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // dstMemcpyLarge variants.
 #define DST_MEMCPY_THRESHOLD 256
 
+// The amount of stores in bytes in a SIMD function that will trigger the use of
+// the streaming (non-temporal storage) version of the function, sparing L1 cache
+// pollution, which faster for larger data sets. Should be set to a value somewhat
+// lower than the L1 data cache size.
+#define DST_STREAM_THRESHOLD 28000
+
 // SIMD detection.
 
 #ifndef DST_NO_SIMD
 
 #ifndef DST_FIXED_SIMD
 #define DST_FUNC_LOOKUP(f) dst_config.simd_funcs.f
+#define DST_FUNC_STREAM_LOOKUP(f) dst_config.simd_funcs_stream.f
 #endif
 
 // Set flags for SIMD implementations supported by the library, hardwired or optionally.
@@ -125,30 +132,39 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef DST_FIXED_SIMD
 #ifdef DST_FIXED_SIMD_SSE2
 #define DST_FUNC_LOOKUP(f) f ## SSE2
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSE2Stream
 #define DST_SSE2_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE3)
 #define DST_FUNC_LOOKUP(f) f ## SSE3
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSE3Stream
 #define DST_SSE3_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSSE3)
 #define DST_FUNC_LOOKUP(f) f ## SSSE3
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSSE3Stream
 #define DST_SSSE3_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE4A)
 #define DST_FUNC_LOOKUP(f) f ## SSE4A
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSE4AStream
 #define DST_SSE4A_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE41)
 #define DST_FUNC_LOOKUP(f) f ## SSE41
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSE41Stream
 #define DST_SSE41_SUPPORT
 #elif defined(DST_FIXED_SIMD_SSE42)
-#define DST_FUNC_LOOKUP(f) ## SSE42
+#define DST_FUNC_LOOKUP(f) f ## SSE42
+#define DST_FUNC_STREAM_LOOKUP(f) f ## SSE42Stream
 #define DST_SSE42_SUPPORT
 #elif defined(DST_FIXED_SIMD_AVX)
-#define DST_FUNC_LOOKUP(f) ## AVX
+#define DST_FUNC_LOOKUP(f) f ## AVX
+#define DST_FUNC_STREAM_LOOKUP(f) f ## AVXStream
 #define DST_AVX_SUPPORT
 #elif defined(DST_FIXED_SIMD_AVX_SSE4A_FMA4)
-#define DST_FUNC_LOOKUP(f) ## AVX_SSE4A_FMA4
+#define DST_FUNC_LOOKUP(f) f ## AVX_SSE4A_FMA4
+#define DST_FUNC_STREAM_LOOKUP(f) f ## AVX_SSE4A_FMA4Stream
 #define DST_AVX_SSE4A_FMA4_SUPPORT
 #elif defined(DST_FIXED_SIMD_AVX_FMA)
-#define DST_FUNC_LOOKUP(f) ## AVX_FMA
+#define DST_FUNC_LOOKUP(f) f ## AVX_FMA
+#define DST_FUNC_STREAM_LOOKUP(f) f ## AVX_FMAStream
 #define DST_AVX_FMA_SUPPORT
 #else
 
@@ -277,15 +293,19 @@ public :
 extern const dstSIMDFuncs dst_simd_funcs_NoSIMD;
 #ifdef DST_SSE2_SUPPORT
 extern const dstSIMDFuncs dst_simd_funcs_SSE2;
+extern const dstSIMDFuncs dst_simd_funcs_SSE2Stream;
 #endif
 #ifdef DST_SSE3_SUPPORT
 extern const dstSIMDFuncs dst_simd_funcs_SSE3;
+extern const dstSIMDFuncs dst_simd_funcs_SSE3Stream;
 #endif
 #ifdef DST_SSSE3_SUPPORT
 extern const dstSIMDFuncs dst_simd_funcs_SSSE3;
+extern const dstSIMDFuncs dst_simd_funcs_SSSE3Stream;
 #endif
 #ifdef DST_SSE4A_SUPPORT
 extern const dstSIMDFuncs dst_simd_funcs_SSE4A;
+extern const dstSIMDFuncs dst_simd_funcs_SSE4AStream;
 #endif
 #ifdef DST_SSE41_SUPPORT
 extern const dstSIMDFuncs dst_simd_funcs_SSE41;
@@ -316,6 +336,7 @@ public :
 	uint32_t simd_cpu_flags;
 	// Function table.
 	dstSIMDFuncs simd_funcs;
+	dstSIMDFuncs simd_funcs_stream;
 };
 
 
@@ -412,6 +433,10 @@ static DST_INLINE_ONLY bool dstCheckSIMDCPUFlag(uint32_t flag) {
 }
 
 DST_API void dstSetSIMDType(int simd_type);
+
+DST_API void dstSetStreamingSIMDType(int simd_type);
+
+DST_API void dstSetNonStreamingSIMDType(int simd_type);
 
 DST_INLINE_ONLY int dstGetSIMDType() {
 	return dst_config.simd_type;

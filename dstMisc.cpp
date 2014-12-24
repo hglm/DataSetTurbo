@@ -188,6 +188,7 @@ void dstInit() {
 
 
 #ifndef DST_NO_SIMD
+
 static const dstSIMDFuncs *dst_simd_funcs_table[] = {
 	&dst_simd_funcs_NoSIMD,
 #ifdef DST_SSE2_SUPPORT
@@ -241,12 +242,67 @@ static const dstSIMDFuncs *dst_simd_funcs_table[] = {
 	NULL,
 #endif
 };
+
+static const dstSIMDFuncs *dst_simd_funcs_stream_table[] = {
+	&dst_simd_funcs_NoSIMD,
+#ifdef DST_SSE2_SUPPORT
+	&dst_simd_funcs_SSE2Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_SSE3_SUPPORT
+	&dst_simd_funcs_SSE3Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_SSSE3_SUPPORT
+	&dst_simd_funcs_SSSE3Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_SSE4A_SUPPORT
+	&dst_simd_funcs_SSE4AStream,
+#else
+	NULL,
+#endif
+#ifdef DST_SSE41_SUPPORT
+	&dst_simd_funcs_SSE41Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_SSE42_SUPPORT
+	&dst_simd_funcs_SSE42Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_AVX_SUPPORT
+	&dst_simd_funcs_AVXStream,
+#else
+	NULL,
+#endif
+#ifdef DST_NEON_SUPPORT
+	&dst_simd_funcs_NEONStream,
+#else
+	NULL,
+#endif
+#ifdef DST_AVX_SSE4A_FMA4_SUPPORT
+	&dst_simd_funcs_AVX_SSE4A_FMA4Stream,
+#else
+	NULL,
+#endif
+#ifdef DST_AVX_FMA_SUPPORT
+	&dst_simd_funcs_AVX_FMAStream,
+#else
+	NULL,
+#endif
+};
 #endif
 
 void dstSetSIMDType(int simd_type) {
 #if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
 	dst_config.simd_type = simd_type;
 	dst_config.simd_funcs = *dst_simd_funcs_table[simd_type];
+	dst_config.simd_funcs_stream = *dst_simd_funcs_stream_table[simd_type];
 	if (simd_type == DST_SIMD_NONE)
 		dst_config.flags &= (~DST_FLAG_SIMD_ENABLED);
 	else
@@ -254,6 +310,23 @@ void dstSetSIMDType(int simd_type) {
 
 #endif
 }
+
+void dstSetStreamingSIMDType(int simd_type) {
+#if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
+	dstSetSIMDType(simd_type);
+	dst_config.simd_funcs = *dst_simd_funcs_stream_table[simd_type];
+	dst_config.simd_funcs_stream = *dst_simd_funcs_stream_table[simd_type];
+#endif
+}
+
+void dstSetNonStreamingSIMDType(int simd_type) {
+#if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
+	dstSetSIMDType(simd_type);
+	dst_config.simd_funcs = *dst_simd_funcs_table[simd_type];
+	dst_config.simd_funcs_stream = *dst_simd_funcs_table[simd_type];
+#endif
+}
+
 
 // Default random number generator.
 

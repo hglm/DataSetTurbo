@@ -29,6 +29,7 @@ ifneq ($(TARGET_ARCH),)
 ifeq ($(TARGET_ARCH), X86)
 # All types should be configured by default.
 SIMD_MODULES = dstSIMDSSE2.o dstSIMDSSE3.o dstSIMDSSSE3.o dstSIMDSSE4A.o # Add the rest.
+SIMD_MODULES += dstSIMDSSE2Stream.o dstSIMDSSE3Stream.o dstSIMDSSSE3Stream.o dstSIMDSSE4AStream.o
 else
 ifeq ($(TARGET_ARCH), ARM)
 SIMD_MODULES = dstSIMDNEON.o
@@ -84,6 +85,9 @@ endif
 ifeq ($(TARGET_SIMD), X86_AVX_FMA)
 OPTCFLAGS += -mavx -mfma
 FIXED_SIMD_TYPE = AVX_FMA
+endif
+ifneq ($(TARGET_SIMD),)
+$(error Not a valid SIMD type.)
 endif
 endif
 endif
@@ -252,7 +256,11 @@ clean :
 			SSEFLAGS='-m'$$SSENAMELOWER' -DDST_SIMD_MODE_'$$y; \
 		fi; \
 	done; \
-	CMD='g++ -c '$$SSEFLAGS' $(CFLAGS_LIB) $< -o $@'; \
+	STREAMMATCH=`echo $\$< | grep Stream | wc -l`; \
+	if [ $$STREAMMATCH != 0 ]; then \
+		STREAMFLAGS='-DDST_SIMD_MODE_STREAM'; \
+	fi; \
+	CMD='g++ -c '$$SSEFLAGS' '$$STREAMFLAGS' $(CFLAGS_LIB) $< -o $@'; \
 	echo $$CMD; $$CMD
 
 .S.o :

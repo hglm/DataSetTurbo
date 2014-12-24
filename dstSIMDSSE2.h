@@ -176,10 +176,22 @@ static DST_INLINE_ONLY __simd128_float simd128_load_unaligned_float(const float 
 #endif
 }
 
+// Store 16-byte-aligned float data with a non-temporal memory hint (the L1 cache line will not be
+// updated from the higher level memory hierarchy; the memory writes goes bypasses the L1 cache and
+// goes directly to higher level memory).
+
+static DST_INLINE_ONLY void simd128_stream_float(float *fp, __simd128_float s) {
+	_mm_stream_ps(fp, s);
+}
+
 // Store 16-byte-aligned float data.
 
 static DST_INLINE_ONLY void simd128_store_float(float *fp, __simd128_float s) {
-    _mm_store_ps(fp, s);
+#ifdef DST_SIMD_MODE_STREAM
+	simd128_stream_float(fp, s);
+#else
+	_mm_store_ps(fp, s);
+#endif
 }
 
 // Load one float into the lowest-order element. The other elements are filled with
