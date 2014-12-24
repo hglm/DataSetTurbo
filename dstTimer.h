@@ -74,12 +74,10 @@ private :
 	
 	static void *Thread(void *p) {
 		dstThreadedTimeout *tt = (dstThreadedTimeout *)p;
-		int secs = tt->timeout_period / 1000000;
-		if (secs > 0)
-			sleep(secs);
-		int usecs = tt->timeout_period % 1000000;
-		if (usecs > 0)
-			usleep(usecs);
+		struct timespec ts;
+		ts.tv_sec = tt->timeout_period / 1000000;
+		ts.tv_nsec = (tt->timeout_period % 1000000) * 1000;
+		nanosleep(&ts, NULL);
 		pthread_mutex_lock(&tt->mutex);
 		*tt->stop_signalled = true;
 		pthread_mutex_unlock(&tt->mutex);
