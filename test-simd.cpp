@@ -603,6 +603,17 @@ int main(int argc, char *argv[]) {
 		// Warm-up for 0.1s.
 		tt->Start((uint64_t)(timeout_secs * 100000));
 		timer.Start();
+		test_data[i].test_func(tt, TEST_MODE_SIMD_NO_STREAMING);
+
+		tt->Start((uint64_t)(timeout_secs * 1000000));
+		timer.Start();
+		count = test_data[i].test_func(tt, TEST_MODE_SIMD_NO_STREAMING);
+		elapsed_time = timer.Elapsed();
+		double rate_non_streaming_threaded = count / elapsed_time;
+
+		// Warm-up for 0.1s.
+		tt->Start((uint64_t)(timeout_secs * 100000));
+		timer.Start();
 		test_data[i].test_func(tt, TEST_MODE_SIMD_STREAMING);
 
 		tt->Start((uint64_t)(timeout_secs * 1000000));
@@ -612,7 +623,6 @@ int main(int argc, char *argv[]) {
 		double rate_streaming_threaded = count / elapsed_time;
 
 		double rate_non_simd_threaded = 0.0d;
-		double rate_non_streaming_threaded = 0.0d;
 		printf("Test: %s\n"
 			"Single:  Non-SIMD: %8.3lfM  SIMD: %8.3lfM  Streaming: %8.3lfM\n"
 			"Multi:   Non-SIMD: %8.3lfM  SIMD: %8.3lfM  Streaming: %8.3lfM\n",

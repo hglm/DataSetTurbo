@@ -26,13 +26,24 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "dstSIMD.h"
 #include "dstSIMDDot.h"
 #include "dstSIMDMatrix.h"
+
 #ifdef DST_SIMD_MODE_STREAM
+// Support multi-threading in streaming store versions of SIMD functions.
+#define DST_MULTI_THREADING
+#else
+// Support multi-threading also in non-streaming store versions of SIMD functions.
+// This adds some overhead because the non-streaming versions are called for small
+// sizes also.
+#define DST_MULTI_THREADING
+#endif
+
+#ifdef DST_MULTI_THREADING
 #include "dstThread.h"
 #endif
 
 #ifndef DST_NO_SIMD
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static dstTaskScheduler task_scheduler;
 
@@ -85,7 +96,7 @@ const float * DST_RESTRICT f2, __simd128_float& m_result) {
 	dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 typedef void (*dstDotProductFuncType)(int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT dot);
@@ -168,7 +179,7 @@ const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 
 // Dot products (NxN).
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNxNV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -185,7 +196,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNxNV4(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNxNV3P(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -201,7 +212,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNxNV3P(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNxNV3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -219,7 +230,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 
 // Dot products (Nx1).
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNx1V4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -235,7 +246,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNx1V4(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNx1V3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -251,7 +262,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNx1V3(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNx1V3PV3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -267,7 +278,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNx1V3PV3(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNx1P3PV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
@@ -283,7 +294,7 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 	dstInlineCalculateDotProductsNx1P3PV4(n, f1, f2, dot);
 }
 
-#ifdef DST_SIMD_MODE_STREAM
+#ifdef DST_MULTI_THREADING
 
 static const void dstNonInlineCalculateDotProductsNx1P3V4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
