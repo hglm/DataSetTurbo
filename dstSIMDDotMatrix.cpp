@@ -26,8 +26,17 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "dstSIMD.h"
 #include "dstSIMDDot.h"
 #include "dstSIMDMatrix.h"
+#ifdef DST_SIMD_MODE_STREAM
+#include "dstThread.h"
+#endif
 
 #ifndef DST_NO_SIMD
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static dstTaskScheduler task_scheduler;
+
+#endif
 
 // Matrix multiplication.
 
@@ -76,47 +85,217 @@ const float * DST_RESTRICT f2, __simd128_float& m_result) {
 	dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
 }
 
+#ifdef DST_SIMD_MODE_STREAM
+
+typedef void (*dstDotProductFuncType)(int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT dot);
+
+
+static void dstCalculateDotProductsThread(dstTaskInfo *task_info) {
+	void **user_data = (void **)task_info->user_data;
+	float *f1 = (float *)user_data[0];
+	float *f2 = (float *)user_data[1];
+	float *dot = (float *)user_data[2];
+	dstDotProductFuncType dot_product_func = (dstDotProductFuncType)user_data[3];
+	uint32_t alignment_and_sizes = (uint32_t)(uint64_t)user_data[4];
+	uint32_t size_f1 = (alignment_and_sizes >> 8) & 0xFF;
+	uint32_t size_f2 = (alignment_and_sizes >> 16) & 0xFF;
+	f1 += task_info->subdivision.start_index * size_f1;
+	f2 += task_info->subdivision.start_index * size_f2;
+	dot += task_info->subdivision.start_index;
+//	printf("Task start = %d, n = %d, creation time = %.5lf\n", task_info->subdivision.start_index,
+//		task_info->subdivision.nu_elements,(double)task_info->creation_time / 1000000.0d);
+	dot_product_func(task_info->subdivision.nu_elements, f1, f2, dot);
+}
+
+
+static void dstSubdivideDotProductFunction(int nu_threads,
+const void (*dot_product_func)(int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT dot), uint32_t alignment_and_sizes, int n, const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	uint32_t alignment = alignment_and_sizes & 0xFF;
+	dstTaskDivisionData division;
+	division.size = n;
+	division.nu_subdivisions = nu_threads;
+	// Alignment in terms of number of elements.
+	division.alignment = alignment;
+//	printf("Number of threads hint: %d\n", nu_threads);
+	const void **user_data = (const void **)malloc(sizeof(void *) * 5);
+	user_data[0] = f1;
+	user_data[1] = f2;
+	user_data[2] = dot;
+	user_data[3] = (void *)dot_product_func;
+	user_data[4] = (void *)alignment_and_sizes;
+	for (int i = 0; i < nu_threads; i++) {
+		division.index = i;
+		task_scheduler.AddTask(0, dstCalculateDotProductsThread,
+			(const void *)user_data, division);
+	}
+	task_scheduler.WaitUntilFinished();
+	free(user_data);
+}
+
+static DST_INLINE_ONLY bool dstDotProductFunctionMultiThreadCheck(const void (*dot_product_func)(
+int n, const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT dot), int cost, int alignment, int n, const float * DST_RESTRICT f1,
+const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	if (dstCheckFlag(DST_FLAG_THREADING)) {
+		int nu_threads = dstGetNumberOfThreadsHint(n, cost);
+		if (nu_threads > 1) {
+			dstSubdivideDotProductFunction(nu_threads, dot_product_func, alignment,
+				n, f1, f2, dot);
+			return true;
+		}
+	}
+	return false;
+}
+
+#define DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(func, cost, alignment) \
+	bool r = dstDotProductFunctionMultiThreadCheck(func, cost, alignment, n, f1, f2, dot); \
+	if (r) \
+		return;
+
+#else
+
+#define DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(func, cost, alignment)
+
+#endif
+
+// Create integer with information about alignment in terms of number of elements and
+// size of each element of f1 and f2 in terms of floats.
+#define ALIGNMENT_AND_SIZES(alignment, size_f1, size_f2) \
+	((uint32_t)alignment | ((uint32_t)size_f1 << 8) | ((uint32_t)size_f2 << 16))
+
 // Dot products (NxN).
 
-void SIMD_FUNC(dstCalculateDotProductsNxNV4)(int n,
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNxNV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	dstInlineCalculateDotProductsNxNV4(n, f1, f2, dot);
 }
 
+#endif
+
+void SIMD_FUNC(dstCalculateDotProductsNxNV4)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	// Cost 64, alignment has to be four because of dot product stores.
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNxNV4, 64,
+		ALIGNMENT_AND_SIZES(4, 4, 4));
+	dstInlineCalculateDotProductsNxNV4(n, f1, f2, dot);
+}
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNxNV3P(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	dstInlineCalculateDotProductsNxNV4(n, f1, f2, dot);
+}
+
+#endif
+
 void SIMD_FUNC(dstCalculateDotProductsNxNV3P)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNxNV3P, 64,
+		ALIGNMENT_AND_SIZES(4, 4, 4));
 	dstInlineCalculateDotProductsNxNV3P(n, f1, f2, dot);
 }
 
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNxNV3(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	dstInlineCalculateDotProductsNxNV3(n, f1, f2, dot);
+}
+
+#endif
+
 void SIMD_FUNC(dstCalculateDotProductsNxNV3)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNxNV3, 64,
+		ALIGNMENT_AND_SIZES(4, 3, 3));
 	dstInlineCalculateDotProductsNxNV3(n, f1, f2, dot);
 }
 
 // Dot products (Nx1).
 
-void SIMD_FUNC(dstCalculateDotProductsNx1V4)(int n,
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNx1V4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	dstInlineCalculateDotProductsNx1V4(n, f1, f2, dot);
 }
 
-void SIMD_FUNC(dstCalculateDotProductsNx1V3)(int n,
+#endif
+
+void SIMD_FUNC(dstCalculateDotProductsNx1V4)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNx1V4, 48,
+		ALIGNMENT_AND_SIZES(4, 4, 0));
+	dstInlineCalculateDotProductsNx1V4(n, f1, f2, dot);
+}
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNx1V3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	dstInlineCalculateDotProductsNx1V3(n, f1, f2, dot);
 }
 
-void SIMD_FUNC(dstCalculateDotProductsNx1V3PV3)(int n,
+#endif
+
+void SIMD_FUNC(dstCalculateDotProductsNx1V3)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNx1V3, 48,
+		ALIGNMENT_AND_SIZES(4, 3, 0));
+	dstInlineCalculateDotProductsNx1V3(n, f1, f2, dot);
+}
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNx1V3PV3(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	dstInlineCalculateDotProductsNx1V3PV3(n, f1, f2, dot);
 }
 
-void SIMD_FUNC(dstCalculateDotProductsNx1P3PV4)(int n,
+#endif
+
+void SIMD_FUNC(dstCalculateDotProductsNx1V3PV3)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNx1V3PV3, 48,
+		ALIGNMENT_AND_SIZES(4, 4, 0));
+	dstInlineCalculateDotProductsNx1V3PV3(n, f1, f2, dot);
+}
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNx1P3PV4(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	dstInlineCalculateDotProductsNx1P3PV4(n, f1, f2, dot);
 }
 
+#endif
+
+void SIMD_FUNC(dstCalculateDotProductsNx1P3PV4)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNx1P3PV4, 52,
+		ALIGNMENT_AND_SIZES(4, 4, 0));
+	dstInlineCalculateDotProductsNx1P3PV4(n, f1, f2, dot);
+}
+
+#ifdef DST_SIMD_MODE_STREAM
+
+static const void dstNonInlineCalculateDotProductsNx1P3V4(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	dstInlineCalculateDotProductsNx1P3V4(n, f1, f2, dot);
+}
+
+#endif
+
 void SIMD_FUNC(dstCalculateDotProductsNx1P3V4)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+	DOT_PRODUCT_FUNC_MULTI_THREAD_CHECK(dstNonInlineCalculateDotProductsNx1P3V4, 52,
+		ALIGNMENT_AND_SIZES(4, 3, 0));
 	dstInlineCalculateDotProductsNx1P3V4(n, f1, f2, dot);
 }
 

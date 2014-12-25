@@ -36,7 +36,7 @@ enum {
     DST_TASK_FLAG_NOTIFY_COMPLETION = 0x4,
     // Flags that are set after completion.
     DST_TASK_FLAG_COMPLETED = 0x10000,
-    DST_TASK_FLAG_SLOT_AVAILABLE = 0x20000
+    DST_TASK_FLAG_COMPLETION_NOTIFIED = 0x20000
 };
 
 class DST_API dstTaskDurationEstimate {
@@ -51,6 +51,20 @@ public :
 	}
 };
 
+class dstTaskDivisionData {
+public:
+	uint32_t size;
+	uint32_t nu_subdivisions;
+	uint32_t alignment;
+	uint32_t index;
+};
+
+class dstTaskSubdivisionData {
+public :
+	uint32_t start_index;
+	uint32_t nu_elements;
+};
+
 class DST_API dstTaskInfo;
 
 typedef void (*dstTaskFunc)(dstTaskInfo *task_info);
@@ -60,12 +74,11 @@ public :
 	pthread_t thread;
 	int flags;
 	dstTaskFunc task_func;
+	const void *user_data;
 	uint64_t creation_time;
 	dstTaskDurationEstimate duration_estimate;
-        pthread_mutex_t *mutex;
+	dstTaskSubdivisionData subdivision;
 };
-
-static void *dstInternalThreadFunc(void *);
 
 typedef dstCastDynamicArray <dstTaskInfo *, void *, uint32_t, dstPointerArray>
     dstTaskInfoPointerArray;
@@ -73,24 +86,55 @@ typedef dstCastDynamicArray <dstTaskInfo *, void *, uint32_t, dstPointerArray>
 class DST_API dstTaskScheduler {
 private :
 	dstTaskInfoPointerArray task_info_array;
+	dstIntArray empty_slot_array;
         dstIntArray completion_notification_array;
+	uint64_t start_time;
         // A mutex exists because a thread may change the flags field of a task_info_array
 	// entry.
-        pthread_mutex_t task_info_mutex;
+        pthread_mutex_t task_info_array_mutex;
+	pthread_mutex_t empty_slot_array_mutex;
 
 private :
-	int FindEmptySlot();
-	inline void LockMutex() {
-		pthread_mutex_lock(&task_info_mutex);
+	inline void LockMutexTaskInfoArray() {
+		pthread_mutex_lock(&task_info_array_mutex);
 	}
-	inline void UnlockMutex() {
-		pthread_mutex_unlock(&task_info_mutex);
+	inline void UnlockMutexTaskInfoArray() {
+		pthread_mutex_unlock(&task_info_array_mutex);
 	}
+	inline void LockMutexEmptySlotArray() {
+		pthread_mutex_lock(&empty_slot_array_mutex);
+	}
+	inline void UnlockMutexEmptySlotArray() {
+		pthread_mutex_unlock(&empty_slot_array_mutex);
+	}
+	void ClearTaskInfoArray();
+
 public :
 	dstTaskScheduler();
-	int AddTask(int flags, dstTaskFunc func, dstTaskDurationEstimate e);
-	inline int AddTask(int flags, dstTaskFunc func) {
-		return AddTask(flags, func, dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0));
+	int AddTask(int flags, dstTaskFunc func, const void *user_data, dstTaskDurationEstimate e,
+		const dstTaskDivisionData& division);
+	inline int AddTask(int flags, dstTaskFunc func, const void *user_data) {
+		dstTaskDivisionData division;
+		division.size = 0;
+		return AddTask(flags, func, user_data,
+			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division);
+	}
+	inline int AddTask(int flags, dstTaskFunc func, const void *user_data, dstTaskDurationEstimate e) {
+		dstTaskDivisionData division;
+		division.size = 0;
+		return AddTask(flags, func, user_data, e, division);
+	}
+	inline int AddTask(int flags, dstTaskFunc func, const void *user_data,
+	const dstTaskDivisionData& division) {
+		return AddTask(flags, func, user_data,
+			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division);
+	}
+	inline void AddSubdividedTasks(int flags, dstTaskFunc func, const void *user_data,
+	dstTaskDivisionData& division) {
+		for (uint32_t i = 0; i < division.nu_subdivisions; i++) {
+			division.index = i;
+			AddTask(flags, func, user_data, division);
+		}
 	}
 	void WaitUntilFinished(int task_index);
 	void WaitUntilFinished();

@@ -62,6 +62,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif // DST_SHARED
 
 #include "dstConfigParams.h"
+#include "dstMath.h"
 
 // Alignment macros (on some platforms, aligning or packing data structures may improve
 // performance.
@@ -98,7 +99,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // The amount of stores in bytes in a SIMD function that will trigger the use of
 // the streaming (non-temporal storage) version of the function, sparing L1 cache
 // pollution, which faster for larger data sets. Should be set to a value somewhat
-// lower than the L1 data cache size.
+// lower than the L1 data cache size. For modern AMD processors it should be something
+// like 56000, for Intel processors 28000.
 #define DST_STREAM_THRESHOLD 28000
 
 // SIMD detection.
@@ -199,6 +201,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 enum {
 	DST_FLAG_SIMD_ENABLED = 0x1,
 	DST_FLAG_SIMD_256 = 0x2,
+	DST_FLAG_THREADING = 0x4,
+	DST_FLAG_FIXED_NU_THREADS = 0x8,
 };
 
 enum {
@@ -334,6 +338,10 @@ public :
 	uint32_t simd_type;
 	// All SIMD features that are supported by the current CPU.
 	uint32_t simd_cpu_flags;
+	// The maximum number of threads to use in a CPU-intensive function.
+	int max_threads_per_function;
+	// Optional fixed number of threads setting.
+	int fixed_nu_threads;
 	// Function table.
 	dstSIMDFuncs simd_funcs;
 	dstSIMDFuncs simd_funcs_stream;
@@ -432,17 +440,57 @@ static DST_INLINE_ONLY bool dstCheckSIMDCPUFlag(uint32_t flag) {
 	return (dst_config.simd_cpu_flags & flag) != 0;
 }
 
+static DST_INLINE_ONLY void dstSetFlags(uint32_t flags) {
+	dst_config.flags = flags;
+}
+
+static DST_INLINE_ONLY uint32_t dstGetFlags() {
+	return dst_config.flags;
+}
+
+static DST_INLINE_ONLY void dstSetFlag(uint32_t flag) {
+	dst_config.flags |= flag;
+}
+
+static DST_INLINE_ONLY void dstClearFlag(uint32_t flag) {
+	dst_config.flags &= (~flag);
+}
+
 DST_API void dstSetSIMDType(int simd_type);
 
 DST_API void dstSetStreamingSIMDType(int simd_type);
 
 DST_API void dstSetNonStreamingSIMDType(int simd_type);
 
-DST_INLINE_ONLY int dstGetSIMDType() {
+static DST_INLINE_ONLY int dstGetSIMDType() {
 	return dst_config.simd_type;
 }
 
 DST_API const char *dstGetSIMDTypeString(int simd_type);
+
+// Set two-thread cost threshold. For example, when it is equal to 1048576 (1 << 20), two threads
+// will be used when the total cost is 1048576 (1 << 20) or higher, four threads will be used when
+// the cost is (1 << 21) or higher, eight threads when it is (1 << 22) or higher, etc, up to the
+// maximum allowed number of threads.
+#define DST_TWO_THREADS_COST_THRESHOLD (1 << 21)
+
+// Get hint about number of threads to use for operation on N elements, each with a given relative
+// cost. A cost of one per element roughly corresponds to a simple operation that adds up all elements
+// of an array of floats. A four vector dot product calculation with two arrays has a cost of roughly 64
+// per element. This always returns a power of two.
+
+static DST_INLINE_ONLY int dstGetNumberOfThreadsHint(uint32_t n, uint32_t cost) {
+	if (dst_config.flags & DST_FLAG_FIXED_NU_THREADS)
+		return dst_config.fixed_nu_threads;
+	int nu_threads = mini(128, 1 + (uint64_t)n * cost / DST_TWO_THREADS_COST_THRESHOLD);
+	return mini(nu_threads, dst_config.max_threads_per_function);
+}
+
+// Set fixed number of threads. The DST_FLAG_FIXED_NU_THREADS flag is not set.
+
+static DST_INLINE_ONLY void dstSetFixedNumberOfThreads(int nu_threads) {
+	dst_config.fixed_nu_threads = nu_threads;
+}
 
 #endif // !defined(__DST_CONFIG_H__)
 

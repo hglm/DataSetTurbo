@@ -1,0 +1,96 @@
+
+Notes
+
+-funsafe-math-optimizations is required for automatic NEON instruction generation.
+
+Source files:
+
+dstSIMD.h
+
+	Include file for SIMD support using a unified syntax. This file is meant to be
+	compiled seperately for	different SIMD configurations. It will typically include
+	dstSIMDSSE2.h, which defines low-level primitives for SSE2 with a little use of
+	later x86 SIMD versions. Included by files such as dstSIMDDot.h.
+
+dstSIMDSSE2.h
+
+	Defines low-level primitives for SSE2 with a little use of later x86 SIMD versions.
+	Meant to be compiled seperately for different SIMD configurations (not limited to SSE2).
+
+dstSIMDDot.h
+
+	Prototypes and inline versions of several dot product calculation functions, implemented
+	using SIMD.
+
+	Included by dstSIMD.h, this file is meant to be compiled seperately for different
+	SIMD configurations. For example, once with -msse2 and DST_SIMD_MODE_SSE2, once with
+	-msse3 and DST_SIMD_MODE_SSE3. The exported functions have the SIMD postfix
+	appended to their name.
+
+dstSIMDDotMatrix.cpp
+
+	Regular (exported) versions of SIMD dot product calculation functions, implemented using
+	the inline versions defined in dstSIMDDot.h. This file is meant to be compiled seperately
+	for different SIMD configurations in conjunction with dstSIMDDot.h. This file also
+	implements multi-threading for dot product calculation functions for different SIMD
+	types that use streaming store instructions.
+
+dstDotMatrixNoSIMD.cpp
+
+	Implementation of low-level SIMD dot product functions without using SIMD.
+	The prototypes should be declared in dstSIMDFuncs.h. The implementations cast the
+	float * types to dstVectorMath types for ease of computation.
+
+	In the current set-up, there are no inline versions of these functions.
+
+dstSIMDFuncs.h
+
+	Prototypes for dot product function for all SIMD types, including non-SIMD. These
+	are assigned to the function pointers in dst_config. This file is meant to be compiled seperately
+	for different SIMD configurations in conjunction with dstSIMDDotMatrix.cpp. The actual
+	implementation of these functions comes from repeated compilation of dstSIMDotMatrix.cpp
+	(which includes dstSIMDDot.h, which includes dstSIMD.h) for each SIMD type.
+
+dstVectorMathSIMD.h
+
+	Defines a few inline low-level SIMD primitives for loading/storing dstVectorMath types
+	directly. May no longer be used internally within the library. When associated with
+	exported functions must be compiled seperately for each SIMD configuration.
+
+dstVectorMathSIMD.cpp
+
+	Old implementation of dot product SIMD function interface.
+
+
+Multi-threading performance
+
+Two threads triggered at size 32678 (cost threshold 2097152, cost per element 64).
+
+dstCalculateDotProductsVector4D
+
+Two threads triggered at size 32678 (cost threshold 2097152, cost per element 64).
+
+
+			16384	20000	32768	50000	100000	500000	1000000	5000000
+Single thread		470	322		316	311	240	237	247
+n = 2			317	350		513	581	372	369	365
+n = 4			318	174		381	540	373	405	382
+n = 8			317	353		501	592	363	348	363
+
+dstCalculateDotProductsVector3D
+
+			32768	20000	32768	50000	100000	500000	1000000	5000000
+Single thread
+n = 2
+n = 4
+n = 8
+
+dstCalculateDotProductsNx1Vector4D
+
+			16384	20000	32768	50000	100000	500000	1000000	5000000
+Single thread
+n = 2
+n = 4
+n = 8
+
+

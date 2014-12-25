@@ -52,15 +52,15 @@ static uint64_t TestCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTime
 
 TestData test_data[] = {
 	{
-		"SIMD dstCalculateDotProductsVector4D",
+		"SIMD dstCalculateDotProductsNxNVector4D",
 		TestCalculateDotProductsNxNVector4D,
 	},
 	{
-		"SIMD dstCalculateDotProductsVector3DPadded",
+		"SIMD dstCalculateDotProductsNxNVector3DPadded",
 		TestCalculateDotProductsNxNVector3DPadded
 	},
 	{
-		"SIMD dstCalculateDotProductsVector3D",
+		"SIMD dstCalculateDotProductsNxNVector3D",
 		TestCalculateDotProductsNxNVector3D
 	},
 
@@ -87,7 +87,7 @@ TestData test_data[] = {
 };
 
 #define NU_TESTS (sizeof(test_data) / sizeof(test_data[0]))
-#define DEFAULT_vector_array_size 1024
+#define DEFAULT_VECTOR_ARRAY_SIZE 1024
 
 enum {
 	TEST_MODE_NO_SIMD,
@@ -101,7 +101,8 @@ Vector3D *vector3D_array[2];
 float *dot_product_array[2];
 dstRNG *rng;
 int simd_type;
-int vector_array_size = DEFAULT_vector_array_size;
+int vector_array_size;
+int fixed_nu_threads;
 
 static void TypeSizeReport() {
 	Vector3DPadded V;
@@ -323,15 +324,64 @@ static const char *CorrectString(double deviation) {
 		return "not correct";
 }
 
+static void ErrorMessage(const char *s) {
+	printf("%s\n", s);
+	exit(1);
+}
+
+static void Usage() {
+	printf(
+		"test-simd -- Test SIMD functionality of DataSetTurbo library\n\n"
+		"Options:\n"
+		"-n <number>  Size of vector arrays (number of elements).\n"
+		"-t <number>  Use a fixed number of threads for multi-threading benchmarks.\n"
+		"-h           Display this text.\n"
+		);
+	exit(0);
+}
+
 int main(int argc, char *argv[]) {
-	if (argc >= 2) {
-		int n = atoi(argv[1]);
-		if (n > 0 && n <= (1 << 30))
-			vector_array_size = n;
+	vector_array_size = DEFAULT_VECTOR_ARRAY_SIZE;
+	fixed_nu_threads = 0;
+
+ 	for (int i = 1; i < argc; i++) {
+		// Options that take no arguments.
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+			case 'h' :
+				Usage();
+			}
+		}
+		// Options that take one argument.
+		if (argv[i][0] == '-' && i + 1 < argc) {
+			int n = atoi(argv[i + 1]);
+			switch (argv[i][1]) {
+			case 'n' :
+				if (n > 0 && n <= (1 << 30))
+					vector_array_size = n;
+				else
+					ErrorMessage("Invalid option argument (vector array size).");
+				i++;
+				continue;
+			case 't' :
+				if (n > 0 && n <= 128)
+					fixed_nu_threads = n;
+				else
+					ErrorMessage("Invalid option argument (fixed number of threads).");
+				i++;
+				continue;
+			}
+		}
+		if (argv[i][0] == '-')
+			ErrorMessage("Invalid option.");
+		ErrorMessage("Invalid command-line argument (only options allowed).");
 	}
 
 	dstInit();
-
+	if (fixed_nu_threads > 0) {
+		dstSetFixedNumberOfThreads(fixed_nu_threads);
+		dstSetFlag(DST_FLAG_FIXED_NU_THREADS);
+	}
 #if 0
 	// Allocate 1GB of address space, so that huge pages will be used.
 	uint8_t *buffer = (uint8_t *)malloc (1024 * 1024 * 1024);
@@ -499,12 +549,19 @@ int main(int argc, char *argv[]) {
 		avg_deviation, CorrectString(avg_deviation));
 
 	printf("Array size %d\n", vector_array_size);
+	printf("Number of threads for multi-threading: ");
+	if (fixed_nu_threads > 0)
+		printf("%d (fixed)\n", fixed_nu_threads);
+	else
+		printf("Dynamic (depends on data size)\n");
 	float timeout_secs = TEST_DURATION;
 	dstTimer timer;
 
-	for (int i = 0; i < NU_TESTS; i++) {
+	for (uint32_t i = 0; i < NU_TESTS; i++) {
 		dstThreadedTimeout *tt;
 		tt = new dstThreadedTimeout();
+
+		dstClearFlag(DST_FLAG_THREADING);
 
 		// Warm-up for 0.1s.
 		tt->Start((uint64_t)(timeout_secs * 100000));
@@ -541,9 +598,27 @@ int main(int argc, char *argv[]) {
 		elapsed_time = timer.Elapsed();
 		double rate_streaming = count / elapsed_time;
 
-		printf("Test: %s\nRate: Non-SIMD: %8.3fM  Non-streaming: %8.3fM  Streaming: %8.3fM\n",
+		dstSetFlag(DST_FLAG_THREADING);
+
+		// Warm-up for 0.1s.
+		tt->Start((uint64_t)(timeout_secs * 100000));
+		timer.Start();
+		test_data[i].test_func(tt, TEST_MODE_SIMD_STREAMING);
+
+		tt->Start((uint64_t)(timeout_secs * 1000000));
+		timer.Start();
+		count = test_data[i].test_func(tt, TEST_MODE_SIMD_STREAMING);
+		elapsed_time = timer.Elapsed();
+		double rate_streaming_threaded = count / elapsed_time;
+
+		double rate_non_simd_threaded = 0.0d;
+		double rate_non_streaming_threaded = 0.0d;
+		printf("Test: %s\n"
+			"Single:  Non-SIMD: %8.3lfM  SIMD: %8.3lfM  Streaming: %8.3lfM\n"
+			"Multi:   Non-SIMD: %8.3lfM  SIMD: %8.3lfM  Streaming: %8.3lfM\n",
 			test_data[i].description, rate_non_simd / 1000000.0d, rate_non_streaming / 1000000.0d,
-			rate_streaming / 1000000.0d);
+			rate_streaming / 1000000.0d, rate_non_simd_threaded / 1000000.0d,
+			rate_non_streaming_threaded / 1000000.0d, rate_streaming_threaded / 1000000.0d);
 		delete tt;
 	}
 }

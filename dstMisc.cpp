@@ -166,6 +166,15 @@ void dstInit() {
 	if (dst_config.simd_type == DST_SIMD_AVX || 
 	(dst_config.simd_type >= DST_SIMD_AVX_SSE4A_FMA4 && dst_config.simd_type <= DST_SIMD_AVX_FMA))
 		dst_config.flags |= DST_FLAG_SIMD_256;
+#if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
+	// The SIMD type has been autodetected and can be changed.
+	// Initialize the function pointers.
+	dstSetSIMDType(dst_config.simd_type);
+#endif
+
+	dst_config.max_threads_per_function = sysconf(_SC_NPROCESSORS_CONF);
+	if (dst_config.max_threads_per_function > 1)
+		dst_config.flags |= DST_FLAG_THREADING;
 
 	printf("dstInit: Processor name: %s\n", cpuinfo->processor_name);
 	printf("dstInit: Processor SIMD features: ");
@@ -178,12 +187,8 @@ void dstInit() {
 	"detected"
 #endif
 		);
-
-#if !defined(DST_NO_SIMD) && !defined(DST_FIXED_SIMD)
-	// The SIMD type has been autodetected and can be changed.
-	// Initialize the function pointers.
-	dstSetSIMDType(dst_config.simd_type);
-#endif
+	printf("dstInit: Max level of multi-threading per function: %d\n",
+		dst_config.max_threads_per_function);
 }
 
 
