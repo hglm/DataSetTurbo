@@ -33,7 +33,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #else
 // Support multi-threading also in non-streaming store versions of SIMD functions.
 // This adds some overhead because the non-streaming versions are called for small
-// sizes also.
+// sizes also (for which multi-threading is normally not used, but a flags check/
+// cost calculation is performed).
 #define DST_MULTI_THREADING
 #endif
 
@@ -114,9 +115,13 @@ static void dstCalculateDotProductsThread(dstTaskInfo *task_info) {
 	f1 += task_info->subdivision.start_index * size_f1;
 	f2 += task_info->subdivision.start_index * size_f2;
 	dot += task_info->subdivision.start_index;
-//	printf("Task start = %d, n = %d, creation time = %.5lf\n", task_info->subdivision.start_index,
+//	printf("Task begin start_index = %d, n = %d, creation time = %.5lf\n",
+//		task_info->subdivision.start_index,
 //		task_info->subdivision.nu_elements,(double)task_info->creation_time / 1000000.0d);
+//	fflush(stdout);
 	dot_product_func(task_info->subdivision.nu_elements, f1, f2, dot);
+//	printf("Task end, start_index = %d\n", task_info->subdivision.start_index);
+//	fflush(stdout);
 }
 
 
@@ -131,16 +136,16 @@ const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	// Alignment in terms of number of elements.
 	division.alignment = alignment;
 //	printf("Number of threads hint: %d\n", nu_threads);
-	const void **user_data = (const void **)malloc(sizeof(void *) * 5);
-	user_data[0] = f1;
-	user_data[1] = f2;
+	void **user_data = (void **)malloc(sizeof(void *) * 5);
+	user_data[0] = (void *)f1;
+	user_data[1] = (void *)f2;
 	user_data[2] = dot;
 	user_data[3] = (void *)dot_product_func;
 	user_data[4] = (void *)alignment_and_sizes;
 	for (int i = 0; i < nu_threads; i++) {
 		division.index = i;
 		task_scheduler.AddTask(0, dstCalculateDotProductsThread,
-			(const void *)user_data, division);
+			(void *)user_data, division);
 	}
 	task_scheduler.WaitUntilFinished();
 	free(user_data);

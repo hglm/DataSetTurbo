@@ -19,6 +19,15 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_THREAD_H__
 #define __DST_THREAD_H__
 
+// Thread scheduler class. After a dstTaskScheduler is created, threads
+// are created as tasks are added. When a task is finished, the thread
+// is kept active, waiting for the signal to start with the next task.
+// The number of created threads is always equal to the maximum number
+// of tasks that has been concurrently active since the creation of
+// the dstTaskScheduler. When a dstTaskScheduler is destroyed, the threads
+// will exit.
+
+
 #include <pthread.h>
 
 #include <dstDynamicArray.h>
@@ -69,6 +78,12 @@ class DST_API dstTaskInfo;
 
 typedef void (*dstTaskFunc)(dstTaskInfo *task_info);
 
+enum dstTaskThreadSignal {
+	DST_TASK_THREAD_WAIT,
+	DST_TASK_THREAD_CONTINUE,
+	DST_TASK_THREAD_EXIT
+};
+
 class DST_API dstTaskInfo {
 public :
 	pthread_t thread;
@@ -78,6 +93,19 @@ public :
 	uint64_t creation_time;
 	dstTaskDurationEstimate duration_estimate;
 	dstTaskSubdivisionData subdivision;
+	pthread_mutex_t continue_mutex;
+	pthread_cond_t continue_condition;
+	dstTaskThreadSignal continue_signal;
+	pthread_mutex_t complete_mutex;
+	pthread_cond_t complete_condition;
+	dstTaskThreadSignal complete_signal;
+
+	inline void LockMutexContinue() {
+		pthread_mutex_lock(&continue_mutex);
+	}
+	inline void UnlockMutexContinue() {
+		pthread_mutex_unlock(&continue_mutex);
+	}
 };
 
 typedef dstCastDynamicArray <dstTaskInfo *, void *, uint32_t, dstPointerArray>
@@ -89,8 +117,6 @@ private :
 	dstIntArray empty_slot_array;
         dstIntArray completion_notification_array;
 	uint64_t start_time;
-        // A mutex exists because a thread may change the flags field of a task_info_array
-	// entry.
         pthread_mutex_t task_info_array_mutex;
 	pthread_mutex_t empty_slot_array_mutex;
 
@@ -107,10 +133,11 @@ private :
 	inline void UnlockMutexEmptySlotArray() {
 		pthread_mutex_unlock(&empty_slot_array_mutex);
 	}
-	void ClearTaskInfoArray();
+	void ClearTasks();
 
 public :
 	dstTaskScheduler();
+	~dstTaskScheduler();
 	int AddTask(int flags, dstTaskFunc func, const void *user_data, dstTaskDurationEstimate e,
 		const dstTaskDivisionData& division);
 	inline int AddTask(int flags, dstTaskFunc func, const void *user_data) {

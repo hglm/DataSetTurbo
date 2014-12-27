@@ -48,7 +48,7 @@ private :
                 max_elements = new_capacity;
 		data = (T *)realloc(data, sizeof(T) * max_elements);
 	}
-	inline void ExpandCapacity(int reference_capacity) {
+	inline void ExpandCapacity(S reference_capacity) {
 		S new_capacity = GetExpansionHint(reference_capacity);
 		if (new_capacity < reference_capacity) {
 			// When new_capacity is less than expected, usually zero, overflow
