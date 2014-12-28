@@ -98,11 +98,11 @@ public :
 		return max_elements;
         }
 	// Get value of element i.
-	inline T Get(S i) const {
+	inline T& Get(S i) const {
 		return data[i];
 	}
         // Set value of element i.
-        inline void Set(S i, T v) {
+        inline void Set(S i, const T& v) {
 		data[i] = v;
         }
 	// Get a pointer to the start of the array.
@@ -129,12 +129,12 @@ public :
         }
 	// Add element with value v without a capacity check. Capacity must have room for
 	// at least one more element.
-	inline void AddQuick(T v) {
+	inline void AddQuick(const T& v) {
 		data[nu_elements] = v;
 		nu_elements++;
 	}
 	// Add element with value v.
-	inline void Add(T v) {
+	inline void Add(const T& v) {
 		if (nu_elements == max_elements)
 			ExpandCapacity();
 		AddQuick(v);
@@ -191,16 +191,16 @@ public :
 	}
 	// Pop element (return value of last element and decrease size by one) when
 	// treating array as a stack. The array must contain at least one element.
-	inline S Pop() {
-		S v = data[nu_elements - 1];
+	inline T Pop() {
+		T v = data[nu_elements - 1];
 		nu_elements--;
 		return v;
 	}
 	// Pushing an element is equivalent to Add().
-	inline void PushQuick(S v) {
+	inline void PushQuick(const T& v) {
 		AddQuick(v);
 	}
-	inline void Push(S v) {
+	inline void Push(const T& v) {
 		Add(v);
 	}
 private :
@@ -265,8 +265,8 @@ class DST_API dstCastDynamicArray : public C2 {
 public :
 	dstCastDynamicArray(S starting_capacity = 4) { }
 	// Get value of element i.
-	inline U Get(S i) const {
-		return (U)(((C2 *)this)->Get(i));
+	inline U& Get(S i) const {
+		return (U&)(((C2 *)this)->Get(i));
 	}
         // Set value of element i.
         inline void Set(S i, U v) const {
@@ -314,6 +314,7 @@ typedef dstCastDynamicArray <void *, int64_t, uint32_t, dstInt64Array> dstPointe
 typedef dstCastDynamicArray <char *, void *, uint32_t, dstPointerArray> dstCharPointerArray;
 typedef dstCastDynamicArray <float, int, uint32_t, dstIntArray> dstFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint32_t, dstInt64Array> dstDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint32_t, dstIntArray> dstUnsignedIntArray;
 
 // Dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 16 bits (max 32768 entries).
@@ -329,6 +330,7 @@ typedef dstCastDynamicArray <void *, int64_t, uint16_t, dstSmallInt64Array> dstS
 typedef dstCastDynamicArray <char *, void *, uint16_t, dstSmallPointerArray> dstSmallCharPointerArray;
 typedef dstCastDynamicArray <float, int, uint16_t, dstSmallIntArray> dstSmallFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint16_t, dstSmallInt64Array> dstSmallDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint16_t, dstSmallIntArray> dstSmallUnsignedIntArray;
 
 // Dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 8 bits (max 128 entries).
@@ -345,6 +347,7 @@ typedef dstCastDynamicArray <char *, void *, uint8_t, dstVerySmallPointerArray> 
 typedef dstCastDynamicArray <float, int, uint8_t, dstVerySmallIntArray> dstVerySmallFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint8_t, dstVerySmallInt64Array>
     dstVerySmallDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint16_t, dstVerySmallIntArray> dstVerySmallUnsignedIntArray;
 
 // Dynamic array types for int, int64_t, void *, char *, float and double with a size
 // storage size of 64 bits (allowing arrays with much more than 2G entries). Because the size
@@ -362,6 +365,7 @@ typedef dstCastDynamicArray <void *, int64_t, uint64_t, dstHugeInt64Array> dstHu
 typedef dstCastDynamicArray <char *, void *, uint64_t, dstHugePointerArray> dstHugeCharPointerArray;
 typedef dstCastDynamicArray <float, int, uint64_t, dstHugeIntArray> dstHugeFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint64_t, dstHugeInt64Array> dstHugeDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint64_t, dstHugeIntArray> dstHugeUnsignedIntArray;
 
 // Tight array variant, which does not expand by doubling capacity but by smaller steps.
 
@@ -442,6 +446,7 @@ typedef dstCastDynamicArray <char *, void *, uint32_t, dstTightPointerArray>
     dstTightCharPointerArray;
 typedef dstCastDynamicArray <float, int, uint32_t, dstTightIntArray> dstTightFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint32_t, dstTightInt64Array> dstTightDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint32_t, dstTightIntArray> dstTightUnsignedIntArray;
 
 // dstTightSmallDynamicArray types for int, int64_t, void * char *, with a size storage size
 // of 16 bits (max 65536 entries).
@@ -455,10 +460,12 @@ typedef dstCastDynamicArray <void *, int, uint16_t, dstTightSmallIntArray> dstTi
 typedef dstCastDynamicArray <void *, int64_t, uint16_t, dstTightSmallInt64Array> dstTightSmallPointerArray;
 #endif
 typedef dstCastDynamicArray <char *, void *, uint16_t, dstTightSmallPointerArray>
-    dstTightSmallCharPointerArray;
+	dstTightSmallCharPointerArray;
 typedef dstCastDynamicArray <float, int, uint16_t, dstTightSmallIntArray> dstTightSmallFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint16_t, dstTightSmallInt64Array>
-    dstTightSmallDoubleArray;
+	dstTightSmallDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint16_t, dstTightSmallIntArray>
+	dstTightSmallUnsignedIntArray;
 
 // Tight dynamic array types for int, int64_t, void * char *, with a size storage size
 // of 8 bits (max 256 entries).
@@ -477,6 +484,8 @@ typedef dstCastDynamicArray <float, int, uint8_t, dstTightVerySmallIntArray>
     dstTightVerySmallFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint8_t, dstTightVerySmallInt64Array>
     dstTightVerySmallDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint8_t, dstTightVerySmallIntArray>
+	dstTightVerySmallUnsignedIntArray;
 
 // Dynamic array types for int, int64_t, void *, char *, float and double with a size
 // storage size of 64 bits (allowing arrays with much more than 2G entries).
@@ -495,6 +504,8 @@ typedef dstCastDynamicArray <char *, void *, uint64_t, dstTightHugePointerArray>
 typedef dstCastDynamicArray <float, int, uint64_t, dstTightHugeIntArray> dstTightHugeFloatArray;
 typedef dstCastDynamicArray <double, int64_t, uint64_t, dstTightHugeInt64Array>
     dstTightHugeDoubleArray;
+typedef dstCastDynamicArray <uint32_t, int, uint64_t, dstTightHugeIntArray>
+	dstTightHugeUnsignedIntArray;
 
 #endif
 
