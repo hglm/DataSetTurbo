@@ -34,18 +34,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dstTimer.h>
 
 enum {
-    DST_TASK_DURATION_UNIT_NONE = 0,
-    DST_TASK_DURATION_UNIT_USEC
+	DST_TASK_DURATION_UNIT_NONE = 0,
+	DST_TASK_DURATION_UNIT_USEC
 };
 
 enum {
-    // Specified flags.
-    DST_TASK_FLAG_PRIORITY_HIGH = 0x1,
-    DST_TASK_FLAG_DURATION_ESTIMATE = 0x2,
-    DST_TASK_FLAG_NOTIFY_COMPLETION = 0x4,
-    // Flags that are set after completion.
-    DST_TASK_FLAG_COMPLETED = 0x10000,
-    DST_TASK_FLAG_COMPLETION_NOTIFIED = 0x20000
+	// Specified flags.
+	DST_TASK_FLAG_PRIORITY_HIGH = 0x1,
+	DST_TASK_FLAG_DURATION_ESTIMATE = 0x2,
+	DST_TASK_FLAG_NOTIFY_COMPLETION = 0x4,
+
+	// Flags that are set after completion.
+	DST_TASK_FLAG_COMPLETED = 0x10000,
+	DST_TASK_FLAG_COMPLETION_NOTIFIED = 0x20000
 };
 
 class DST_API dstTaskDurationEstimate {
@@ -74,9 +75,9 @@ public :
 	uint32_t nu_elements;
 };
 
-class DST_API dstTaskInfo;
+class DST_API dstBaseTaskInfo;
 
-typedef void (*dstTaskFunc)(dstTaskInfo *task_info);
+typedef void (*dstTaskFunc)(dstBaseTaskInfo *task_info);
 
 enum dstTaskThreadSignal {
 	DST_TASK_THREAD_WAIT,
@@ -84,15 +85,19 @@ enum dstTaskThreadSignal {
 	DST_TASK_THREAD_EXIT
 };
 
-class DST_API dstTaskInfo {
+class DST_API dstBaseTaskInfo {
 public :
 	pthread_t thread;
-	int flags;
+	uint32_t flags;
 	dstTaskFunc task_func;
 	const void *user_data;
+	dstTaskSubdivisionData subdivision;
+};
+
+class DST_API dstTaskInfo : public dstBaseTaskInfo {
+public :
 	uint64_t creation_time;
 	dstTaskDurationEstimate duration_estimate;
-	dstTaskSubdivisionData subdivision;
 	pthread_mutex_t continue_mutex;
 	pthread_cond_t continue_condition;
 	dstTaskThreadSignal continue_signal;
@@ -109,7 +114,30 @@ public :
 };
 
 typedef dstCastDynamicArray <dstTaskInfo *, void *, uint32_t, dstPointerArray>
-    dstTaskInfoPointerArray;
+	dstTaskInfoPointerArray;
+
+class dstTaskGroup;
+
+class DST_API dstTaskGroupMember : public dstBaseTaskInfo {
+public :
+	dstTaskGroup *group;
+	dstTaskThreadSignal continue_signal;
+};
+
+typedef dstDynamicArray <dstTaskGroupMember, uint8_t> dstTaskGroupMemberArray;
+
+class DST_API dstTaskGroup {
+public :
+	dstTaskGroupMemberArray member_array;
+	pthread_mutex_t continue_mutex;
+	pthread_cond_t continue_condition;
+	pthread_mutex_t complete_mutex;
+	pthread_cond_t complete_condition;
+	int nu_active_members;
+};
+
+typedef dstCastDynamicArray <dstTaskGroup *, void *, int, dstPointerArray>
+	dstTaskGroupPointerArray;
 
 class DST_API dstTaskScheduler {
 private :
@@ -119,6 +147,7 @@ private :
 	uint64_t start_time;
         pthread_mutex_t task_info_array_mutex;
 	pthread_mutex_t empty_slot_array_mutex;
+	dstTaskGroupPointerArray task_group_array;
 
 private :
 	inline void LockMutexTaskInfoArray() {
@@ -134,6 +163,7 @@ private :
 		pthread_mutex_unlock(&empty_slot_array_mutex);
 	}
 	void ClearTasks();
+	void ClearGroups();
 
 public :
 	dstTaskScheduler();
@@ -163,9 +193,13 @@ public :
 			AddTask(flags, func, user_data, division);
 		}
 	}
+	int AddSubdividedTaskGroup(int flags, dstTaskFunc func, const void *user_data,
+		dstTaskDivisionData& division);
 	void WaitUntilFinished(int task_index);
+	void WaitUntilGroupFinished(int group_index);
 	void WaitUntilFinished();
 	const dstIntArray *GetCompletionNotifications();
+	int StartTaskGroup(int n);
 };
 
 #endif

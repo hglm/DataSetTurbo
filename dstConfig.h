@@ -338,6 +338,8 @@ public :
 	uint32_t simd_type;
 	// All SIMD features that are supported by the current CPU.
 	uint32_t simd_cpu_flags;
+	// Number of CPU cores.
+	uint32_t nu_cpus;
 	// The maximum number of threads to use in a CPU-intensive function.
 	int max_threads_per_function;
 	// Optional fixed number of threads setting.

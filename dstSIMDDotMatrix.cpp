@@ -103,7 +103,7 @@ typedef void (*dstDotProductFuncType)(int n, const float * DST_RESTRICT f1, cons
 float * DST_RESTRICT dot);
 
 
-static void dstCalculateDotProductsThread(dstTaskInfo *task_info) {
+static void dstCalculateDotProductsThread(dstBaseTaskInfo *task_info) {
 	void **user_data = (void **)task_info->user_data;
 	float *f1 = (float *)user_data[0];
 	float *f2 = (float *)user_data[1];
@@ -115,9 +115,11 @@ static void dstCalculateDotProductsThread(dstTaskInfo *task_info) {
 	f1 += task_info->subdivision.start_index * size_f1;
 	f2 += task_info->subdivision.start_index * size_f2;
 	dot += task_info->subdivision.start_index;
-//	printf("Task begin start_index = %d, n = %d, creation time = %.5lf\n",
+//	printf("Task begin start_index = %d, n = %d, sizes %d/%d\n",
 //		task_info->subdivision.start_index,
-//		task_info->subdivision.nu_elements,(double)task_info->creation_time / 1000000.0d);
+//		task_info->subdivision.nu_elements,
+//		size_f1, size_f2);
+//	printf("Creation time = %.5lf\n", (double)task_info->creation_time / 1000000.0d); 
 //	fflush(stdout);
 	dot_product_func(task_info->subdivision.nu_elements, f1, f2, dot);
 //	printf("Task end, start_index = %d\n", task_info->subdivision.start_index);
@@ -141,13 +143,20 @@ const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	user_data[1] = (void *)f2;
 	user_data[2] = dot;
 	user_data[3] = (void *)dot_product_func;
-	user_data[4] = (void *)alignment_and_sizes;
+	user_data[4] = (void *)(uint64_t)alignment_and_sizes;
+#define USE_TASK_GROUP
+#ifdef USE_TASK_GROUP
+	int group_index = task_scheduler.AddSubdividedTaskGroup(0, dstCalculateDotProductsThread,
+		(void *)user_data, division);
+	task_scheduler.WaitUntilGroupFinished(group_index);
+#else
 	for (int i = 0; i < nu_threads; i++) {
-		division.index = i;
+		division.index = (uint32_t)i;
 		task_scheduler.AddTask(0, dstCalculateDotProductsThread,
 			(void *)user_data, division);
 	}
 	task_scheduler.WaitUntilFinished();
+#endif
 	free(user_data);
 }
 

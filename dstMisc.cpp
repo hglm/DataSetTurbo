@@ -172,7 +172,8 @@ void dstInit() {
 	dstSetSIMDType(dst_config.simd_type);
 #endif
 
-	dst_config.max_threads_per_function = sysconf(_SC_NPROCESSORS_CONF);
+	dst_config.nu_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	dst_config.max_threads_per_function = dst_config.nu_cpus;
 	if (dst_config.max_threads_per_function > 1)
 		dst_config.flags |= DST_FLAG_THREADING;
 
