@@ -163,7 +163,8 @@ LIBRARY_CPP_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o \
 	$(SIMD_MODULES) # dstMatrixMathSIMD.o
 LIBRARY_ASM_MODULE_OBJECTS = dstARMMemset.o
 LIBRARY_MODULE_OBJECTS = $(LIBRARY_CPP_MODULE_OBJECTS) $(LIBRARY_ASM_MODULE_OBJECTS)
-LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstTimer.h dstThread.h \
+LIBRARY_HEADER_FILES = dstConfig.h dstRandom.h dstDynamicArray.h dstQueue.h \
+	dstTimer.h dstThread.h \
 	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h \
 	dstMath.h dstMemory.h \
 	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h \

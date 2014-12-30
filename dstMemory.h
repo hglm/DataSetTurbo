@@ -119,7 +119,7 @@ static inline void dstMemcpyAlignedSmall(T *dest, T *src, uint32_t n) {
 			*(uint64_t *)((uint32_t *)&dest[0] + i) =
 				*(uint64_t *)((uint32_t *)&src[0] + i);
 		if (n & 0x1)
-			*dest[n - 1] = src[n - 1];
+			dest[n - 1] = src[n - 1];
 	}
 
 }

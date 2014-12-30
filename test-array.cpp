@@ -23,44 +23,45 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/time.h>
 
 #include <dstDynamicArray.h>
+#include <dstQueue.h>
 #include <dstTimer.h>
 
 int main(int argc, char *argv[]) {
 	dstIntArray a;
 	printf("dstIntArray: MaxCapacity() = %u\n", a.MaxCapacity());
-        int size = a.Size();
+        int capacity = a.Capacity();
 	for (int i = 0; i < 1000000; i++) {
-		int previous_size = size;
+		int previous_capacity = capacity;
 		a.Add(i);
-		size = a.Capacity();
-		if (size != previous_size)
-			printf("dstIntArray size changed from %d to %d.\n",
-				previous_size, size);
+		capacity = a.Capacity();
+		if (capacity != previous_capacity)
+			printf("dstIntArray capacity changed from %d to %d.\n",
+				previous_capacity, capacity);
 	}
 
 	dstTightIntArray ta;
 	printf("dstTightIntArray: MaxCapacity() = %u\n", ta.MaxCapacity());
-        size = ta.Capacity();
+        capacity = ta.Capacity();
 	for (int i = 0; i < 1000000; i++) {
-		int previous_size = size;
+		int previous_capacity = capacity;
 		ta.Add(i);
-		size = ta.Capacity();
-		if (size != previous_size)
-			printf("dstTightIntArray size changed from %d to %d.\n",
-				previous_size, size);
+		capacity = ta.Capacity();
+		if (capacity != previous_capacity)
+			printf("dstTightIntArray capacity changed from %d to %d.\n",
+				previous_capacity, capacity);
 	}
 
 	dstTightVerySmallIntArray tvsa1;
 	int tvsa_max_capacity = tvsa1.MaxCapacity();
 	printf("dstTightVerySmallIntArray: MaxCapacity() = %u\n", tvsa_max_capacity);
-        size = tvsa1.Capacity();
+        capacity = tvsa1.Capacity();
 	for (int i = 0; i < tvsa_max_capacity; i++) {
-		int previous_size = size;
+		int previous_capacity = capacity;
 		tvsa1.Add(i);
-		size = tvsa1.Capacity();
-		if (size != previous_size)
-			printf("dstTightVerySmallIntArray size changed from %d to %d.\n",
-				previous_size, size);
+		capacity = tvsa1.Capacity();
+		if (capacity != previous_capacity)
+			printf("dstTightVerySmallIntArray capacity changed from %d to %d.\n",
+				previous_capacity, capacity);
 	}
 
 	dstTimer timer;
@@ -186,6 +187,53 @@ int main(int argc, char *argv[]) {
 	}
 	elapsed = timer.Elapsed();
         printf("dstTightVerySmallIntArray (many small arrays): Time taken: %.3lfs, %.3lf million adds per second\n",
+		elapsed, 1000.0d * 100000.0d / 1000000.0d / elapsed);
+
+
+	dstIntQueue q;
+	printf("dstIntQueue: MaxCapacity() = %u\n", q.MaxCapacity());
+        capacity = q.Capacity();
+	for (int i = 0; i < 1000; i++) {
+		int previous_capacity = capacity;
+		q.Enqueue(i);
+		capacity = q.Capacity();
+		if (capacity != previous_capacity)
+			printf("dstIntQueue capacity changed from %d to %d.\n",
+				previous_capacity, capacity);
+	}
+
+        for (int j = 0; j < 1001; j++) {
+		// Allow one round of warm-up before starting timer.
+		if (j == 1)
+			timer.Start();
+		__volatile__ int v = 0;
+		for (int i = 0; i < 100000; i++) {
+			v += q.Dequeue();
+			q.Enqueue(i);
+		}
+	}
+	elapsed = timer.Elapsed();
+        printf("dstIntQueue: Time taken: %.3lfs, %.3lf million dequeue/enqueue combinations per second\n",
+		elapsed, 1000.0d * 100000.0d / 1000000.0d / elapsed);
+
+	dstSmallIntQueue sq;
+	printf("dstSmallIntQueue: MaxCapacity() = %u\n", sq.MaxCapacity());
+	for (int i = 0; i < 64; i++) {
+		sq.Enqueue(i);
+	}
+
+        for (int j = 0; j < 1001; j++) {
+		// Allow one round of warm-up before starting timer.
+		if (j == 1)
+			timer.Start();
+		__volatile__ int v = 0;
+		for (int i = 0; i < 100000; i++) {
+			v += sq.Dequeue();
+			sq.Enqueue(i);
+		}
+	}
+	elapsed = timer.Elapsed();
+        printf("dstSmallIntQueue: Time taken: %.3lfs, %.3lf million dequeue/enqueue combinations per second\n",
 		elapsed, 1000.0d * 100000.0d / 1000000.0d / elapsed);
 
 	exit(0);
