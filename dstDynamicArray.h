@@ -20,7 +20,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define __DST_DYNAMIC_ARRAY_H__
 
 #include <dstConfig.h>
-#include <dstRandom.h>
 #include <dstMemory.h>
 
 #include <stdlib.h>

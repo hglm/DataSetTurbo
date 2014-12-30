@@ -25,6 +25,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 
 #include <dstDynamicArray.h>
+#include <dstRandom.h>
 #include <dstTimer.h>
 #include <dstMemory.h>
 #include <dstVectorMath.h>
