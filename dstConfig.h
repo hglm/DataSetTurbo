@@ -341,6 +341,8 @@ public :
 	uint32_t simd_cpu_flags;
 	// Number of CPU cores.
 	uint32_t nu_cpus;
+	// The logical CPU on which the main library thread is running.
+	int main_thread_cpu;
 	// The maximum number of threads to use in a CPU-intensive function.
 	int max_threads_per_function;
 	// Optional fixed number of threads setting.

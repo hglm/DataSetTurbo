@@ -70,7 +70,6 @@ dstCalculateDotProductsNxNVector4D
 
 Two threads triggered at size 32678 (cost threshold 2097152, cost per element 64).
 
-
 			16384	20000	32768	50000	100000	500000	1000000	5000000
 Single thread		470	322		316	311	240	237	247
 n = 2			317	350		513	581	372	369	365
@@ -103,4 +102,15 @@ n = 3			514	571	758	1003	1132	734
 n = 4			499	561	787	852	888	637
 n = 8					611	808	851
 
+
+Task groups implemented
+Second number is non-streaming result.
+
+dstCalculateDotProductsNxNVector4D
+
+			16384	20000	32768	50000	100000	500000	1000000	5000000
+Single thread		520	323	317	315	311	237
+n = 2			382	532	570	508	565	351
+n = 3			431	481	594/670	705	767	500
+n = 4			300	378	578	734/767	629/746 480/573
 

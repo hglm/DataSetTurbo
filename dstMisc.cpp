@@ -18,6 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdio.h>
 #include <signal.h>
+#include <sched.h>
 
 #include "dstConfig.h"
 #include "dstRandom.h"
@@ -173,6 +174,13 @@ void dstInit() {
 #endif
 
 	dst_config.nu_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	// Make the main library thread execute on CPU 0.
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(0, &cpu_set);
+	sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
+	dst_config.main_thread_cpu = 0;
+
 	dst_config.max_threads_per_function = dst_config.nu_cpus;
 	if (dst_config.max_threads_per_function > 1)
 		dst_config.flags |= DST_FLAG_THREADING;

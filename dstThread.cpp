@@ -192,12 +192,13 @@ dstTaskDivisionData& division) {
 		if (new_task_group) {
 			// Create the thread. For group threads, the task will not start until the
 			// continue signal is given. Set CPU affinity so that each thread is on a
-			// a different CPU.
+			// a different CPU. Start with the CPU the main library thread is on.
 			pthread_attr_t attr;
 			pthread_attr_init(&attr);
 			cpu_set_t cpuset;
 			CPU_ZERO(&cpuset);
-			CPU_SET(current_member_index % dst_config.nu_cpus, &cpuset);
+			CPU_SET((dst_config.main_thread_cpu + current_member_index)
+				% dst_config.nu_cpus, &cpuset);
 			pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
 			pthread_create(&member_p->thread, &attr, dstInternalGroupThreadFunc, member_p);
 			pthread_attr_destroy(&attr);
