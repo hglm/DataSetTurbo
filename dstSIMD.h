@@ -119,7 +119,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_FUNC_SIMD_TYPE(f) f ## AVXStream
 #elif defined(DST_SIMD_MODE_NEON)
 #define SIMD_FUNC_SIMD_TYPE(f) f ## NEONStream
-#elif !defined(__SSE2__) && !defined(__NEON_FP)
+#elif !defined(__SSE2__) && !defined(__ARM_NEON_FP)
 #error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
 #else // No stream mode.
@@ -139,7 +139,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_FUNC_SIMD_TYPE(f) f ## AVX
 #elif defined(DST_SIMD_MODE_NEON)
 #define SIMD_FUNC_SIMD_TYPE(f) f ## NEON
-#elif !defined(__SSE2__) && !defined(__NEON_FP)
+#elif !defined(__SSE2__) && !defined(__ARM_NEON_FP)
 #error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
 #endif // !defined (DST_SIMD_MODE_STREAM)
@@ -148,6 +148,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_FUNC(f) SIMD_FUNC_SIMD_TYPE(f)
 #define SIMD_VAR(f) SIMD_FUNC(f)
 
+#ifndef DST_NO_SIMD
 
 #if defined(_MSC_VEC)
 /* Microsoft C/C++-compatible compiler */
@@ -404,6 +405,8 @@ __simd128_float m_v, __simd128_float m_result) {
                 simd128_horizontal_add2_float(m_mul0, m_mul1),
                 simd128_horizontal_add2_float(m_mul2, m_zeros));
 }
+
+#endif // !defined(DST_NO_SIMD)
 
 #endif // defined(__DST_SIMD_H__)
 

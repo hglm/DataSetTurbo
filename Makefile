@@ -25,6 +25,7 @@ endif
 
 # Select the compiled in SIMD types.
 ifneq ($(TARGET_ARCH),)
+ifneq ($(TARGET_SIMD), NONE)
 # When no fixed SIMD architecture is specified, many will be supported and autodetected.
 ifeq ($(TARGET_ARCH), X86)
 # All types should be configured by default.
@@ -33,6 +34,7 @@ SIMD_MODULES += dstSIMDSSE2Stream.o dstSIMDSSE3Stream.o dstSIMDSSSE3Stream.o dst
 else
 ifeq ($(TARGET_ARCH), ARM)
 SIMD_MODULES = dstSIMDNEON.o
+endif
 endif
 endif
 endif
@@ -73,21 +75,25 @@ else
 ifeq ($(TARGET_SIMD), X86_AVX)
 OPTCFLAGS += -mavx
 FIXED_SIMD_TYPE = AVX
-endif
+else
 ifeq ($(TARGET_SIMD), ARM_NEON)
-OPTCFLAGS += -mneon
+OPTCFLAGS += -mfpu=neon
 FIXED_SIMD_TYPE = NEON
-endif
+else
 ifeq ($(TARGET_SIMD), X86_AVX_SSE4A_FMA4)
 OPTCFLAGS += -mavx -msse4a -mfma4
 FIXED_SIMD_TYPE = AVX_SSE4A_FMA4
-endif
+else
 ifeq ($(TARGET_SIMD), X86_AVX_FMA)
 OPTCFLAGS += -mavx -mfma
 FIXED_SIMD_TYPE = AVX_FMA
-endif
+else
 ifneq ($(TARGET_SIMD),)
 $(error Not a valid SIMD type.)
+endif
+endif
+endif
+endif
 endif
 endif
 endif
@@ -279,7 +285,7 @@ dep :
 	make .depend
 
 .depend: Makefile.conf Makefile dstConfigParams.h
-	g++ -MM $(patsubst %.o,%.cpp,$(LIBRARY_CPP_MODULE_OBJECTS)) >> .depend
+	g++ -MM $(CFLAGS_LIB) $(patsubst %.o,%.cpp,$(LIBRARY_CPP_MODULE_OBJECTS)) >> .depend
 	g++ -MM $(patsubst %.o,%.S,$(LIBRARY_ASM_MODULE_OBJECTS)) >> .depend
         # Make sure Makefile.conf and Makefile are dependency for all modules.
 	for x in $(LIBRARY_MODULE_OBJECTS); do \
