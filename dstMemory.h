@@ -96,32 +96,42 @@ static inline void dstMemcpyTypeAlignedLarge(T *dest, T *src, size_t n) {
 //                        any number of bytes.
 // 2 (uint16_t, short)    Destination and source are aligned on a 32-bit boundary, while n is
 //                        any number of bytes.
+// Other values		  Destination and source are aligned on a 32-bit boundary, while n is
+//                        any number of bytes (but a multiple of T).
 
 template <class T>
 static inline void dstMemcpyAlignedSmall(T *dest, T *src, uint32_t n) {
-	if (sizeof(T) <= 2) {
+	if (sizeof(T) == 8 || (sizeof(T) > 8 && (sizeof(T) & 7) == 0)) {
+		n >>= 2;
+		uint32_t n_even = n & (~0x1);
+		uint32_t *srcp = (uint32_t *)src;
+		uint32_t *destp = (uint32_t *)dest;
+		uint32_t i;
+		for (i = 0; i < n_even; i += 2)
+			*(uint64_t *)(destp + i) =
+				*(uint64_t *)(srcp + i);
+		if (n & 0x1)
+			destp[i] = srcp[i];
+	}
+	else if (sizeof(T) == 4 || (sizeof(T) > 8 && (sizeof(T) & 3) == 0)) {
+		n >>= 2;
+		uint32_t *srcp = (uint32_t *)&src[0];
+		uint32_t *destp = (uint32_t *)&dest[0];	
+		for (uint32_t i = 0; i < n; i++)
+			destp[i] = srcp[i];
+	}
+	else {
+		// sizeof(T) <= 2 or any other value (T is a struct/class that is not a multiple
+		// of four or eight bytes in size).
+		uint8_t *srcp = (uint8_t *)src;
+		uint8_t *destp = (uint8_t *)dest;
 		uint32_t i = 0;
 		// src and dest are guaranteed to be aligned on a 32-bit boundary.
 		for (; i + 3 < n; i += 4)
-			*(uint32_t *)(&dest[0] + i) = *(uint32_t *)(&src[0] + i);
+			*(uint32_t *)(destp + i) = *(uint32_t *)(srcp + i);
 		for (; i < n; i++)
-			*((uint8_t *)&dest[0] + i) = *((uint8_t *)src[0] + i);
+			destp[i] = srcp[i];
 	}
-	else if (sizeof(T) == 4) {
-		n >>= 2;	
-		for (uint32_t i = 0; i < n; i++)
-			dest[i] = src[i];
-	}
-	else if (sizeof(T) == 8) {
-		n >>= 2;
-		uint32_t n_even = n & (~0x1);
-		for (uint32_t i = 0; i < n_even; i += 2)
-			*(uint64_t *)((uint32_t *)&dest[0] + i) =
-				*(uint64_t *)((uint32_t *)&src[0] + i);
-		if (n & 0x1)
-			dest[n - 1] = src[n - 1];
-	}
-
 }
 
 template <class T>
@@ -136,10 +146,10 @@ static inline void dstMemcpyUnalignedSmall(T *dest, T *src, uint32_t n) {
 	if ((((uintptr_t)src | (uintptr_t)dest) & 0x3) == 0)
 #endif
 		for (; i + 3 < n; i += 4)
-			*(uint32_t *)((uint8_t *)&dest[0] + i) =
-				*(uint32_t *)((uint8_t *)&src[0] + i);
+			*(uint32_t *)((uint8_t *)dest + i) =
+				*(uint32_t *)((uint8_t *)src + i);
 	for (; i < n; i++)
-		*((uint8_t *)&dest + i) = *((uint8_t *)&src + i);
+		*((uint8_t *)dest + i) = *((uint8_t *)src + i);
 }
 
 // Aligned memcpy for larger sizes.
@@ -157,40 +167,44 @@ static inline void dstMemcpyUnalignedSmall(T *dest, T *src, uint32_t n) {
 
 template <class T>
 static inline void dstMemcpyAlignedLarge(T *dest, T *src, size_t n) {
-	if (sizeof(T) == 4) {
-		size_t i = 0;
-		n >>= 2;
-		for (; i + 7 < n; i += 8) {
-			dest[i] = src[i];
-			dest[i + 1] = src[i + 1];
-			dest[i + 2] = src[i + 2];
-			dest[i + 3] = src[i + 3];
-			dest[i + 4] = src[i + 4];
-			dest[i + 5] = src[i + 5];
-			dest[i + 6] = src[i + 6];
-			dest[i + 7] = src[i + 7];
-		}
-		for (; i < n; i++)
-			dest[i] = src[i];
-	}
-	else if (sizeof(T) == 8) {
+	if (sizeof(T) == 8 || (sizeof(T) > 8 && (sizeof(T) & 7) == 0)) {
 		uint32_t i = 0;
 		uint32_t remainder = n & 0x4;
 		n >>= 3;
+		uint64_t *srcp = (uint64_t *)&src[0];
+		uint64_t *destp = (uint64_t *)&dest[0];
 		for (; i + 7 < n; i+= 8) {
-			dest[i] = src[i];
-			dest[i + 1] = src[i + 1];
-			dest[i + 2] = src[i + 2];
-			dest[i + 3] = src[i + 3];
-			dest[i + 4] = src[i + 4];
-			dest[i + 5] = src[i + 5];
-			dest[i + 6] = src[i + 6];
-			dest[i + 7] = src[i + 7];
+			destp[i] = srcp[i];
+			destp[i + 1] = srcp[i + 1];
+			destp[i + 2] = srcp[i + 2];
+			destp[i + 3] = srcp[i + 3];
+			destp[i + 4] = srcp[i + 4];
+			destp[i + 5] = srcp[i + 5];
+			destp[i + 6] = srcp[i + 6];
+			destp[i + 7] = srcp[i + 7];
 		}
 		for (; i < n; i++)
-			dest[i] = src[i];
+			destp[i] = srcp[i];
 		if (remainder != 0)
-			*(uint32_t *)&dest[i] = *(uint32_t *)&src[i];
+			*(uint32_t *)&destp[i] = *(uint32_t *)&srcp[i];
+	}
+	else if (sizeof(T) == 4 || (sizeof(T) > 8 && (sizeof(T) & 3) == 0)) {
+		size_t i = 0;
+		n >>= 2;
+		uint32_t *srcp = (uint32_t *)&src[0];
+		uint32_t *destp = (uint32_t *)&dest[0];
+		for (; i + 7 < n; i += 8) {
+			destp[i] = srcp[i];
+			destp[i + 1] = srcp[i + 1];
+			destp[i + 2] = srcp[i + 2];
+			destp[i + 3] = srcp[i + 3];
+			destp[i + 4] = srcp[i + 4];
+			destp[i + 5] = srcp[i + 5];
+			destp[i + 6] = srcp[i + 6];
+			destp[i + 7] = srcp[i + 7];
+		}
+		for (; i < n; i++)
+			destp[i] = srcp[i];
 	}
 	else
 		memcpy(dest, src, n);
