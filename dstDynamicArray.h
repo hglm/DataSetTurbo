@@ -69,7 +69,10 @@ private :
 	}
 
 public :
-	virtual inline S MaxCapacity() const = 0;
+	virtual inline S InternalMaxCapacity() const = 0;
+	inline S MaxCapacity() {
+			return InternalMaxCapacity();
+	}
 	dstDynamicArrayBaseClass() {
 		nu_elements = 0;
 		max_elements = 0;
@@ -239,13 +242,14 @@ public:
 template <class T, class S>
 class DST_API dstDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
-	dstDynamicArray(S starting_capacity = 4) { }
-	// The absolute maximum capacity allowed by the class variant.
-	inline S MaxCapacity() const {
-		return (S)1 << (sizeof(S) * 8 - 1);
-	}
+	dstDynamicArray() : dstDynamicArrayBaseClass <T, S>() { }
+	dstDynamicArray(S starting_capacity) : dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
 
 private :
+	// The absolute maximum capacity allowed by the class variant.
+	inline S InternalMaxCapacity() const {
+		return (S)1 << (sizeof(S) * 8 - 1);
+	}
 	// By how much to expand array capacity. Return value is new capacity.
 	inline S GetExpansionHint(S size) const {
 		// Expand the size to the next power of two.
@@ -262,7 +266,8 @@ private :
 template <class U, class T, class S, class C2>
 class DST_API dstCastDynamicArray : public C2 {
 public :
-	dstCastDynamicArray(S starting_capacity = 4) { }
+	dstCastDynamicArray() : C2() { }
+	dstCastDynamicArray(S starting_capacity) : C2(starting_capacity) { }
 	// Get value of element i.
 	inline U& Get(S i) const {
 		return (U&)(((C2 *)this)->Get(i));
@@ -371,9 +376,13 @@ typedef dstCastDynamicArray <uint32_t, int, uint64_t, dstHugeIntArray> dstHugeUn
 template <class T, class S>
 class DST_API dstTightDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
-	dstTightDynamicArray(S starting_capacity = 4) { }
+	dstTightDynamicArray() : dstDynamicArrayBaseClass <T, S>() { }
+	dstTightDynamicArray(S starting_capacity) :
+		dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
+
+private :
 	// The absolute maximum capacity allowed by the class variant.
-	inline S MaxCapacity() const {
+	inline S InternalMaxCapacity() const {
 		// Calculate the expansion step size near the end of the size range.
 		S largest_power_of_two_size = (S)1 << (sizeof(S) * 8 - 1);
 		S next = GetExpansionHint(largest_power_of_two_size);
@@ -383,8 +392,6 @@ public :
 		// and 2^8.
 		return (S)(- step);
 	}
-
-private :
 	// By how much to expand array capacity. Return value is new capacity.
 	inline S GetExpansionHint(S size) const {
 		// Conservatively expand the size of the array, keeping it tight.

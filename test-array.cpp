@@ -27,6 +27,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dstTimer.h>
 
 int main(int argc, char *argv[]) {
+	dstIntQueue queue;
+	printf("dstIntQueue queue capacity = %d\n", queue.Capacity());
+	queue.Enqueue(0);
+	dstIntQueue queue8(8);
+	printf("dstIntQueue queue(8) capacity = %d\n", queue.Capacity());
+	queue.Enqueue(0);
+
 	dstIntArray a;
 	printf("dstIntArray: MaxCapacity() = %u\n", a.MaxCapacity());
         int capacity = a.Capacity();
@@ -198,7 +205,7 @@ int main(int argc, char *argv[]) {
 		q.Enqueue(i);
 		capacity = q.Capacity();
 		if (capacity != previous_capacity)
-			printf("dstIntQueue capacity changed from %d to %d.\n",
+			printf("dstIntQueue minimum capacity changed from %d to %d.\n",
 				previous_capacity, capacity);
 	}
 

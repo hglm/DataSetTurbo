@@ -26,22 +26,38 @@ class DST_API dstQueueBaseClass : public dstDynamicArray <T, S> {
 protected :
 	S head_index;
 public :
-	inline dstQueueBaseClass() {
+	inline dstQueueBaseClass() : dstDynamicArray <T, S>() {
 		head_index = 0;
 	}
-	inline S MaxCapacity() {
-		return ((dstDynamicArrayBaseClass <T, S> *)this)->MaxCapacity() / 2;
+	inline dstQueueBaseClass(S starting_capacity) : dstDynamicArray <T, S>(starting_capacity) {
+		head_index = 0;
+	}
+	inline S MaxCapacity() const {
+		return ((dstDynamicArray <T, S> *)this)->MaxCapacity() / 2;
+	}
+	// Return lower limit on queue capacity.
+	inline S Capacity() const {
+		return ((dstDynamicArray <T, S> *)this)->Capacity() / 2;
 	}
 	inline S Size() const {
-		return ((dstDynamicArrayBaseClass <T, S> *)this)->Size() - head_index;
+		return ((dstDynamicArray <T, S> *)this)->Size() - head_index;
 	}
 	inline bool IsEmpty() const {
 		return Size() == 0;
+	}
+	inline T Peek() const {
+		return this->Get(head_index);
+	}
+	inline void SetFirst(const T& v) {
+		this->Set(head_index, v);
 	}
 	inline T Dequeue() {
 		T v = this->Get(head_index);
 		head_index++;
 		return v;
+	}
+	inline T RemoveFirst() {
+		head_index++;
 	}
 	inline void EnqueueQuick(const T& v) {
 		this->Add(v);
@@ -54,6 +70,9 @@ public :
 template <class T>
 class DST_API dstQueue : public dstQueueBaseClass <T, uint32_t> {
 public :
+	inline dstQueue() : dstQueueBaseClass <T, uint32_t>() { }
+	inline dstQueue(uint32_t starting_capacity) :
+		dstQueueBaseClass <T, uint32_t>(starting_capacity) { }
 	inline void Enqueue(const T& v) {
 		this->Add(v);
 		uint32_t queue_size = this->Size();
@@ -82,6 +101,9 @@ typedef dstQueue <void *> dstPointerQueue;
 template <class T>
 class DST_API dstSmallQueue : public dstQueueBaseClass <T, uint8_t> {
 public :
+	inline dstSmallQueue() : dstQueueBaseClass <T, uint8_t>() { }
+	inline dstSmallQueue(uint8_t starting_capacity) :
+		dstQueueBaseClass <T, uint8_t>(starting_capacity) { }
 	inline void Enqueue(const T& v) {
 		this->Add(v);
 		uint8_t queue_size = this->Size();
