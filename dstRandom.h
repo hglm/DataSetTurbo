@@ -738,12 +738,12 @@ public :
     // of two. However for larger ranges (such as the one that applies here with
     // a minimum of zero) a larger effective precision can be attained.
     // Return a random float from 0 to range (exclusive).
-    float RandomFloat(float range) {
+    inline float RandomFloat(float range) {
         return (float)Random32() * (1.0f / powf(2.0f, 32)) * range;
     }
     // Return a random float from 0 to range (exclusive) with low precision
     // (16 random bits), which is faster because of lighter use of the RNG.
-    float RandomFloatLP(float range) {
+    inline float RandomFloatLP(float range) {
         return (float)(unsigned short)RandomBits(16) * (1.0f / powf(2.0f, 16)) * range;
     }
     // Return a random float from 0 to range (exclusive) with high precision. A
@@ -752,13 +752,13 @@ public :
     // 29 bits, a higher effective precision can be reached by scaling the
     // integer (using 64-bit integer format). Execution speed depends on whether
     // the hardware has hardware support for 64-bit integer to float conversion.
-    float RandomFloatHP(float range) {
+    inline float RandomFloatHP(float range) {
         return (float)((uint64_t)Random32() << 32) * (1.0f / powf(2.0f, 64)) * range;
     }
     // Return a random double from 0 to range (exclusive) with high precision.
     // A high precision is (minimum probably around 53 bits) is applied within
     // the range.
-    double RandomDouble(double range) {
+    inline double RandomDouble(double range) {
         // Scaling the 2^32 integers to [0, 1) (which has good precision in the
         // double format) maintains precision when adding up the lower and higher
         // order components.
@@ -791,41 +791,41 @@ public :
     }
     // Return a random double from 0 to range (exclusive) with low precision.
     // 32 random bits are used.
-    double RandomDoubleLP(double range) {
+    inline double RandomDoubleLP(double range) {
         return (double)Random32() * (1.0f / pow(2.0d, 32)) * range;
     }
     // Return a random double from 0 to range (exclusive) with low precision
     // (16 random bits), which is faster because of lighter use of the RNG.
-    float RandomDoubleVLP(float range) {
+    inline float RandomDoubleVLP(float range) {
         return (double)(unsigned short)RandomBits(16) * (1.0d / powf(2.0d, 16)) * range;
     }
     // Return a random float from min_bound to max_bound (exclusive).
-    float RandomFloatWithinBounds(float min_bound, float max_bound) {
+    inline float RandomFloatWithinBounds(float min_bound, float max_bound) {
          return min_bound + RandomFloat(max_bound - min_bound);
     }
     // Return a random float from min_bound to max_bound (exclusive) with high precision.
-    float RandomFloatWithinBoundsHP(float min_bound, float max_bound) {
+    inline float RandomFloatWithinBoundsHP(float min_bound, float max_bound) {
         return min_bound + RandomFloatHP(max_bound - min_bound);
     }
     // Return a random float from min_bound to max_bound (exclusive) with low recision.
-    float RandomFloatWithinBoundsLP(float min_bound, float max_bound) {
+    inline float RandomFloatWithinBoundsLP(float min_bound, float max_bound) {
         return min_bound + RandomFloatLP(max_bound - min_bound);
     }
     // Return a random double from min_bound to max_bound (exclusive).
-    double RandomDoubleWithinBounds(double min_bound, double max_bound) {
+    inline double RandomDoubleWithinBounds(double min_bound, double max_bound) {
         return min_bound + RandomDouble(max_bound - min_bound);
     }
     // Return a random double from min_bound to max_bound (exclusive) with high precision.
-    double RandomDoubleWithinBoundsHP(double min_bound, double max_bound) {
+    inline double RandomDoubleWithinBoundsHP(double min_bound, double max_bound) {
         return min_bound + RandomDoubleHP(max_bound - min_bound);
     }
     // Return a random double from min_bound to max_bound (exclusive) with low precision.
-    double RandomDoubleWithinBoundsLP(double min_bound, double max_bound) {
+    inline double RandomDoubleWithinBoundsLP(double min_bound, double max_bound) {
         return min_bound + RandomDoubleLP(max_bound - min_bound);
     }
     // Return a random double from min_bound to max_bound (exclusive) with very low
     // precision.
-    double RandomDoubleWithinBoundsVLP(double min_bound, double max_bound) {
+    inline double RandomDoubleWithinBoundsVLP(double min_bound, double max_bound) {
         return min_bound + RandomDoubleVLP(max_bound - min_bound);
     }
 
