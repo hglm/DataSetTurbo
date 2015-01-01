@@ -40,8 +40,12 @@ private :
 	S nu_elements;
 	S max_elements;
 
+protected :
 	// By how much to expand array capacity. Return value is new capacity.
-	virtual inline S GetExpansionHint(S capacity) const = 0;
+	virtual S GetExpansionHint(S capacity) const = 0;
+	virtual S InternalMaxCapacity() const = 0;
+
+protected :
 	// The absolute maximum capacity allowed by the class variant.
         inline void ResizeCapacity(S new_capacity) {
                 max_elements = new_capacity;
@@ -69,16 +73,15 @@ private :
 	}
 
 public :
-	virtual inline S InternalMaxCapacity() const = 0;
-	inline S MaxCapacity() {
-			return InternalMaxCapacity();
+	inline S MaxCapacity() const {
+		return InternalMaxCapacity();
 	}
 	dstDynamicArrayBaseClass() {
 		nu_elements = 0;
 		max_elements = 0;
 		data = NULL;
 	}
-	dstDynamicArrayBaseClass(S starting_capacity) {
+	explicit dstDynamicArrayBaseClass(S starting_capacity) {
 		nu_elements = 0;
 		data = NULL;
 		ResizeCapacity(starting_capacity);
@@ -243,9 +246,10 @@ template <class T, class S>
 class DST_API dstDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
 	dstDynamicArray() : dstDynamicArrayBaseClass <T, S>() { }
-	dstDynamicArray(S starting_capacity) : dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
+	explicit dstDynamicArray(S starting_capacity) :
+		dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
 
-private :
+protected :
 	// The absolute maximum capacity allowed by the class variant.
 	inline S InternalMaxCapacity() const {
 		return (S)1 << (sizeof(S) * 8 - 1);
@@ -267,40 +271,40 @@ template <class U, class T, class S, class C2>
 class DST_API dstCastDynamicArray : public C2 {
 public :
 	dstCastDynamicArray() : C2() { }
-	dstCastDynamicArray(S starting_capacity) : C2(starting_capacity) { }
+	explicit dstCastDynamicArray(S starting_capacity) : C2(starting_capacity) { }
 	// Get value of element i.
 	inline U& Get(S i) const {
-		return (U&)(((C2 *)this)->Get(i));
+		return (U&)C2::Get(i);
 	}
         // Set value of element i.
         inline void Set(S i, U v) const {
-		((C2 *)this)->Set(i, (T)v);
+		C2::Set(i, (T)v);
         }
 	// Get a pointer to the start of the array.
 	inline U *DataPointer() const {
-                return (U *)((C2 *)this)->DataPointer();
+                return (U *)C2::DataPointer();
         }
 	// Get a pointer to a specific element.
         inline U *DataPointer(S i) const {
-		return &(U *)((C2 *)this)->DataPointer(i);
+		return &(U *)C2::DataPointer(i);
         }
 	inline void Add(U v) {
-		((C2 *)this)->Add((T)v);
+		C2::Add((T)v);
 	}
 	inline void AddQuick(U v) {
-		((C2 *)this)->AddQuick((T)v);
+		C2::AddQuick((T)v);
 	}
 	inline void Add(const U *v_pointer, S n) {
-		((C2 *)this)->Add((T *)v_pointer, n);
+		C2::Add((T *)v_pointer, n);
 	}
 	inline void AddQuick(const U *v_pointer, S n) {
-		((C2 *)this)->AddQuick((T *)v_pointer, n);
+		C2::AddQuick((T *)v_pointer, n);
 	}
 	inline void Add(const dstDynamicArrayBaseClass <U, S> & array) {
-		((C2 *)this)->Add((const dstDynamicArrayBaseClass <T, S> &)array);
+		C2::Add((const dstDynamicArrayBaseClass <T, S> &)array);
 	}
 	inline void AddQuick(const dstDynamicArrayBaseClass <U, S> & array) {
-		((C2 *)this)->AddQuick((const dstDynamicArrayBaseClass <T, S> &)array);
+		C2::AddQuick((const dstDynamicArrayBaseClass <T, S> &)array);
 	}
 };
 
@@ -377,10 +381,10 @@ template <class T, class S>
 class DST_API dstTightDynamicArray : public dstDynamicArrayBaseClass <T, S> {
 public :
 	dstTightDynamicArray() : dstDynamicArrayBaseClass <T, S>() { }
-	dstTightDynamicArray(S starting_capacity) :
+	explicit dstTightDynamicArray(S starting_capacity) :
 		dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
 
-private :
+protected :
 	// The absolute maximum capacity allowed by the class variant.
 	inline S InternalMaxCapacity() const {
 		// Calculate the expansion step size near the end of the size range.

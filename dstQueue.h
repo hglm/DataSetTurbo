@@ -25,22 +25,25 @@ template <class T, class S>
 class DST_API dstQueueBaseClass : public dstDynamicArray <T, S> {
 protected :
 	S head_index;
+
+	virtual void Enqueue(const T& v) = 0;
+
 public :
-	inline dstQueueBaseClass() : dstDynamicArray <T, S>() {
+	dstQueueBaseClass() : dstDynamicArray <T, S>() {
 		head_index = 0;
 	}
-	inline dstQueueBaseClass(S starting_capacity) : dstDynamicArray <T, S>(starting_capacity) {
+	explicit dstQueueBaseClass(S starting_capacity) : dstDynamicArray <T, S>(starting_capacity) {
 		head_index = 0;
 	}
 	inline S MaxCapacity() const {
-		return ((dstDynamicArray <T, S> *)this)->MaxCapacity() / 2;
+		return dstDynamicArray <T, S>::MaxCapacity() / 2;
 	}
 	// Return lower limit on queue capacity.
 	inline S Capacity() const {
-		return ((dstDynamicArray <T, S> *)this)->Capacity() / 2;
+		return dstDynamicArray <T, S>::Capacity() / 2;
 	}
 	inline S Size() const {
-		return ((dstDynamicArray <T, S> *)this)->Size() - head_index;
+		return dstDynamicArray <T, S>::Size() - head_index;
 	}
 	inline bool IsEmpty() const {
 		return Size() == 0;
@@ -60,9 +63,8 @@ public :
 		head_index++;
 	}
 	inline void EnqueueQuick(const T& v) {
-		this->Add(v);
+		Add(v);
 	}
-	virtual inline void Enqueue(const T& v) = 0;
 };
 
 // Standard dstQueue has capacity up to 2^31.
@@ -70,16 +72,16 @@ public :
 template <class T>
 class DST_API dstQueue : public dstQueueBaseClass <T, uint32_t> {
 public :
-	inline dstQueue() : dstQueueBaseClass <T, uint32_t>() { }
-	inline dstQueue(uint32_t starting_capacity) :
+	dstQueue() : dstQueueBaseClass <T, uint32_t>() { }
+	explicit dstQueue(uint32_t starting_capacity) :
 		dstQueueBaseClass <T, uint32_t>(starting_capacity) { }
 	inline void Enqueue(const T& v) {
-		this->Add(v);
+		dstDynamicArray <T, uint32_t>::Add(v);
 		uint32_t queue_size = this->Size();
 		// When the array space before the head of the queue is as large as
 		// the queue itself, move the queue to the front of the array.
 		if (this->head_index >= 8 && this->head_index >= queue_size) {
-			this->RemoveHead(this->head_index);
+			dstDynamicArray <T, uint32_t>::RemoveHead(this->head_index);
 			this->head_index = 0;
 		}
 	}
@@ -96,21 +98,21 @@ typedef dstQueue <uint32_t> dstUnsignedIntQueue;
 typedef dstQueue <void *> dstPointerQueue;
 
 // Small and fast dstSmallQueue has capacity up to 64 elements (the small array has a capacity
-// of 128 elements, and allowing for the array to be just less than half empty.
+// of 128 elements, and allow for the array to be just less than half empty).
 
 template <class T>
 class DST_API dstSmallQueue : public dstQueueBaseClass <T, uint8_t> {
 public :
-	inline dstSmallQueue() : dstQueueBaseClass <T, uint8_t>() { }
-	inline dstSmallQueue(uint8_t starting_capacity) :
+	dstSmallQueue() : dstQueueBaseClass <T, uint8_t>() { }
+	explicit dstSmallQueue(uint8_t starting_capacity) :
 		dstQueueBaseClass <T, uint8_t>(starting_capacity) { }
 	inline void Enqueue(const T& v) {
-		this->Add(v);
+		dstDynamicArray <T, uint8_t>::Add(v);
 		uint8_t queue_size = this->Size();
 		// When the array space before the head of the queue is as large as
 		// the queue itself, move the queue to the front of the array.
 		if (this->head_index >= 8 && this->head_index >= queue_size) {
-			this->RemoveSmallHead(this->head_index);
+			dstDynamicArray <T, uint8_t>::RemoveSmallHead(this->head_index);
 			this->head_index = 0;
 		}
 	}
