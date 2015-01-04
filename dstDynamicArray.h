@@ -40,7 +40,7 @@ private :
 	S nu_elements;
 	S max_elements;
 
-protected :
+public :
 	// By how much to expand array capacity. Return value is new capacity.
 	virtual S GetExpansionHint(S capacity) const = 0;
 	virtual S InternalMaxCapacity() const = 0;
@@ -249,13 +249,13 @@ public :
 	explicit dstDynamicArray(S starting_capacity) :
 		dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
 
-protected :
+public :
 	// The absolute maximum capacity allowed by the class variant.
-	inline S InternalMaxCapacity() const {
+	virtual S InternalMaxCapacity() const {
 		return (S)1 << (sizeof(S) * 8 - 1);
 	}
 	// By how much to expand array capacity. Return value is new capacity.
-	inline S GetExpansionHint(S size) const {
+	virtual S GetExpansionHint(S size) const {
 		// Expand the size to the next power of two.
                 uint32_t log2_size = dstCalculateLog2(size);
 		return (S)((S)1 << (log2_size + 1));
@@ -384,9 +384,9 @@ public :
 	explicit dstTightDynamicArray(S starting_capacity) :
 		dstDynamicArrayBaseClass <T, S>(starting_capacity) { }
 
-protected :
+public :
 	// The absolute maximum capacity allowed by the class variant.
-	inline S InternalMaxCapacity() const {
+	virtual S InternalMaxCapacity() const {
 		// Calculate the expansion step size near the end of the size range.
 		S largest_power_of_two_size = (S)1 << (sizeof(S) * 8 - 1);
 		S next = GetExpansionHint(largest_power_of_two_size);
@@ -397,7 +397,7 @@ protected :
 		return (S)(- step);
 	}
 	// By how much to expand array capacity. Return value is new capacity.
-	inline S GetExpansionHint(S size) const {
+	virtual S GetExpansionHint(S size) const {
 		// Conservatively expand the size of the array, keeping it tight.
 		// A fast, integer log2 function is used.
 		S log2_size = dstCalculateLog2(size);

@@ -24,15 +24,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdint.h>
 #include <unistd.h>
 
+#include <dstMisc.h>
 #include <dstDynamicArray.h>
 #include <dstRandom.h>
 #include <dstTimer.h>
 #include <dstMemory.h>
 #include <dstVectorMath.h>
+#include <dstThread.h>
 
 
 // Duration of each test in seconds.
 #define TEST_DURATION 0.5f
+// Maximum number of queued tasks that will be executed in the background.
+#define MAX_MAX_NU_TASKS 4
 
 typedef uint64_t (*TestFunc)(dstThreadedTimeout *tt, int test_mode);
 
@@ -99,11 +103,12 @@ enum {
 Vector4D *vector4D_array[2];
 Vector3DPadded *vector3D_padded_array[2];
 Vector3D *vector3D_array[2];
-float *dot_product_array[2];
+float *dot_product_array[2][MAX_MAX_NU_TASKS];
 dstRNG *rng;
 int simd_type;
 int vector_array_size;
 int fixed_nu_threads;
+int max_nu_tasks;
 
 static void TypeSizeReport() {
 	Vector3DPadded V;
@@ -123,10 +128,12 @@ static uint64_t TestCalculateDotProductsNxNVector4D(dstThreadedTimeout *tt, int 
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i  = 0;
 	for (;;) {
 		dstCalculateDotProductsNxN(vector_array_size,
-			vector4D_array[0], vector4D_array[1], dot_product_array[0]);
+			vector4D_array[0], vector4D_array[1], dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -141,10 +148,13 @@ static uint64_t TestCalculateDotProductsNxNVector3DPadded(dstThreadedTimeout *tt
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNxN(vector_array_size,
-			vector3D_padded_array[0], vector3D_padded_array[1], dot_product_array[0]);
+			vector3D_padded_array[0], vector3D_padded_array[1],
+			dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -159,10 +169,12 @@ static uint64_t TestCalculateDotProductsNxNVector3D(dstThreadedTimeout *tt, int 
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNxN(vector_array_size,
-			vector3D_array[0], vector3D_array[1], dot_product_array[0]);
+			vector3D_array[0], vector3D_array[1], dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -179,10 +191,12 @@ static uint64_t TestCalculateDotProductsNx1Vector4D(dstThreadedTimeout *tt, int 
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
+			vector4D_array[0], vector4D_array[1][0], dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -197,10 +211,13 @@ static uint64_t TestCalculateDotProductsNx1Vector3DPadded(dstThreadedTimeout *tt
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[0]);
+			vector3D_padded_array[0], vector3D_array[1][0],
+			dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -215,10 +232,12 @@ static uint64_t TestCalculateDotProductsNx1Vector3D(dstThreadedTimeout *tt, int 
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_array[0], vector3D_array[1][0], dot_product_array[0]);
+			vector3D_array[0], vector3D_array[1][0], dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -233,10 +252,13 @@ static uint64_t TestCalculateDotProductsNx1Point3DVector4D(dstThreadedTimeout *t
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNx1(vector_array_size,
-			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[0]);
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0],
+			dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -251,10 +273,13 @@ static uint64_t TestCalculateDotProductsNx1Point3DPaddedVector4D(dstThreadedTime
 	else
 		dstSetStreamingSIMDType(simd_type);
 	uint64_t count = 0;
+	int i = 0;
 	for (;;) {
 		dstCalculateDotProductsNx1(vector_array_size,
-			(const Point3DPadded *)vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
+			(const Point3DPadded *)vector4D_array[0], vector4D_array[1][0],
+			dot_product_array[0][i % max_nu_tasks]);
 		count += vector_array_size;
+		i++;
 		if (tt->StopSignalled())
 			break;
 	}
@@ -302,7 +327,7 @@ static void SetRandomVector3DArrays() {
 static float DotProductArraysDeviation() {
 	double deviation = 0.0f;
 	for (int i = 0; i < vector_array_size; i++)
-		deviation += fabs(dot_product_array[1][i] - dot_product_array[0][i]);
+		deviation += fabs(dot_product_array[1][0][i] - dot_product_array[0][0][i]);
 	return deviation / vector_array_size;
 }
 
@@ -310,7 +335,7 @@ static float DotProductArraysMaxDeviation() {
 	double max_deviation = 0.0d;
 	for (int i = 0; i < vector_array_size; i++)
 		max_deviation = maxd(max_deviation,
-			fabsf(dot_product_array[1][i] - dot_product_array[0][i]));
+			fabsf(dot_product_array[1][0][i] - dot_product_array[0][0][i]));
 	return max_deviation;
 }
 
@@ -336,14 +361,38 @@ static void Usage() {
 		"Options:\n"
 		"-n <number>  Size of vector arrays (number of elements).\n"
 		"-t <number>  Use a fixed number of threads for multi-threading benchmarks.\n"
+		"-q <number>  The maximum number of tasks queued inside threads for\n"
+		"             multi-threading (default 1).\n"
 		"-h           Display this text.\n"
 		);
 	exit(0);
 }
 
 int main(int argc, char *argv[]) {
+	// Check queue semantics.
+	printf("Checking dstThreadDataQueue semantics.\n");
+	dstThreadDataQueue queue;
+	__volatile__ int sum = 0;
+        int capacity = queue.Capacity();
+	for (int i = 0; i < 20; i++) {
+		int previous_capacity = capacity;
+		dstThreadData thread_data;
+		thread_data.user_data = NULL;
+		thread_data.subdivision.start_index = i;
+		queue.Enqueue(thread_data);
+		dstThreadData thread_data2 = queue.Dequeue();
+		sum += thread_data2.subdivision.start_index;
+		capacity = queue.Capacity();
+		printf("%d enqueue/dequeue operations, capacity = %d, array size = %d\n", i, capacity,
+			queue.dstDynamicArray <dstThreadData, uint32_t>::Size());
+		if (capacity != previous_capacity)
+			printf("dstTreadDataQueue(4) minimum capacity changed from %d to %d, size = %d.\n",
+				previous_capacity, capacity, queue.Size());
+	}
+
 	vector_array_size = DEFAULT_VECTOR_ARRAY_SIZE;
 	fixed_nu_threads = 0;
+	max_nu_tasks = 1;
 
  	for (int i = 1; i < argc; i++) {
 		// Options that take no arguments.
@@ -369,6 +418,13 @@ int main(int argc, char *argv[]) {
 					fixed_nu_threads = n;
 				else
 					ErrorMessage("Invalid option argument (fixed number of threads).");
+				i++;
+				continue;
+			case 'q' :
+				if (n > 0 && n <= MAX_MAX_NU_TASKS)
+					max_nu_tasks = n;
+				else
+					ErrorMessage("Invalid option argument (number of queued tasks).");
 				i++;
 				continue;
 			}
@@ -403,8 +459,10 @@ int main(int argc, char *argv[]) {
 	vector3D_array[1] = dstNewAligned <Vector3D>(vector_array_size, page_size);
 	vector3D_padded_array[0] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
 	vector3D_padded_array[1] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
-	dot_product_array[0] = dstNewAligned <float>(vector_array_size, page_size);
-	dot_product_array[1] = dstNewAligned <float>(vector_array_size, page_size);
+	for (int i = 0; i < max_nu_tasks; i++) {
+		dot_product_array[0][i] = dstNewAligned <float>(vector_array_size, page_size);
+		dot_product_array[1][i] = dstNewAligned <float>(vector_array_size, page_size);
+	}
 #endif
 
 	TypeSizeReport();
@@ -425,10 +483,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector4DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNxN(vector_array_size, vector4D_array[0], vector4D_array[1],
-			dot_product_array[0]);
+			dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNxN(vector_array_size, vector4D_array[0],
-			vector4D_array[1], dot_product_array[1]);
+			vector4D_array[1], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -440,10 +498,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector3DPaddedArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNxN(vector_array_size, vector3D_padded_array[0],
-			vector3D_padded_array[1], dot_product_array[0]);
+			vector3D_padded_array[1], dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNxN(vector_array_size, vector3D_padded_array[0],
-			vector3D_padded_array[1], dot_product_array[1]);
+			vector3D_padded_array[1], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -455,10 +513,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector3DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNxN(vector_array_size, vector3D_array[0], vector3D_array[1],
-			dot_product_array[0]);
+			dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNxN(vector_array_size, vector3D_array[0],
-			vector3D_array[1], dot_product_array[1]);
+			vector3D_array[1], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -471,10 +529,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector4DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector4D_array[0], vector4D_array[1][0], dot_product_array[0]);
+			vector4D_array[0], vector4D_array[1][0], dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNx1(vector_array_size, vector4D_array[0],
-			vector4D_array[1][0], dot_product_array[1]);
+			vector4D_array[1][0], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 		max_deviation = maxd(max_deviation, DotProductArraysMaxDeviation());
 	}
@@ -490,10 +548,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector3DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[0]);
+			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[1]);
+			vector3D_padded_array[0], vector3D_array[1][0], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -505,10 +563,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector3DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_array[0], vector3D_array[1][0], dot_product_array[0]);
+			vector3D_array[0], vector3D_array[1][0], dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNx1(vector_array_size,
-			vector3D_array[0], vector3D_array[1][0], dot_product_array[1]);
+			vector3D_array[0], vector3D_array[1][0], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -521,10 +579,10 @@ int main(int argc, char *argv[]) {
 		SetRandomVector4DArrays();
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNx1(vector_array_size,
-			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[0]);
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNx1(vector_array_size,
-			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[1]);
+			(const Point3D *)vector3D_array[0], vector4D_array[1][0], dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -538,11 +596,11 @@ int main(int argc, char *argv[]) {
 		dstSetSIMDType(simd_type);
 		dstCalculateDotProductsNx1(vector_array_size,
 			(const Point3DPadded *)vector3D_padded_array[0], vector4D_array[1][0],
-			 dot_product_array[0]);
+			 dot_product_array[0][0]);
 		dstSetSIMDType(DST_SIMD_NONE);
 		dstCalculateDotProductsNx1(vector_array_size,
 			(const Point3DPadded *)vector3D_padded_array[0], vector4D_array[1][0],
-			dot_product_array[1]);
+			dot_product_array[1][0]);
 		deviation += DotProductArraysDeviation();
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
@@ -557,6 +615,8 @@ int main(int argc, char *argv[]) {
 		printf("Dynamic (depends on data size)\n");
 	float timeout_secs = TEST_DURATION;
 	dstTimer timer;
+
+	dstSetMaxNumberOfTasks(max_nu_tasks);
 
 	for (uint32_t i = 0; i < NU_TESTS; i++) {
 		dstThreadedTimeout *tt;
@@ -609,6 +669,7 @@ int main(int argc, char *argv[]) {
 		tt->Start((uint64_t)(timeout_secs * 1000000));
 		timer.Start();
 		count = test_data[i].test_func(tt, TEST_MODE_SIMD_NO_STREAMING);
+		dstSyncTasks();
 		elapsed_time = timer.Elapsed();
 		double rate_non_streaming_threaded = count / elapsed_time;
 
@@ -620,6 +681,7 @@ int main(int argc, char *argv[]) {
 		tt->Start((uint64_t)(timeout_secs * 1000000));
 		timer.Start();
 		count = test_data[i].test_func(tt, TEST_MODE_SIMD_STREAMING);
+		dstSyncTasks();
 		elapsed_time = timer.Elapsed();
 		double rate_streaming_threaded = count / elapsed_time;
 

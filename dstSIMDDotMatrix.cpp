@@ -26,6 +26,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "dstSIMD.h"
 #include "dstSIMDDot.h"
 #include "dstSIMDMatrix.h"
+#include "dstMisc.h"
 
 #ifdef DST_SIMD_MODE_STREAM
 // Support multi-threading in streaming store versions of SIMD functions.
@@ -43,12 +44,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifndef DST_NO_SIMD
-
-#ifdef DST_MULTI_THREADING
-
-static dstTaskScheduler task_scheduler;
-
-#endif
 
 // Matrix multiplication.
 
@@ -103,8 +98,8 @@ typedef void (*dstDotProductFuncType)(int n, const float * DST_RESTRICT f1, cons
 float * DST_RESTRICT dot);
 
 
-static void dstCalculateDotProductsThread(dstBaseTaskInfo *task_info) {
-	void **user_data = (void **)task_info->user_data;
+static void dstCalculateDotProductsThread(dstThreadData *thread_data) {
+	void **user_data = (void **)thread_data->user_data;
 	float *f1 = (float *)user_data[0];
 	float *f2 = (float *)user_data[1];
 	float *dot = (float *)user_data[2];
@@ -112,17 +107,17 @@ static void dstCalculateDotProductsThread(dstBaseTaskInfo *task_info) {
 	uint32_t alignment_and_sizes = (uint32_t)(uint64_t)user_data[4];
 	uint32_t size_f1 = (alignment_and_sizes >> 8) & 0xFF;
 	uint32_t size_f2 = (alignment_and_sizes >> 16) & 0xFF;
-	f1 += task_info->subdivision.start_index * size_f1;
-	f2 += task_info->subdivision.start_index * size_f2;
-	dot += task_info->subdivision.start_index;
+	f1 += thread_data->subdivision.start_index * size_f1;
+	f2 += thread_data->subdivision.start_index * size_f2;
+	dot += thread_data->subdivision.start_index;
 //	printf("Task begin start_index = %d, n = %d, sizes %d/%d\n",
-//		task_info->subdivision.start_index,
-//		task_info->subdivision.nu_elements,
+//		thread_data->subdivision.start_index,
+//		thread_data->subdivision.nu_elements,
 //		size_f1, size_f2);
-//	printf("Creation time = %.5lf\n", (double)task_info->creation_time / 1000000.0d); 
+//	printf("Creation time = %.5lf\n", (double)thread_data->creation_time / 1000000.0d); 
 //	fflush(stdout);
-	dot_product_func(task_info->subdivision.nu_elements, f1, f2, dot);
-//	printf("Task end, start_index = %d\n", task_info->subdivision.start_index);
+	dot_product_func(thread_data->subdivision.nu_elements, f1, f2, dot);
+//	printf("Task end, start_index = %d\n", thread_data->subdivision.start_index);
 //	fflush(stdout);
 }
 
@@ -146,16 +141,21 @@ const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
 	user_data[4] = (void *)(uint64_t)alignment_and_sizes;
 #define USE_TASK_GROUP
 #ifdef USE_TASK_GROUP
-	int group_index = task_scheduler.AddSubdividedTaskGroup(0, dstCalculateDotProductsThread,
-		(void *)user_data, division);
-	task_scheduler.WaitUntilGroupFinished(group_index);
+	int group_index = dst_config.task_scheduler.AddSubdividedTaskGroup(0,
+		dstCalculateDotProductsThread, (void *)user_data, division);
+	dst_config.nu_tasks++;
+	if (dst_config.nu_tasks >= dst_config.max_tasks) {
+		// Wait for all tasks to finish.
+		dst_config.task_scheduler.WaitUntilGroupFinished(group_index);
+		dst_config.nu_tasks = 0;
+	}
 #else
 	for (int i = 0; i < nu_threads; i++) {
 		division.index = (uint32_t)i;
-		task_scheduler.AddTask(0, dstCalculateDotProductsThread,
+		dst_config.task_scheduler.AddTask(0, dstCalculateDotProductsThread,
 			(void *)user_data, division);
 	}
-	task_scheduler.WaitUntilFinished();
+	dst_config.task_scheduler.WaitUntilFinished();
 #endif
 	free(user_data);
 }

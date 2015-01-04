@@ -27,7 +27,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "dstSIMD.h"
 
 template <class T>
 static inline T *dstNewAligned(size_t n, size_t alignment) {
@@ -53,32 +52,32 @@ static inline T *dstNewAlignedHugeTLB(size_t n) {
 #ifdef DST_PREFER_LIBC_MEMCPY
 
 template <class T>
-static inline void dstMemcpyAlignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyAlignedSmall(T *dest, const T *src, uint32_t n) {
 	memcpy(dest, src, n);
 }
 
 template <class T>
-static inline void dstMemcpyUnalignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyUnalignedSmall(T *dest, const T *src, uint32_t n) {
 	memcpy(dest, src, n);
 }
 
 template <class T>
-static inline void dstMemcpyAlignedLarge(T *dest, T *src, size_t n) {
+static inline void dstMemcpyAlignedLarge(T *dest, const T *src, size_t n) {
 	memcpy(dest, src, n);
 }
 
 template <class T>
-static inline void dstMemcpyUnalignedLarge(T *dest, T *src, size_t n) {
+static inline void dstMemcpyUnalignedLarge(T *dest, const T *src, size_t n) {
 	memcpy(dest, src, n);
 }
 
 template <class T>
-static inline void dstMemcpyTypeAlignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyTypeAlignedSmall(T *dest, const T *src, uint32_t n) {
 	memcpy(dest, src, n);
 }
 
 template <class T>
-static inline void dstMemcpyTypeAlignedLarge(T *dest, T *src, size_t n) {
+static inline void dstMemcpyTypeAlignedLarge(T *dest, const T *src, size_t n) {
 	memcpy(dest, src, n);
 }
 
@@ -100,7 +99,7 @@ static inline void dstMemcpyTypeAlignedLarge(T *dest, T *src, size_t n) {
 //                        any number of bytes (but a multiple of T).
 
 template <class T>
-static inline void dstMemcpyAlignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyAlignedSmall(T *dest, const T *src, uint32_t n) {
 	if (sizeof(T) == 8 || (sizeof(T) > 8 && (sizeof(T) & 7) == 0)) {
 		n >>= 2;
 		uint32_t n_even = n & (~0x1);
@@ -135,7 +134,7 @@ static inline void dstMemcpyAlignedSmall(T *dest, T *src, uint32_t n) {
 }
 
 template <class T>
-static inline void dstMemcpyUnalignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyUnalignedSmall(T *dest, const T *src, uint32_t n) {
 	uint32_t i = 0;
 	// No distinction is made between sizeof(T) of 1, 2, 4 or 8; treat the copy as bytes
 	// but use 32-bit word access when possible.
@@ -166,7 +165,7 @@ static inline void dstMemcpyUnalignedSmall(T *dest, T *src, uint32_t n) {
 //                        any number of bytes.
 
 template <class T>
-static inline void dstMemcpyAlignedLarge(T *dest, T *src, size_t n) {
+static inline void dstMemcpyAlignedLarge(T *dest, const T *src, size_t n) {
 	if (sizeof(T) == 8 || (sizeof(T) > 8 && (sizeof(T) & 7) == 0)) {
 		uint32_t i = 0;
 		uint32_t remainder = n & 0x4;
@@ -211,7 +210,7 @@ static inline void dstMemcpyAlignedLarge(T *dest, T *src, size_t n) {
 }
 
 template <class T>
-static inline void dstMemcpyUnalignedLarge(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyUnalignedLarge(T *dest, const T *src, uint32_t n) {
 	// Trust memcpy for this one.
 	memcpy(dest, src, n);
 }
@@ -219,7 +218,7 @@ static inline void dstMemcpyUnalignedLarge(T *dest, T *src, uint32_t n) {
 // The source and destination pointers are aligned to the type (T) boundary.
 
 template <class T>
-static inline void dstMemcpyTypeAlignedSmall(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyTypeAlignedSmall(T *dest, const T *src, uint32_t n) {
 	if (sizeof(T) <= 2)
 		dstMemcpyUnalignedSmall(dest, src, n);
 	else
@@ -227,7 +226,7 @@ static inline void dstMemcpyTypeAlignedSmall(T *dest, T *src, uint32_t n) {
 }
 
 template <class T>
-static inline void dstMemcpyTypeAlignedLarge(T *dest, T *src, uint32_t n) {
+static inline void dstMemcpyTypeAlignedLarge(T *dest, const T *src, uint32_t n) {
 	if (sizeof(T) <= 2)
 		memcpy(dest, src, n);
 	else

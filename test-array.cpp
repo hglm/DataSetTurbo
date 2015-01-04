@@ -22,6 +22,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <sys/time.h>
 
+#include "dstMisc.h"
 #include <dstDynamicArray.h>
 #include <dstQueue.h>
 #include <dstTimer.h>
@@ -34,9 +35,22 @@ int main(int argc, char *argv[]) {
 	printf("dstIntQueue queue(8) capacity = %d\n", queue.Capacity());
 	queue.Enqueue(0);
 
+	dstIntQueue queue4(4);
+	__volatile__ int sum = 0;
+        int capacity = queue4.Capacity();
+	for (int i = 0; i < 16; i++) {
+		int previous_capacity = capacity;
+		queue4.Enqueue(i);
+		sum += queue4.Dequeue();
+		capacity = queue4.Capacity();
+		if (capacity != previous_capacity)
+			printf("dstIntQueue(4) minimum capacity changed from %d to %d.\n",
+				previous_capacity, capacity);
+	}
+
 	dstIntArray a;
 	printf("dstIntArray: MaxCapacity() = %u\n", a.MaxCapacity());
-        int capacity = a.Capacity();
+        capacity = a.Capacity();
 	for (int i = 0; i < 1000000; i++) {
 		int previous_capacity = capacity;
 		a.Add(i);

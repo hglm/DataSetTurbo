@@ -32,6 +32,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/time.h>
 #include <fgen.h>
 
+#include "dstMisc.h"
 #include "dstRandom.h"
 #include "dstMatrixMath.h"
 

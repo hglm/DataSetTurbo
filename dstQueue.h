@@ -26,7 +26,9 @@ class DST_API dstQueueBaseClass : public dstDynamicArray <T, S> {
 protected :
 	S head_index;
 
+public :
 	virtual void Enqueue(const T& v) = 0;
+	virtual void Enqueue(const T *v_pointer, S n) = 0;
 
 public :
 	dstQueueBaseClass() : dstDynamicArray <T, S>() {
@@ -57,6 +59,10 @@ public :
 	inline T Dequeue() {
 		T v = this->Get(head_index);
 		head_index++;
+		if (Size() == 0) {
+			head_index = 0;
+			this->Truncate(0);
+		}
 		return v;
 	}
 	inline T RemoveFirst() {
@@ -75,17 +81,18 @@ public :
 	dstQueue() : dstQueueBaseClass <T, uint32_t>() { }
 	explicit dstQueue(uint32_t starting_capacity) :
 		dstQueueBaseClass <T, uint32_t>(starting_capacity) { }
-	inline void Enqueue(const T& v) {
-		dstDynamicArray <T, uint32_t>::Add(v);
+	virtual void Enqueue(const T& v) {
+		/* dstDynamicArray <T, uint32_t>:: */
+		this->Add(v);
 		uint32_t queue_size = this->Size();
 		// When the array space before the head of the queue is as large as
 		// the queue itself, move the queue to the front of the array.
 		if (this->head_index >= 8 && this->head_index >= queue_size) {
-			dstDynamicArray <T, uint32_t>::RemoveHead(this->head_index);
+			this->RemoveHead(this->head_index);
 			this->head_index = 0;
 		}
 	}
-	inline void Enqueue(const T *v_pointer, uint8_t n) {
+	virtual void Enqueue(const T *v_pointer, uint32_t n) {
 		this->Add(v_pointer, n);
 	}
 };
@@ -106,17 +113,17 @@ public :
 	dstSmallQueue() : dstQueueBaseClass <T, uint8_t>() { }
 	explicit dstSmallQueue(uint8_t starting_capacity) :
 		dstQueueBaseClass <T, uint8_t>(starting_capacity) { }
-	inline void Enqueue(const T& v) {
-		dstDynamicArray <T, uint8_t>::Add(v);
+	virtual void Enqueue(const T& v) {
+		this->Add(v);
 		uint8_t queue_size = this->Size();
 		// When the array space before the head of the queue is as large as
 		// the queue itself, move the queue to the front of the array.
 		if (this->head_index >= 8 && this->head_index >= queue_size) {
-			dstDynamicArray <T, uint8_t>::RemoveSmallHead(this->head_index);
+			this->RemoveHead(this->head_index);
 			this->head_index = 0;
 		}
 	}
-	inline void Enqueue(const T *v_pointer, uint8_t n) {
+	virtual void Enqueue(const T *v_pointer, uint8_t n) {
 		this->AddSmall(v_pointer, n);
 	}
 };

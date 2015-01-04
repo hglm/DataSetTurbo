@@ -20,7 +20,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <sched.h>
 
-#include "dstConfig.h"
+#include "dstMisc.h"
 #include "dstRandom.h"
 #include "dstTimer.h"
 
@@ -184,6 +184,8 @@ void dstInit() {
 	dst_config.max_threads_per_function = dst_config.nu_cpus;
 	if (dst_config.max_threads_per_function > 1)
 		dst_config.flags |= DST_FLAG_THREADING;
+	dst_config.nu_tasks = 0;
+	dst_config.max_tasks = 1;
 
 	printf("dstInit: Processor name: %s\n", cpuinfo->processor_name);
 	printf("dstInit: Processor SIMD features: ");

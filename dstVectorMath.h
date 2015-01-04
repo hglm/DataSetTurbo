@@ -19,7 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __DST_VECTOR_MATH_H__
 #define __DST_VECTOR_MATH_H__
 
-#include "dstConfig.h"
+#include "dstMisc.h"
 #include "dstMath.h"
 
 // This code is largely based on the source code provided by Eric Lengyel

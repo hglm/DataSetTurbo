@@ -30,7 +30,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <pthread.h>
 
+#include <dstConfig.h>
 #include <dstDynamicArray.h>
+#include <dstQueue.h>
 #include <dstTimer.h>
 
 enum {
@@ -66,7 +68,8 @@ public:
 	uint32_t size;
 	uint32_t nu_subdivisions;
 	uint32_t alignment;
-	uint32_t index;
+
+	int CalculateSubdivision(uint32_t index, uint32_t &start_index, uint32_t &nu_elements) const;
 };
 
 class dstTaskSubdivisionData {
@@ -75,9 +78,9 @@ public :
 	uint32_t nu_elements;
 };
 
-class DST_API dstBaseTaskInfo;
+class DST_API dstThreadData;
 
-typedef void (*dstTaskFunc)(dstBaseTaskInfo *task_info);
+typedef void (*dstTaskFunc)(dstThreadData *thread_data);
 
 enum dstTaskThreadSignal {
 	DST_TASK_THREAD_WAIT,
@@ -85,13 +88,23 @@ enum dstTaskThreadSignal {
 	DST_TASK_THREAD_EXIT
 };
 
-class DST_API dstBaseTaskInfo {
+class DST_API dstThreadData {
+public :
+	const void *user_data;
+	dstTaskSubdivisionData subdivision;
+};
+
+//typedef dstQueue <dstThreadData> dstThreadDataQueue;
+class DST_API dstThreadDataQueue : public dstQueue <dstThreadData> {
+public :
+	dstThreadDataQueue() : dstQueue(4) { }
+};
+
+class DST_API dstBaseTaskInfo : public dstThreadData {
 public :
 	pthread_t thread;
 	uint32_t flags;
 	dstTaskFunc task_func;
-	const void *user_data;
-	dstTaskSubdivisionData subdivision;
 };
 
 class DST_API dstTaskInfo : public dstBaseTaskInfo {
@@ -118,10 +131,15 @@ typedef dstCastDynamicArray <dstTaskInfo *, void *, uint32_t, dstPointerArray>
 
 class dstTaskGroup;
 
-class DST_API dstTaskGroupMember : public dstBaseTaskInfo {
+class DST_API dstTaskGroupMember {
 public :
+	pthread_t thread;
+	uint32_t flags;
 	dstTaskGroup *group;
 	dstTaskThreadSignal continue_signal;
+	dstTaskFunc task_func;
+	pthread_mutex_t thread_data_queue_mutex;
+	dstThreadDataQueue thread_data_queue;
 };
 
 typedef dstDynamicArray <dstTaskGroupMember, uint8_t> dstTaskGroupMemberArray;
@@ -169,29 +187,28 @@ public :
 	dstTaskScheduler();
 	~dstTaskScheduler();
 	int AddTask(int flags, dstTaskFunc func, const void *user_data, dstTaskDurationEstimate e,
-		const dstTaskDivisionData& division);
+		const dstTaskDivisionData& division, uint32_t division_index);
 	inline int AddTask(int flags, dstTaskFunc func, const void *user_data) {
 		dstTaskDivisionData division;
 		division.size = 0;
 		return AddTask(flags, func, user_data,
-			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division);
+			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division, 0);
 	}
 	inline int AddTask(int flags, dstTaskFunc func, const void *user_data, dstTaskDurationEstimate e) {
 		dstTaskDivisionData division;
 		division.size = 0;
-		return AddTask(flags, func, user_data, e, division);
+		return AddTask(flags, func, user_data, e, division, 0);
 	}
 	inline int AddTask(int flags, dstTaskFunc func, const void *user_data,
-	const dstTaskDivisionData& division) {
+	const dstTaskDivisionData& division, uint32_t division_index) {
 		return AddTask(flags, func, user_data,
-			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division);
+			dstTaskDurationEstimate(DST_TASK_DURATION_UNIT_NONE, 0), division,
+			division_index);
 	}
 	inline void AddSubdividedTasks(int flags, dstTaskFunc func, const void *user_data,
 	dstTaskDivisionData& division) {
-		for (uint32_t i = 0; i < division.nu_subdivisions; i++) {
-			division.index = i;
-			AddTask(flags, func, user_data, division);
-		}
+		for (uint32_t i = 0; i < division.nu_subdivisions; i++)
+			AddTask(flags, func, user_data, division, i);
 	}
 	int AddSubdividedTaskGroup(int flags, dstTaskFunc func, const void *user_data,
 		dstTaskDivisionData& division);
