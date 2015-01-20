@@ -34,6 +34,7 @@ const dstSIMDFuncs SIMD_VAR(dst_simd_funcs_) = {
 	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4),
 
 	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3),
+	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3PV3),
 	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V4),
 
 	SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3),
@@ -45,5 +46,7 @@ const dstSIMDFuncs SIMD_VAR(dst_simd_funcs_) = {
 
 	SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4),
 	SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4),
+	dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD,
+	dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD,
 };
 

@@ -979,11 +979,11 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         __simd128_float m_v2_2_y = simd128_set_same_float(f2[7]);
         __simd128_float m_v2_2_z = simd128_set_same_float(f2[8]);
         __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
-        __simd128_float m_min_dot_C1 = simd128_replicate_float(m_min_dot_C0, 0);
-        __simd128_float m_min_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
+        __simd128_float m_min_dot_C1 = m_min_dot_C0;
+        __simd128_float m_min_dot_C2 = m_min_dot_C0;
         __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
-        __simd128_float m_max_dot_C1 = simd128_replicate_float(m_min_dot_C1, 0);
-        __simd128_float m_max_dot_C2 = simd128_replicate_float(m_min_dot_C1, 0);
+        __simd128_float m_max_dot_C1 = m_max_dot_C0;
+        __simd128_float m_max_dot_C2 = m_max_dot_C0;
         for (; i + 3 < n; i += 4) {
             __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
             __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
@@ -1065,6 +1065,111 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         }
 }
 
+DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3PV3)(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product);
+
+static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx3V3PV3(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
+    int i = 0;
+    if (((uintptr_t)f1 & 0xF) == 0) {
+        __simd128_float m_v2_0_x = simd128_set_same_float(f2[0]);
+        __simd128_float m_v2_0_y = simd128_set_same_float(f2[1]);
+        __simd128_float m_v2_0_z = simd128_set_same_float(f2[2]);
+        __simd128_float m_v2_1_x = simd128_set_same_float(f2[3]);
+        __simd128_float m_v2_1_y = simd128_set_same_float(f2[4]);
+        __simd128_float m_v2_1_z = simd128_set_same_float(f2[5]);
+        __simd128_float m_v2_2_x = simd128_set_same_float(f2[6]);
+        __simd128_float m_v2_2_y = simd128_set_same_float(f2[7]);
+        __simd128_float m_v2_2_z = simd128_set_same_float(f2[8]);
+        __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
+        __simd128_float m_min_dot_C1 = m_min_dot_C0;
+        __simd128_float m_min_dot_C2 = m_min_dot_C0;
+        __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
+        __simd128_float m_max_dot_C1 = m_max_dot_C0;
+        __simd128_float m_max_dot_C2 = m_max_dot_C0;
+        for (; i + 3 < n; i += 4) {
+            __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+            __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+            __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+            __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
+            __simd128_float m_v1_x, m_v1_y, m_v1_z;
+            simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
+                m_v1_x, m_v1_y, m_v1_z);
+            __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_0_x, m_v2_0_y, m_v2_0_z);
+            m_min_dot_C0 = simd128_min_float(m_min_dot_C0, m_dot);
+            m_max_dot_C0 = simd128_max_float(m_max_dot_C0, m_dot);
+            m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_1_x, m_v2_1_y, m_v2_1_z);
+            m_min_dot_C1 = simd128_min_float(m_min_dot_C1, m_dot);
+            m_max_dot_C1 = simd128_max_float(m_max_dot_C1, m_dot);
+            m_dot = simd128_four_dot_products_vector3_vertical_float(
+	        m_v1_x, m_v1_y, m_v1_z, m_v2_2_x, m_v2_2_y, m_v2_2_z);
+            m_min_dot_C2 = simd128_min_float(m_min_dot_C2, m_dot);
+            m_max_dot_C2 = simd128_max_float(m_max_dot_C2, m_dot);
+        }
+        __simd128_float shifted_float1, shifted_float2, shifted_float3;
+        __simd128_float m_min_dot_23, m_max_dot_23;
+        shifted_float1 = simd128_shift_right_float(m_min_dot_C0, 1);
+        shifted_float2 = simd128_shift_right_float(m_min_dot_C0, 2);
+        shifted_float3 = simd128_shift_right_float(m_min_dot_C0, 3);
+        m_min_dot_C0 = simd128_min1_float(m_min_dot_C0, shifted_float1);
+        m_min_dot_23 = simd128_min1_float(shifted_float2, shifted_float3);
+        m_min_dot_C0 = simd128_min1_float(m_min_dot_C0, m_min_dot_23);
+        min_dot_product[0] = simd128_get_float(m_min_dot_C0);
+        shifted_float1 = simd128_shift_right_float(m_max_dot_C0, 1);
+        shifted_float2 = simd128_shift_right_float(m_max_dot_C0, 2);
+        shifted_float3 = simd128_shift_right_float(m_max_dot_C0, 3);
+        m_min_dot_C0 = simd128_max1_float(m_max_dot_C0, shifted_float1);
+        m_max_dot_23 = simd128_max1_float(shifted_float2, shifted_float3);
+        m_max_dot_C0 = simd128_max1_float(m_max_dot_C0, m_max_dot_23);
+        max_dot_product[0] = simd128_get_float(m_max_dot_C0);
+
+        shifted_float1 = simd128_shift_right_float(m_min_dot_C1, 1);
+        shifted_float2 = simd128_shift_right_float(m_min_dot_C1, 2);
+        shifted_float3 = simd128_shift_right_float(m_min_dot_C1, 3);
+        m_min_dot_C1 = simd128_min1_float(m_min_dot_C1, shifted_float1);
+        m_min_dot_23 = simd128_min1_float(shifted_float2, shifted_float3);
+        m_min_dot_C1 = simd128_min1_float(m_min_dot_C1, m_min_dot_23);
+        min_dot_product[1] = simd128_get_float(m_min_dot_C1);
+        shifted_float1 = simd128_shift_right_float(m_max_dot_C1, 1);
+        shifted_float2 = simd128_shift_right_float(m_max_dot_C1, 2);
+        shifted_float3 = simd128_shift_right_float(m_max_dot_C1, 3);
+        m_max_dot_C1 = simd128_max1_float(m_max_dot_C1, shifted_float1);
+        m_max_dot_23 = simd128_max1_float(shifted_float2, shifted_float3);
+        m_max_dot_C1 = simd128_max1_float(m_max_dot_C1, m_max_dot_23);
+        max_dot_product[1] = simd128_get_float(m_max_dot_C1);
+
+        shifted_float1 = simd128_shift_right_float(m_min_dot_C2, 1);
+        shifted_float2 = simd128_shift_right_float(m_min_dot_C2, 2);
+        shifted_float3 = simd128_shift_right_float(m_min_dot_C2, 3);
+        m_min_dot_C2 = simd128_min1_float(m_min_dot_C2, shifted_float1);
+        m_min_dot_23 = simd128_min1_float(shifted_float2, shifted_float3);
+        m_min_dot_C2 = simd128_min1_float(m_min_dot_C2, m_min_dot_23);
+        min_dot_product[2] = simd128_get_float(m_min_dot_C2);
+        shifted_float1 = simd128_shift_right_float(m_max_dot_C2, 1);
+        shifted_float2 = simd128_shift_right_float(m_max_dot_C2, 2);
+        shifted_float3 = simd128_shift_right_float(m_max_dot_C2, 3);
+        m_max_dot_C2 = simd128_max1_float(m_max_dot_C2, shifted_float1);
+        m_max_dot_23 = simd128_max1_float(shifted_float2, shifted_float3);
+        m_max_dot_C2 = simd128_max1_float(m_max_dot_C2, m_max_dot_23);
+        max_dot_product[2] = simd128_get_float(m_max_dot_C2);
+    }
+    else
+        for (int j = 0; j < 3; j++) {
+            min_dot_product[j] = FLT_MAX;
+            max_dot_product[j] = - FLT_MAX;
+        }
+    // Process the remaining vertices.
+    for (; i < n; i++)
+        for (int j = 0; j < 3; j++) {
+            min_dot_product[j] = minf(min_dot_product[j], dstDotVector3(&f1[i * 4], &f2[j * 3]));
+            max_dot_product[j] = maxf(max_dot_product[j], dstDotVector3(&f1[i * 4], &f2[j * 3]));
+        }
+}
+
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V4)(int n,
 const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product);
@@ -1088,11 +1193,11 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         __simd128_float m_v2_2_w = simd128_set_same_float(f2[11]);
 
     __simd128_float m_min_dot_C0 = simd128_set_same_float(FLT_MAX);
-    __simd128_float m_min_dot_C1 = simd128_replicate_float(m_min_dot_C0, 0);
-    __simd128_float m_min_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
+    __simd128_float m_min_dot_C1 = m_min_dot_C0;
+    __simd128_float m_min_dot_C2 = m_min_dot_C0;
     __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
-    __simd128_float m_max_dot_C1 = simd128_replicate_float(m_max_dot_C0, 0);
-    __simd128_float m_max_dot_C2 = simd128_replicate_float(m_min_dot_C0, 0);
+    __simd128_float m_max_dot_C1 = m_max_dot_C0;
+    __simd128_float m_max_dot_C2 = m_max_dot_C0;
     for (; i + 3 < n; i += 4) {
         __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
         __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);

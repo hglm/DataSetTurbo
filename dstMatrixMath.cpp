@@ -986,7 +986,7 @@ char *Matrix3D::GetString() const {
     for (int i = 0; i < 3; i++) {
         Vector3D V = GetRow(i);
         char rowstr[64];
-        sprintf(rowstr, "(%f, %f, %f) ", V.x, V.y, V.z);
+        sprintf(rowstr, "(%.10G, %.10G, %.10G) ", V.x, V.y, V.z);
         strcat(s, rowstr);
     }
     strcat(s, ")");
@@ -1014,7 +1014,7 @@ char *Matrix4D::GetString() const {
     for (int i = 0; i < 4; i++) {
         Vector4D V = GetRow(i);
         char rowstr[64];
-        sprintf(rowstr, "(%f, %f, %f, %f) ", V.x, V.y, V.z, V.w);
+        sprintf(rowstr, "(%.10G, %.10G, %.10G, %.10G) ", V.x, V.y, V.z, V.w);
         strcat(s, rowstr);
     }
     strcat(s, ")");
@@ -1031,7 +1031,7 @@ char *Matrix4x3RM::GetString() const {
         else
             V = Vector4D(0.0f, 0.0f, 0.0f, 1.0f);
         char rowstr[64];
-        sprintf(rowstr, "(%f, %f, %f, %f) ", V.x, V.y, V.z, V.w);
+        sprintf(rowstr, "(%.10G, %.10G, %.10G, %.10G) ", V.x, V.y, V.z, V.w);
         strcat(s, rowstr);
     }
     strcat(s, ")");

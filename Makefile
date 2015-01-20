@@ -41,9 +41,11 @@ endif
 
 # Enforce a fixed SIMD level when indicated.
 FIXED_SIMD_TYPE =
+FIXED_NO_SIMD =
 ifneq ($(TARGET_SIMD),)
 ifeq ($(TARGET_SIMD), NONE)
 OPTCFLAGS +=-DDST_NO_SIMD
+FIXED_NO_SIMD = DST_NO_SIMD
 else
 # OPTCFLAGS += -DDST_FIXED_SIMD
 
@@ -165,7 +167,7 @@ LIBRARY_ASM_MODULE_OBJECTS = dstARMMemset.o
 LIBRARY_MODULE_OBJECTS = $(LIBRARY_CPP_MODULE_OBJECTS) $(LIBRARY_ASM_MODULE_OBJECTS)
 LIBRARY_HEADER_FILES = dstConfig.h dstMisc.h dstRandom.h dstDynamicArray.h dstQueue.h \
 	dstTimer.h dstThread.h \
-	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h \
+	dstSIMD.h dstSIMDDot.h dstSIMDMatrix.h dstSIMDSSE2.h dstSIMDFuncs.h \
 	dstMath.h dstMemory.h \
 	dstVectorMath.h dstColor.h dstVectorMathSIMD.h dstMatrixMath.h dstMatrixMathSIMD.h \
 	dstConfigParams.h
@@ -234,6 +236,9 @@ dstConfigParams.h : Makefile.conf Makefile
 	for x in $(FIXED_SIMD_TYPE); do \
 		echo '#define DST_FIXED_SIMD'; \
 		echo '#define DST_FIXED_SIMD_$(FIXED_SIMD_TYPE)'; \
+	done; \
+	for x in $(FIXED_NO_SIMD); do \
+		echo '#define DST_NO_SIMD'; \
 	done; } > dstConfigParams.h
 
 $(LIBRARY_PKG_CONFIG_FILE) : Makefile.conf Makefile

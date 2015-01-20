@@ -177,9 +177,9 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 // Determine the minimum and maximum dot products of an array of vertices with three
 // constant vectors.
 
-template <class T>
+template <class T, class S>
 void DST_INLINE_ONLY dstCalculateMinAndMaxDotProductNx3Template(int n,
-const T * DST_RESTRICT v1, const T * DST_RESTRICT v2,
+const T * DST_RESTRICT v1, const S * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
     for (int j = 0; j < 3; j++) {
         min_dot_product[j] = FLT_MAX;
@@ -197,6 +197,13 @@ void dstCalculateMinAndMaxDotProductNx3V3NoSIMD(int n,
 const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
 	dstCalculateMinAndMaxDotProductNx3Template(n, (const Vector3D *)v1,
+		(const Vector3D *)v2, min_dot_product, max_dot_product);
+}
+
+void dstCalculateMinAndMaxDotProductNx3V3PV3NoSIMD(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
+	dstCalculateMinAndMaxDotProductNx3Template(n, (const Vector3DPadded *)v1,
 		(const Vector3D *)v2, min_dot_product, max_dot_product);
 }
 
@@ -279,6 +286,24 @@ const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT
 		Vector4D result;
 		result = *((Matrix4D *)m) * *(Vector4D *)&v[i * 4];
 		*(Vector4D *)&v_result[i * 4] = result;
+	}
+}
+
+void dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD(int n,
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	for (int i = 0; i < n; i++) {
+		Point3D result;
+		result = (*((Matrix4D *)m) * *(Point3D *)&v[i * 3]).GetPoint3D();
+		*(Point3D *)&v_result[i * 3] = result;
+	}
+}
+
+void dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD(int n,
+const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	for (int i = 0; i < n; i++) {
+		Vector3D result;
+		result = (*((Matrix4D *)m) * *(Vector3D *)&v[i * 3]).GetVector3D();
+		*(Vector3D *)&v_result[i * 3] = result;
 	}
 }
 

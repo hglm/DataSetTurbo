@@ -107,7 +107,7 @@ public :
 		return data[i];
 	}
         // Set value of element i.
-        inline void Set(S i, const T& v) {
+        inline void Set(S i, const T& v) const {
 		data[i] = v;
         }
 	// Get a pointer to the start of the array.

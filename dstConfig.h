@@ -110,6 +110,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DST_FUNC_LOOKUP(f) dst_config.simd_funcs.f
 #define DST_FUNC_STREAM_LOOKUP(f) dst_config.simd_funcs_stream.f
 #endif
+#define DST_FUNC_LOOKUP_NO_SIMD(f) dst_simd_funcs_NoSIMD.f
 
 // Set flags for SIMD implementations supported by the library, hardwired or optionally.
 // Depends on the compiler, but modern versions of gcc support all of these.
@@ -194,6 +195,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define DST_FUNC_LOOKUP(f) f ## NoSIMD
 #define DST_FUNC_STREAM_LOOKUP(f) f ## NoSIMD
+#define DST_FUNC_LOOKUP_NO_SIMD(f) f ## NoSIMD
 
 #endif
 

@@ -75,6 +75,13 @@ const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	dstInlineMatrixMultiplyVectors1xNM4x4CMV4(n, m, v, v_result);
 }
 
+#if 0
+void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMP3)(int n, const float * DST_RESTRICT m,
+const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	dstInlineMatrixMultiplyVectors1xNM4x4CMP3(n, m, v, v_result);
+}
+#endif
+
 // Dot products (4x4).
 
 void SIMD_FUNC(dstCalculateFourDotProductsV4)(
@@ -362,6 +369,13 @@ void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
 	dstInlineCalculateMinAndMaxDotProductNx3V3(n, f1, f2,
+		min_dot_product, max_dot_product);
+}
+
+void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3PV3)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
+	dstInlineCalculateMinAndMaxDotProductNx3V3PV3(n, f1, f2,
 		min_dot_product, max_dot_product);
 }
 

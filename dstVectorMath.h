@@ -399,6 +399,7 @@ public :
 		this->z = v.z;
 		return (*this);
 	}
+	char *GetString() const;
 } DST_ALIGNED(sizeof(T) * 4);
 
 typedef Vector3DBase <float> Vector3D;
@@ -827,7 +828,7 @@ public:
 };
 
 typedef Vector4DBase <float> Vector4D;
-typedef Vector4DBase <double> Vector4DDouble;
+typedef Vector4DBase <double> VectorDouble4D;
 
 template <class T>
 inline Vector4DBase <T> dstPlaneFromPoints(const Point3DBase <T>& v1, const Point3DBase <T>& v2,
@@ -854,6 +855,11 @@ static inline bool AlmostEqual(const Vector3DBase <T> & v1, const Vector3DBase <
 }
 
 template <class T>
+static inline bool AlmostEqual(const Vector3DBasePadded <T> & v1, const Vector3DBasePadded <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y) && AlmostEqual(v1.z, v2.z);
+}
+
+template <class T>
 static inline bool AlmostEqual(const Vector2DBase <T> & v1, const Vector2DBase <T> & v2,
 T epsilon) {
 	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon);
@@ -861,6 +867,13 @@ T epsilon) {
 
 template <class T>
 static inline bool AlmostEqual(const Vector3DBase <T> & v1, const Vector3DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
+		AlmostEqual(v1.z, v2.z, epsilon);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Vector3DBasePadded <T> & v1, const Vector3DBasePadded <T> & v2,
 T epsilon) {
 	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
 		AlmostEqual(v1.z, v2.z, epsilon);
@@ -877,6 +890,11 @@ static inline bool AlmostEqual(const Point3DBase <T> & v1, const Point3DBase <T>
 }
 
 template <class T>
+static inline bool AlmostEqual(const Point3DBasePadded <T> & v1, const Point3DBasePadded <T> & v2) {
+	return AlmostEqual(v1.x, v2.x) && AlmostEqual(v1.y, v2.y) && AlmostEqual(v1.z, v2.z);
+}
+
+template <class T>
 static inline bool AlmostEqual(const Point2DBase <T> & v1, const Point2DBase <T> & v2,
 T epsilon) {
 	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon);
@@ -884,6 +902,13 @@ T epsilon) {
 
 template <class T>
 static inline bool AlmostEqual(const Point3DBase <T> & v1, const Point3DBase <T> & v2,
+T epsilon) {
+	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
+		AlmostEqual(v1.z, v2.z, epsilon);
+}
+
+template <class T>
+static inline bool AlmostEqual(const Point3DBasePadded <T> & v1, const Point3DBasePadded <T> & v2,
 T epsilon) {
 	return AlmostEqual(v1.x, v2.x, epsilon) && AlmostEqual(v1.y, v2.y, epsilon) &&
 		AlmostEqual(v1.z, v2.z, epsilon);
@@ -922,23 +947,23 @@ const T * DST_RESTRICT v2, float * DST_RESTRICT dot) {
 	if (n * 4 >= DST_STREAM_THRESHOLD)
 		// Streaming SIMD stores.
 		if (__builtin_offsetof(T, w_marker) == 12)
-			return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV4)(n,
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV4)(n,
 				(const float *)v1,(const float *)v2, dot);
 		else if (sizeof(T) == 16)
-			return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV3P)(n,
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV3P)(n,
 				(const float *)v1, (const float *)v2, dot);
 		else
-			return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV3)(n,
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNxNV3)(n,
 				(const float *)v1, (const float *)v2, dot);
 	else
 		if (__builtin_offsetof(T, w_marker) == 12)
-			return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV4)(n,
+			DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV4)(n,
 				(const float *)v1,(const float *)v2, dot);
 		else if (sizeof(T) == 16)
-			return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3P)(n,
+			DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3P)(n,
 				(const float *)v1, (const float *)v2, dot);
 		else
-			return DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3)(n,
+			DST_FUNC_LOOKUP(dstCalculateDotProductsNxNV3)(n,
 				(const float *)v1, (const float *)v2, dot);
 }
 
@@ -952,59 +977,59 @@ const T * DST_RESTRICT v1, const U& DST_RESTRICT v2, float * DST_RESTRICT dot) {
 		// Streaming SIMD stores.
 		if (__builtin_offsetof(T, w_marker) == 12)
 			// T is Vector4D.
-			return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V4)(n,
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V4)(n,
 				(const float *)v1, (const float *)&v2, dot);
 		else if (sizeof(T) == 16)
 			// T is Vector3DPadded or Point3DPadded.
 			if (__builtin_offsetof(U, w_marker) == 12)
 				// U is Vector4D. In this case, we assume T is Point3DPadded (with
 				// implicit w of 1.0f) because Vector3DPadded doesn't make sense.
-				return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1P3PV4)(n,
+				DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1P3PV4)(n,
 					(const float *)v1, (const float *)&v2, dot);
 			else
 				// U (v2) is assumed to be Vector3D. It doesn't matter if T is
 				// Point3DPadded.
-				return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V3PV3)(n,
+				DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V3PV3)(n,
 					(const float *)v1, (const float *)&v2, dot);
 		else
 			// T is Vector3D or Point3D.
 			if (__builtin_offsetof(U, w_marker) == 12)
 				// U is Vector4D. In this case, we assume T is Point3D (with
 				// implicit w of 1.0f) because Vector3D doesn't make sense.
-				return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1P3V4)(n,
+				DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1P3V4)(n,
 					(const float *)v1, (const float *)&v2, dot);
 			else
 				// U (v2) is assumed to be Vector3D.
-				return DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V3)(n,
+				DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsNx1V3)(n,
 					(const float *)v1, (const float *)&v2, dot);
 	else
 		// No streaming SIMD stores.
 		if (__builtin_offsetof(T, w_marker) == 12)
 			// T is Vector4D.
-			return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V4)(n,
+			DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V4)(n,
 				(const float *)v1, (const float *)&v2, dot);
 		else if (sizeof(T) == 16)
 			// T is Vector3DPadded or Point3DPadded.
 			if (__builtin_offsetof(U, w_marker) == 12)
 				// U is Vector4D. In this case, we assume T is Point3DPadded (with
 				// implicit w of 1.0f) because Vector3DPadded doesn't make sense.
-				return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3PV4)(n,
+				DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3PV4)(n,
 					(const float *)v1, (const float *)&v2, dot);
 			else
 				// U (v2) is assumed to be Vector3D. It doesn't matter if T is
 				// Point3DPadded.
-				return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3PV3)(n,
+				DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3PV3)(n,
 					(const float *)v1, (const float *)&v2, dot);
 		else
 			// T is Vector3D or Point3D.
 			if (__builtin_offsetof(U, w_marker) == 12)
 				// U is Vector4D. In this case, we assume T is Point3D (with
 				// implicit w of 1.0f) because Vector3D doesn't make sense.
-				return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3V4)(n,
+				DST_FUNC_LOOKUP(dstCalculateDotProductsNx1P3V4)(n,
 					(const float *)v1, (const float *)&v2, dot);
 			else
 				// U (v2) is assumed to be Vector3D.
-				return DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3)(n,
+				DST_FUNC_LOOKUP(dstCalculateDotProductsNx1V3)(n,
 					(const float *)v1, (const float *)&v2, dot);
 }
 
@@ -1012,28 +1037,27 @@ const T * DST_RESTRICT v1, const U& DST_RESTRICT v2, float * DST_RESTRICT dot) {
 // and count the number of dot products < 0. p1 must be aligned on a 16-byte
 // boundary.
 
+template <class T>
 DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1(
-int n, const Point3D * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
+int n, const T * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
 float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
 	if (n * 4 >= DST_STREAM_THRESHOLD)
 		// Streaming SIMD stores.
-		DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3V4)(n, (const float *)p1,
-			(const float *)&v2, dot, negative_count);
+		if (sizeof(T) == 16)
+			// T is Point3DPadded.
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(n,
+				(const float *)p1, (const float *)&v2, dot, negative_count);
+		else
+			DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3V4)(
+				n, (const float *)p1, (const float *)&v2, dot, negative_count);
 	else
-		DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3V4)(n, (const float *)p1,
-			(const float *)&v2, dot, negative_count);
-}
-
-DST_INLINE_ONLY void dstCalculateDotProductsAndCountNegativeNx1(
-int n, const Point3DPadded * DST_RESTRICT p1, const Vector4D& DST_RESTRICT v2,
-float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
-	if (n * 4 >= DST_STREAM_THRESHOLD)
-		// Streaming SIMD stores.
-		DST_FUNC_STREAM_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(n, (const float *)p1,
-			(const float *)&v2, dot, negative_count);
-	else
-		DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(n, (const float *)p1,
-			(const float *)&v2, dot, negative_count);
+		if (sizeof(T) == 16)
+			// T is Point3DPadded.
+			DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3PV4)(n,
+				(const float *)p1, (const float *)&v2, dot, negative_count);
+		else
+			DST_FUNC_LOOKUP(dstCalculateDotProductsAndCountNegativeNx1P3V4)(
+				n, (const float *)p1, (const float *)&v2, dot, negative_count);
 }
 
 // Determine the minimum and maximum dot product of an array of vertices with a
@@ -1042,33 +1066,36 @@ float * DST_RESTRICT dot, int& DST_RESTRICT negative_count) {
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
 const Vector3D * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
-	DST_FUNC_STREAM_LOOKUP(dstCalculateMinAndMaxDotProductNx1V3)(n, (const float *)v1,
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V3)(n, (const float *)v1,
 		(const float *)&v2, min_dot_product, max_dot_product);
 }
 
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
 const Vector4D * DST_RESTRICT v1, const Vector4D& DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
-	DST_FUNC_STREAM_LOOKUP(dstCalculateMinAndMaxDotProductNx1V4)(n, (const float *)v1,
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V4)(n, (const float *)v1,
 		(const float *)&v2, min_dot_product, max_dot_product);
 }
 
 // Determine the minimum and maximum dot products of an array of vertices with three
 // constant vectors. v1 must be aligned on a 16-byte boundary.
 
+template <class T, class U>
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx3(int n,
-const Vector3D * DST_RESTRICT v1, const Vector3D * DST_RESTRICT v2,
-float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
-	DST_FUNC_STREAM_LOOKUP(dstCalculateMinAndMaxDotProductNx3V3)(n, (const float *)v1,
-		(const float *)v2, min_dot_product, max_dot_product);
-}
-
-DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx3(int n,
-const Vector4D * DST_RESTRICT v1, const Vector4D * DST_RESTRICT v2,
+const T * DST_RESTRICT v1, const U * DST_RESTRICT v2,
 float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
 	// No streaming variant.
-	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V4)(n, (const float *)v1,
-		(const float *)v2, min_dot_product, max_dot_product);
+	if (__builtin_offsetof(T, w_marker) == 12)
+		// T is Vector4D.
+		DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V4)(n, (const float *)v1,
+			(const float *)v2, min_dot_product, max_dot_product);
+	else if (sizeof(T) == 16)
+		// T is Vector3DPadded or Point3DPadded.
+		DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V3PV3)(n, (const float *)v1,
+			(const float *)v2, min_dot_product, max_dot_product);
+	else
+		DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx3V3)(n, (const float *)v1,
+			(const float *)v2, min_dot_product, max_dot_product);
 }
 
 // Determine the indices within an array of vertices that have the minimum and

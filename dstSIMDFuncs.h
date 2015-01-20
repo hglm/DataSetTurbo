@@ -50,6 +50,8 @@ DST_API void dstCalculateMinAndMaxDotProductNx1V4NoSIMD(int nu_vertices, const f
 
 DST_API void dstCalculateMinAndMaxDotProductNx3V3NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, float *min_dot_product, float *max_dot_product);
+DST_API void dstCalculateMinAndMaxDotProductNx3V3PV3NoSIMD(int nu_vertices, const float *v1,
+	const float *v2, float *min_dot_product, float *max_dot_product);
 DST_API void dstCalculateMinAndMaxDotProductNx3V4NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, float *min_dot_product, float *max_dot_product);
 
@@ -64,6 +66,10 @@ DST_API void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float *f1, const float *f2,
 
 DST_API void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(const float *m, const float *v, float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n, const float *m, const float *v,
+	float *v_result);
+DST_API void dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD(int n, const float *m, const float *v,
+	float *v_result);
+DST_API void dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD(int n, const float *m, const float *v,
 	float *v_result);
 
 // SIMD variant.
@@ -96,6 +102,8 @@ DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4)(int nu_vertices, co
 
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3)(int nu_vertices, const float *v1,
 	const float *v2, float *min_dot_product, float *max_dot_product);
+DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V3PV3)(int nu_vertices, const float *v1,
+	const float *v2, float *min_dot_product, float *max_dot_product);
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V4)(int nu_vertices, const float *v1,
 	const float *v2, float *min_dot_product, float *max_dot_product);
 
@@ -113,4 +121,6 @@ DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM4x3RM)(const float *f1, const float
 DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v, float *v_result);
 DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float *m, const float *v,
 	float *v_result);
+// dstMatrixMultiplyVectors1x4M4x4CMP3 and dstMatrixMultiplyVectors1x4M4x4CMV3 not yet implemented.
+
 

@@ -27,22 +27,35 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 template <>
 char *Vector3D::GetString() const {
 	char *s = new char[64];
-	sprintf(s, "Vector3D(%f, %f, %f)", x, y, z);
-//	sprintf(s, "VectorDouble3D(%lf, %lf, %lf)", x, y, z);
+	sprintf(s, "Vector3D(%.10G, %.10G, %.10G)", x, y, z);
+	return s;
+}
+
+template <>
+char *Vector3DPadded::GetString() const {
+	char *s = new char[64];
+	sprintf(s, "Vector3DPadded(%.10G, %.10G, %.10G)", x, y, z);
 	return s;
 }
 
 template <>
 char *VectorDouble3D::GetString() const {
 	char *s = new char[64];
-	sprintf(s, "VectorDouble3D(%lf, %lf, %lf)", x, y, z);
+	sprintf(s, "VectorDouble3D(%.10G, %.10G, %10G)", x, y, z);
 	return s;
 }
 
 template <>
 char *Vector4D::GetString() const {
     char *s = new char[64];
-    sprintf(s, "Vector4D(%f, %f, %f, %f)", x, y, z, w);
+    sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
+    return s;
+}
+
+template <>
+char *VectorDouble4D::GetString() const {
+    char *s = new char[64];
+    sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
     return s;
 }
 
