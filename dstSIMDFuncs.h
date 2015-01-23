@@ -57,6 +57,8 @@ DST_API void dstCalculateMinAndMaxDotProductNx3V4NoSIMD(int nu_vertices, const f
 
 DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);
+DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V3PNoSIMD(int nu_vertices, const float *v1,
+	const float *v2, int& i_Pmin, int& i_Pmax);
 DST_API void dstGetIndicesWithMinAndMaxDotProductNx1V4NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);
 
@@ -108,6 +110,8 @@ DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx3V4)(int nu_vertices, co
 	const float *v2, float *min_dot_product, float *max_dot_product);
 
 DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3)(int nu_vertices, const float *v1,
+	const float *v2, int& i_Pmin, int& i_Pmax);
+DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3P)(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);
 DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 	const float *v2, int& i_Pmin, int& i_Pmax);

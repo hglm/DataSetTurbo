@@ -107,6 +107,8 @@ public :
 	// maximum dot product with a given constant vector.
 	void (*dstGetIndicesWithMinAndMaxDotProductNx1V3)(int nu_vertices, const float *v1,
 		const float *v2, int& i_Pmin, int& i_Pmax);
+	void (*dstGetIndicesWithMinAndMaxDotProductNx1V3P)(int nu_vertices, const float *v1,
+		const float *v2, int& i_Pmin, int& i_Pmax);
 	void (*dstGetIndicesWithMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 		const float *v2, int& i_Pmin, int& i_Pmax);
 

@@ -1110,6 +1110,13 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 }
 
 DST_INLINE_ONLY void dstGetIndicesWithMinAndMaxDotProductNx1(int n,
+const Vector3DPadded * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+	DST_FUNC_LOOKUP(dstGetIndicesWithMinAndMaxDotProductNx1V3P)(n, (const float *)v1,
+		(const float *)&v2, i_Pmin, i_Pmax);
+}
+
+DST_INLINE_ONLY void dstGetIndicesWithMinAndMaxDotProductNx1(int n,
 const Vector4D * DST_RESTRICT v1, const Vector4D& DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 	DST_FUNC_LOOKUP(dstGetIndicesWithMinAndMaxDotProductNx1V4)(n, (const float *)v1,

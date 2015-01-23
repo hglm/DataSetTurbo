@@ -395,6 +395,12 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 	dstInlineGetIndicesWithMinAndMaxDotProductNx1V3(n, f1, f2, i_Pmin, i_Pmax);
 }
 
+void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3P)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+	dstInlineGetIndicesWithMinAndMaxDotProductNx1V3P(n, f1, f2, i_Pmin, i_Pmax);
+}
+
 void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V4)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {

@@ -1372,6 +1372,93 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
     }
 }
 
+DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V3P)(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax);
+
+static DST_INLINE_ONLY void dstInlineGetIndicesWithMinAndMaxDotProductNx1V3P(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+    int i = 0;
+    float min_dot_product;
+    float max_dot_product;
+    if (((uintptr_t)f1 & 0xF) == 0) {
+    __simd128_float m_v2_x = simd128_set_same_float(f2[0]);
+    __simd128_float m_v2_y = simd128_set_same_float(f2[1]);
+    __simd128_float m_v2_z = simd128_set_same_float(f2[2]);
+    __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
+    __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
+    __simd128_int m_min_dot_index = simd128_set_zero_int();
+    __simd128_int m_max_dot_index = simd128_set_zero_int();
+    // Keep track of four minimum and four maximum dot products (each representing the
+    // min/max for a quarter of the vertices).
+    for (; i + 3 < n; i += 4) {
+        __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 4]);
+        __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 4 + 4]);
+        __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 4 + 8]);
+        __simd128_float m_vertex3 = simd128_load_unaligned_float(&f1[i * 4 + 12]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
+            m_v1_x, m_v1_y, m_v1_z);
+        __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+            m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y, m_v2_z);
+        m_min_dot = simd128_min_float(m_min_dot, m_dot);
+        m_max_dot = simd128_max_float(m_max_dot, m_dot);
+        // Update the index for each component for which the min or max was updated.
+        __simd128_int comp_min, comp_max;
+        __simd128_int indices = simd128_set_int32(i, i + 1, i + 2, i + 3);
+        // Set the bitmask for components for which the minimum/maximum was updated.
+        comp_min = simd128_cmpeq_float(m_min_dot, m_dot);
+        comp_max = simd128_cmpeq_float(m_max_dot, m_dot);
+        m_min_dot_index = simd128_or_int(
+            simd128_andnot_int(comp_min, m_min_dot_index),
+            simd128_and_int(comp_min, indices)
+            );
+        m_max_dot_index = simd128_or_int(
+            simd128_andnot_int(comp_max, m_max_dot_index),
+            simd128_and_int(comp_max, indices)
+            );
+    }
+    // Combine the minimum/maximum calculated for each quarter of the vertices.
+    min_dot_product = simd128_get_float(m_min_dot);
+    i_Pmin = simd128_get_int32(m_min_dot_index);
+    max_dot_product = simd128_get_float(m_max_dot);
+    i_Pmax = simd128_get_int32(m_max_dot_index);
+    for (int j = 1; j < 4; j++) {
+        m_min_dot = simd128_shift_right_float(m_min_dot, 1);
+        m_max_dot = simd128_shift_right_float(m_max_dot, 1);
+        m_min_dot_index = simd128_shift_right_bytes_int(m_min_dot_index, 4);
+        m_max_dot_index = simd128_shift_right_bytes_int(m_max_dot_index, 4);
+        float v_min = simd128_get_float(m_min_dot);
+        float v_max = simd128_get_float(m_max_dot);
+        if (v_min < min_dot_product) {
+            min_dot_product = v_min;
+            i_Pmin = simd128_get_int32(m_min_dot_index);
+        }
+        if (v_max > max_dot_product) {
+            max_dot_product = v_max;
+            i_Pmax = simd128_get_int32(m_max_dot_index);
+        }
+    }
+    }
+    else
+    {
+        min_dot_product = FLT_MAX;
+        max_dot_product = - FLT_MAX;
+    }
+    for (; i < n; i++) {
+        float dot = dstDotVector3(&f1[i * 4], f2);
+        if (dot < min_dot_product) {
+            min_dot_product = dot;
+            i_Pmin = i;
+        }
+        if (dot > max_dot_product) {
+            max_dot_product = dot;
+            i_Pmax = i;
+        }
+    }
+}
+
 DST_API void SIMD_FUNC(dstGetIndicesWithMinAndMaxDotProductNx1V4)(int n,
 const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax);

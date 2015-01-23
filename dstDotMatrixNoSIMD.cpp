@@ -217,9 +217,9 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
 // Determine the indices within an array of vertices that have the minimum and
 // maximum dot product with a given constant vector.
 
-template <class T>
+template <class T, class S>
 static void DST_INLINE_ONLY dstGetIndicesWithMinAndMaxDotProductNx1Template(int n,
-const T * DST_RESTRICT v1, const T & DST_RESTRICT v2,
+const T * DST_RESTRICT v1, const S & DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 	float min_dot_product = FLT_MAX;
 	float max_dot_product = - FLT_MAX;
@@ -241,6 +241,13 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
 	dstGetIndicesWithMinAndMaxDotProductNx1Template(n,
 		(const Vector3D *)v1, *(const Vector3D *)v2, i_Pmin, i_Pmax);
+}
+
+void dstGetIndicesWithMinAndMaxDotProductNx1V3PNoSIMD(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
+	dstGetIndicesWithMinAndMaxDotProductNx1Template(n,
+		(const Vector3DPadded *)v1, *(const Vector3D *)v2, i_Pmin, i_Pmax);
 }
 
 void dstGetIndicesWithMinAndMaxDotProductNx1V4NoSIMD(int n,
