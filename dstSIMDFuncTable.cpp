@@ -27,8 +27,8 @@ const dstSIMDFuncs SIMD_VAR(dst_simd_funcs_) = {
 	SIMD_FUNC(dstCalculateDotProductsNx1P3PV4),
 	SIMD_FUNC(dstCalculateDotProductsNx1P3V4),
 
-	SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3PV4),
 	SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3V4),
+	SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3PV4),
 
 	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V3),
 	SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4),
