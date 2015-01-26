@@ -139,7 +139,7 @@ class DST_API Matrix4D
 {
 	public:
 		// The internal storage is in column-major order.
-		float	n[4][4];
+		float n[4][4];
 	
 	public:
 		
@@ -320,7 +320,7 @@ Matrix4D & DST_RESTRICT result) {
 }
 
 DST_INLINE_ONLY void dstMatrixMultiply(const Matrix4x3RM & DST_RESTRICT m1,
-const Matrix4x3RM & DST_RESTRICT m2, Matrix4D & DST_RESTRICT result) {
+const Matrix4x3RM & DST_RESTRICT m2, Matrix4x3RM & DST_RESTRICT result) {
 	DST_FUNC_LOOKUP(dstMatrixMultiply4x3RM)((const float *)&m1, (const float *)&m2, (float *)&result);
 }
 

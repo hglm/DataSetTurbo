@@ -26,35 +26,35 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 template <>
 char *Vector3D::GetString() const {
-	char *s = new char[64];
+	char *s = new char[80];
 	sprintf(s, "Vector3D(%.10G, %.10G, %.10G)", x, y, z);
 	return s;
 }
 
 template <>
 char *Vector3DPadded::GetString() const {
-	char *s = new char[64];
+	char *s = new char[80];
 	sprintf(s, "Vector3DPadded(%.10G, %.10G, %.10G)", x, y, z);
 	return s;
 }
 
 template <>
 char *VectorDouble3D::GetString() const {
-	char *s = new char[64];
+	char *s = new char[80];
 	sprintf(s, "VectorDouble3D(%.10G, %.10G, %10G)", x, y, z);
 	return s;
 }
 
 template <>
 char *Vector4D::GetString() const {
-    char *s = new char[64];
+    char *s = new char[80];
     sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
     return s;
 }
 
 template <>
 char *VectorDouble4D::GetString() const {
-    char *s = new char[64];
+    char *s = new char[80];
     sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
     return s;
 }

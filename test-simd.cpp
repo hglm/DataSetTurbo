@@ -31,6 +31,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dstMemory.h>
 #include <dstVectorMath.h>
 #include <dstThread.h>
+#include <dstMatrixMath.h>
 
 
 // Duration of each test in seconds.
@@ -100,13 +101,16 @@ enum {
 	TEST_MODE_SIMD_STREAMING
 };
 
-Vector4D *vector4D_array[2];
+Vector4D *vector4D_array[3];
 Vector3DPadded *vector3D_padded_array[2];
 Vector3D *vector3D_array[2];
 float *dot_product_array[2][MAX_MAX_NU_TASKS];
+Matrix4D *matrix4D_array[4];
+Matrix4x3RM *matrix4x3RM_array[4];
 dstRNG *rng;
 int simd_type;
 int vector_array_size;
+int matrix_array_size;
 int fixed_nu_threads;
 int max_nu_tasks;
 
@@ -305,8 +309,8 @@ static Vector3D RandomVector3D() {
 
 static void SetRandomVector4DArrays() {
 	for (int i = 0; i < vector_array_size; i++) {
-		vector4D_array[0][i] = RandomVector4D();
-		vector4D_array[1][i] = RandomVector4D();
+		for (int j = 0; j < 3; j++)
+			vector4D_array[j][i] = RandomVector4D();
 	}
 }
 
@@ -324,19 +328,75 @@ static void SetRandomVector3DArrays() {
 	}
 }
 
-static float DotProductArraysDeviation() {
+static Matrix4D RandomMatrix4D() {
+	Matrix4D m;
+	for (int i = 0; i < 4; i++)
+		m.SetRow(i, RandomVector4D());
+	return m;
+}
+
+static void SetRandomMatrix4DArrays() {
+	for (int i = 0; i < matrix_array_size; i++) {
+		for (int j = 0; j < 4; j++)
+			matrix4D_array[j][i] = RandomMatrix4D();
+	}
+}
+
+static Matrix4x3RM RandomMatrix4x3RM() {
+	Matrix4x3RM m;
+	for (int i = 0; i < 3; i++)
+		m.SetRow(i, RandomVector4D());
+	return m;
+}
+
+static void SetRandomMatrix4x3RMArrays() {
+	for (int i = 0; i < matrix_array_size; i++) {
+		for (int j = 0; j < 4; j++)
+			matrix4x3RM_array[j][i] = RandomMatrix4x3RM();
+	}
+}
+
+static double DotProductArraysDeviation() {
 	double deviation = 0.0f;
 	for (int i = 0; i < vector_array_size; i++)
 		deviation += fabs(dot_product_array[1][0][i] - dot_product_array[0][0][i]);
 	return deviation / vector_array_size;
 }
 
-static float DotProductArraysMaxDeviation() {
+static double DotProductArraysMaxDeviation() {
 	double max_deviation = 0.0d;
 	for (int i = 0; i < vector_array_size; i++)
 		max_deviation = maxd(max_deviation,
 			fabsf(dot_product_array[1][0][i] - dot_product_array[0][0][i]));
 	return max_deviation;
+}
+
+static double Matrix4DArraysDeviation(int i1, int i2) {
+	double deviation = 0.0d;
+	for (int i = 0; i < matrix_array_size; i++)
+		for (int j = 0; j < 4; j++)
+			for (int k = 0; k < 4; k++)
+				deviation += fabs(matrix4D_array[i1][i].Get(j, k) -
+					matrix4D_array[i2][i].Get(j, k));
+	return deviation / (matrix_array_size * 16);
+}
+
+static double Matrix4x3RMArraysDeviation(int i1, int i2) {
+	double deviation = 0.0d;
+	for (int i = 0; i < matrix_array_size; i++)
+		for (int j = 0; j < 4; j++)
+			for (int k = 0; k < 3; k++)
+				deviation += fabs(matrix4x3RM_array[i1][i].Get(j, k) -
+					matrix4x3RM_array[i2][i].Get(j, k));
+	return deviation / (matrix_array_size * 16);
+}
+
+static double Vector4DArraysDeviation(int i1, int i2) {
+	double deviation = 0.0d;
+	for (int i = 0; i < vector_array_size; i++)
+		for (int j = 0; j < 4; j++)
+			deviation += fabs(vector4D_array[i1][i][j] - vector4D_array[i2][i][j]);
+	return deviation / vector_array_size;
 }
 
 static const char *CorrectString(double deviation) {
@@ -391,6 +451,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	vector_array_size = DEFAULT_VECTOR_ARRAY_SIZE;
+	matrix_array_size = 1024;
 	fixed_nu_threads = 0;
 	max_nu_tasks = 1;
 
@@ -455,6 +516,7 @@ int main(int argc, char *argv[]) {
 	int page_size = sysconf(_SC_PAGESIZE);
 	vector4D_array[0] = dstNewAligned <Vector4D>(vector_array_size, page_size);
 	vector4D_array[1] = dstNewAligned <Vector4D>(vector_array_size, page_size);
+	vector4D_array[2] = dstNewAligned <Vector4D>(vector_array_size, page_size);
 	vector3D_array[0] = dstNewAligned <Vector3D>(vector_array_size, page_size);
 	vector3D_array[1] = dstNewAligned <Vector3D>(vector_array_size, page_size);
 	vector3D_padded_array[0] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
@@ -462,6 +524,10 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < max_nu_tasks; i++) {
 		dot_product_array[0][i] = dstNewAligned <float>(vector_array_size, page_size);
 		dot_product_array[1][i] = dstNewAligned <float>(vector_array_size, page_size);
+	}
+	for (int i = 0; i < 4; i++) {
+		matrix4D_array[i] = dstNewAligned <Matrix4D>(matrix_array_size, page_size);
+		matrix4x3RM_array[i] = dstNewAligned <Matrix4x3RM>(matrix_array_size, page_size);
 	}
 #endif
 
@@ -605,6 +671,122 @@ int main(int argc, char *argv[]) {
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
         printf("CalculateDotProductsNx1Point3DPaddedVector4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	// Correctness of matrix x matrix multiplication functions.
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		for (int j = 0; j < matrix_array_size; j++) {
+			dstSetSIMDType(simd_type);
+			dstMatrixMultiply(
+				matrix4D_array[0][j],
+				matrix4D_array[1][j],
+				matrix4D_array[2][j]);
+			dstSetSIMDType(DST_SIMD_NONE);
+			dstMatrixMultiply(
+				matrix4D_array[0][j],
+				matrix4D_array[1][j],
+				matrix4D_array[3][j]);
+		}
+		deviation += Matrix4DArraysDeviation(2, 3);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyMatrix4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4x3RMArrays();
+		for (int j = 0; j < matrix_array_size; j++) {
+			dstSetSIMDType(simd_type);
+			dstMatrixMultiply(
+				matrix4x3RM_array[0][j],
+				matrix4x3RM_array[1][j],
+				matrix4x3RM_array[2][j]);
+			dstSetSIMDType(DST_SIMD_NONE);
+			dstMatrixMultiply(
+				matrix4x3RM_array[0][j],
+				matrix4x3RM_array[1][j],
+				matrix4x3RM_array[3][j]);
+		}
+		deviation += Matrix4x3RMArraysDeviation(2, 3);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyMatrix4x3RM: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		SetRandomMatrix4x3RMArrays();
+		dstSetSIMDType(simd_type);
+		for (int j = 0; j < matrix_array_size; j++)
+			dstMatrixMultiply(
+				matrix4D_array[0][j],
+				matrix4x3RM_array[0][j],
+				matrix4D_array[1][j]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		for (int j = 0; j < matrix_array_size; j++)
+			dstMatrixMultiply(
+				matrix4D_array[0][j],
+				matrix4x3RM_array[0][j],
+				matrix4D_array[2][j]);
+		deviation += Matrix4DArraysDeviation(1, 2);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyMatrix4DMatrix4x3RM: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	// Correctness of matrix x vector multiplication functions.
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		SetRandomVector4DArrays();
+		dstSetSIMDType(simd_type);
+		for (int j = 0; j < vector_array_size / 4; j++)
+			dstMatrixMultiplyVectors1x4(matrix4D_array[0][0],
+				(const Vector4D *)&vector4D_array[0][j * 4],
+				(Vector4D *)&vector4D_array[1][j * 4]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		for (int j = 0; j < vector_array_size / 4; j++)
+			dstMatrixMultiplyVectors1x4(matrix4D_array[0][0],
+				(const Vector4D *)&vector4D_array[0][j * 4],
+				(Vector4D *)&vector4D_array[2][j * 4]);
+		deviation += Vector4DArraysDeviation(1, 2);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyVectors1x4Matrix4DVector4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+#if 0
+	for (int i = 0; i < 16; i++) {
+		char *s1, *s2;
+		s1 = vector4D_array[2][i].GetString();
+		s2 = vector4D_array[1][i].GetString();
+		printf("NonSIMD result: %s, SIMD result: %s\n", s1, s2);
+		delete s1;
+		delete s2;
+	}
+#endif
+
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		SetRandomVector4DArrays();
+		dstSetSIMDType(simd_type);
+		dstMatrixMultiplyVectors1xN(vector_array_size,
+			matrix4D_array[0][0],
+			(const Vector4D *)vector4D_array[0],
+			(Vector4D *)vector4D_array[1]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstMatrixMultiplyVectors1xN(vector_array_size,
+			matrix4D_array[0][0],
+			(const Vector4D *)vector4D_array[0],
+			(Vector4D *)vector4D_array[2]);
+		deviation += Vector4DArraysDeviation(1, 2);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyVectors1xNMatrix4DVector4D: average deviation = %lE (%s)\n",
 		avg_deviation, CorrectString(avg_deviation));
 
 	printf("Array size %d\n", vector_array_size);

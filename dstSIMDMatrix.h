@@ -207,7 +207,7 @@ DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float * DST_RE
 float * DST_RESTRICT v, float * DST_RESTRICT v_result);
 
 static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
-__simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2, __simd128_float m_row3,
+__simd128_float m_column0, __simd128_float m_column1, __simd128_float m_column2, __simd128_float m_column3,
 const float *v, __simd128_float& m_result_0, __simd128_float& m_result_1, __simd128_float& m_result_2,
 __simd128_float& m_result_3) {
     // Load four vectors and transpose so that all similar coordinates are
@@ -219,51 +219,52 @@ __simd128_float& m_result_3) {
     simd128_transpose4_float(m_v_x, m_v_y, m_v_z, m_v_w);
     __simd128_float m_mul0, m_mul1, m_mul2, m_mul3;
     // Process the x coordinates.
-    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row0, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row0, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row0, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row0, 3), m_v_w);
+    // m_column0 contains column 0 of the matrix.
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_column0, 0), m_v_x);	// m[0][0] * Vx[i]
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_column1, 0), m_v_y);	// + m[1][0] * Vy[i]
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_column2, 0), m_v_z);	// + m[2][0] * Vz[i]
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_column3, 0), m_v_w);	// + m[3][0] * Vw[i]
     __simd128_float m_result_x =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the y coordinates.
-    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row1, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row1, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row1, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row1, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_column0, 1), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_column1, 1), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_column2, 1), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_column3, 1), m_v_w);
     __simd128_float m_result_y =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the z coordinates.
-    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row2, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row2, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row2, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row2, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_column0, 2), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_column1, 2), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_column2, 2), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_column3, 2), m_v_w);
     __simd128_float m_result_z =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Process the w coordinates.
-    m_mul0 = simd128_mul_float(simd128_replicate_float(m_row3, 0), m_v_x);
-    m_mul1 = simd128_mul_float(simd128_replicate_float(m_row3, 1), m_v_y);
-    m_mul2 = simd128_mul_float(simd128_replicate_float(m_row3, 2), m_v_z);
-    m_mul3 = simd128_mul_float(simd128_replicate_float(m_row3, 3), m_v_w);
+    m_mul0 = simd128_mul_float(simd128_replicate_float(m_column0, 3), m_v_x);
+    m_mul1 = simd128_mul_float(simd128_replicate_float(m_column1, 3), m_v_y);
+    m_mul2 = simd128_mul_float(simd128_replicate_float(m_column2, 3), m_v_z);
+    m_mul3 = simd128_mul_float(simd128_replicate_float(m_column3, 3), m_v_w);
     __simd128_float m_result_w =
         simd128_add_float(
             simd128_add_float(m_mul0, m_mul1),
             simd128_add_float(m_mul2, m_mul3));
     // Transpose results so that each vector holds multiplication product.
     simd128_transpose4to4_float(m_result_x, m_result_y, m_result_z, m_result_w,
-        m_result_0, m_result_1, m_result_2, m_result_3); 
+        m_result_0, m_result_1, m_result_2, m_result_3);
 }
 
 static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
-__simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2, __simd128_float m_row3,
+__simd128_float m_column0, __simd128_float m_column1, __simd128_float m_column2, __simd128_float m_column3,
 const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	__simd128_float m_result_0, m_result_1, m_result_2, m_result_3;
-	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3, v,
+	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_column0, m_column1, m_column2, m_column3, v,
 		m_result_0, m_result_1, m_result_2, m_result_3);
 	// Store the results.
 	simd128_store_float(&v_result[0], m_result_0);
@@ -274,30 +275,30 @@ const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 
 static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1x4M4x4CMV4(
 const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
-	__simd128_float m_row0, m_row1, m_row2, m_row3;
-        m_row0 = simd128_load_float(&v[0]);
-        m_row1 = simd128_load_float(&v[4]);
-        m_row2 = simd128_load_float(&v[8]);
-        m_row3 = simd128_load_float(&v[12]);
-	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3,
+	__simd128_float m_column0, m_column1, m_column2, m_column3;
+        m_column0 = simd128_load_float(&m[0]);
+        m_column1 = simd128_load_float(&m[4]);
+        m_column2 = simd128_load_float(&m[8]);
+        m_column3 = simd128_load_float(&m[12]);
+	dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_column0, m_column1, m_column2, m_column3,
 		v, v_result);
 }
 
 static DST_INLINE_ONLY void dstInlineMatrixMultiplyVectors1xNM4x4CMV4(int n,
 const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
-	__simd128_float m_row0, m_row1, m_row2, m_row3;
-        m_row0 = simd128_load_float(&v[0]);
-        m_row1 = simd128_load_float(&v[4]);
-        m_row2 = simd128_load_float(&v[8]);
-        m_row3 = simd128_load_float(&v[12]);
+	__simd128_float m_column0, m_column1, m_column2, m_column3;
+        m_column0 = simd128_load_float(&m[0]);
+        m_column1 = simd128_load_float(&m[4]);
+        m_column2 = simd128_load_float(&m[8]);
+        m_column3 = simd128_load_float(&m[12]);
 	int i = 0;
 	for (; i + 3 < n; i += 4)
-		dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_row0, m_row1, m_row2, m_row3,
+		dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_column0, m_column1, m_column2, m_column3,
 			&v[i * 4], &v_result[i * 4]);
 	for (; i < n; i++) {
-	 	   __simd128_float m_v = simd128_load_float(&v[i * 4]);
+		__simd128_float m_v = simd128_load_float(&v[i * 4]);
 		__simd128_float m_result;
-		simd128_multiply_matrix4x4_vector4(m_row0, m_row1, m_row2, m_row3,
+		simd128_multiply_matrix4x4_vector4(m_column0, m_column1, m_column2, m_column3,
 			m_v, m_result);
 		simd128_store_float(&v_result[i * 4], m_result);
 	}
