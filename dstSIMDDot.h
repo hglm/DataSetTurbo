@@ -388,8 +388,6 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 }
 
 // Calculate dot products of Nx1 vectors, all vectored stored in packed format.
-// When vectors of three floats are stored in packed format, simd128_load3_float
-// will make sure the fourth component of the SIMD register is set to 0.0f.
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,

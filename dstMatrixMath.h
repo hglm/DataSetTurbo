@@ -344,10 +344,17 @@ const Vector4D * DST_RESTRICT v1, Vector4D * DST_RESTRICT v2) {
 		(const float *)v1, (float *)v2);
 }
 
-DST_INLINE_ONLY void dstMatrixMultiplyVectors1xN(int n, const Matrix4D & DST_RESTRICT m,
-const Point3D * DST_RESTRICT v1, Point3D * DST_RESTRICT v2) {
+DST_INLINE_ONLY void dstMatrixMultiplyVectors1x4(const Matrix4D & DST_RESTRICT m,
+const Point3DPadded * DST_RESTRICT v1, Point3DPadded * DST_RESTRICT v2) {
 	// Not yet SIMD-accelerated.
-	DST_FUNC_LOOKUP_NO_SIMD(dstMatrixMultiplyVectors1xNM4x4CMP3)(n, (const float *)&m,
+	DST_FUNC_LOOKUP_NO_SIMD(dstMatrixMultiplyVectors1x4M4x4CMP3P)((const float *)&m,
+		(const float *)v1, (float *)v2);
+}
+
+DST_INLINE_ONLY void dstMatrixMultiplyVectors1xN(int n, const Matrix4D & DST_RESTRICT m,
+const Point3DPadded * DST_RESTRICT v1, Point3DPadded * DST_RESTRICT v2) {
+	// Not yet SIMD-accelerated.
+	DST_FUNC_LOOKUP_NO_SIMD(dstMatrixMultiplyVectors1xNM4x4CMP3P)(n, (const float *)&m,
 		(const float *)v1, (float *)v2);
 }
 

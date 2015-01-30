@@ -47,7 +47,8 @@ const dstSIMDFuncs SIMD_VAR(dst_simd_funcs_) = {
 
 	SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4),
 	SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4),
-	dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD,
+	SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMP3P),
+	SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMP3P),
 	dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD,
 };
 

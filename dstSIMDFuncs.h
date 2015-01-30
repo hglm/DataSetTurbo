@@ -69,6 +69,8 @@ DST_API void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float *f1, const float *f2,
 DST_API void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(const float *m, const float *v, float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n, const float *m, const float *v,
 	float *v_result);
+DST_API void dstMatrixMultiplyVectors1x4M4x4CMP3NoSIMD(int n, const float *m, const float *v,
+	float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD(int n, const float *m, const float *v,
 	float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD(int n, const float *m, const float *v,
@@ -122,9 +124,14 @@ DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM)(const float *f1, const float *f2,
 DST_API void SIMD_FUNC(dstMatrixMultiply4x3RM)(const float *f1, const float *f2, float *f3);
 DST_API void SIMD_FUNC(dstMatrixMultiply4x4CM4x3RM)(const float *f1, const float *f2, float *f3);
 
-DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v, float *v_result);
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v,
+	float *v_result);
 DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float *m, const float *v,
 	float *v_result);
-// dstMatrixMultiplyVectors1x4M4x4CMP3 and dstMatrixMultiplyVectors1x4M4x4CMV3 not yet implemented.
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMP3P)(const float *m, const float *v,
+	float *v_result);
+DST_API void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMP3P)(int n, const float *m, const float *v,
+	float *v_result);
+// dstMatrixMultiplyVectors1xNM4x4CMV3 not yet implemented.
 
 

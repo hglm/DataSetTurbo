@@ -102,7 +102,7 @@ enum {
 };
 
 Vector4D *vector4D_array[3];
-Vector3DPadded *vector3D_padded_array[2];
+Vector3DPadded *vector3D_padded_array[3];
 Vector3D *vector3D_array[2];
 float *dot_product_array[2][MAX_MAX_NU_TASKS];
 Matrix4D *matrix4D_array[4];
@@ -315,10 +315,9 @@ static void SetRandomVector4DArrays() {
 }
 
 static void SetRandomVector3DPaddedArrays() {
-	for (int i = 0; i < vector_array_size; i++) {
-		vector3D_padded_array[0][i] = RandomVector3D();
-		vector3D_padded_array[1][i] = RandomVector3D();
-	}
+	for (int i = 0; i < vector_array_size; i++)
+		for (int j = 0; j < 3; j++)
+			vector3D_padded_array[j][i] = RandomVector3D();
 }
 
 static void SetRandomVector3DArrays() {
@@ -396,6 +395,15 @@ static double Vector4DArraysDeviation(int i1, int i2) {
 	for (int i = 0; i < vector_array_size; i++)
 		for (int j = 0; j < 4; j++)
 			deviation += fabs(vector4D_array[i1][i][j] - vector4D_array[i2][i][j]);
+	return deviation / vector_array_size;
+}
+
+static double Vector3DPaddedArraysDeviation(int i1, int i2) {
+	double deviation = 0.0d;
+	for (int i = 0; i < vector_array_size; i++)
+		for (int j = 0; j < 3; j++)
+			deviation += fabs(vector3D_padded_array[i1][i][j] -
+				vector3D_padded_array[i2][i][j]);
 	return deviation / vector_array_size;
 }
 
@@ -519,8 +527,8 @@ int main(int argc, char *argv[]) {
 	vector4D_array[2] = dstNewAligned <Vector4D>(vector_array_size, page_size);
 	vector3D_array[0] = dstNewAligned <Vector3D>(vector_array_size, page_size);
 	vector3D_array[1] = dstNewAligned <Vector3D>(vector_array_size, page_size);
-	vector3D_padded_array[0] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
-	vector3D_padded_array[1] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
+        for (int i = 0; i < 3; i++)
+		vector3D_padded_array[i] = dstNewAligned <Vector3DPadded>(vector_array_size, page_size);
 	for (int i = 0; i < max_nu_tasks; i++) {
 		dot_product_array[0][i] = dstNewAligned <float>(vector_array_size, page_size);
 		dot_product_array[1][i] = dstNewAligned <float>(vector_array_size, page_size);
@@ -787,6 +795,46 @@ int main(int argc, char *argv[]) {
 	}
 	avg_deviation = deviation / nu_correctness_iterations;
         printf("dstMatrixMultiplyVectors1xNMatrix4DVector4D: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		SetRandomVector3DPaddedArrays();
+		dstSetSIMDType(simd_type);
+		for (int j = 0; j < vector_array_size / 4; j++)
+			dstMatrixMultiplyVectors1x4(matrix4D_array[0][0],
+				(const Point3DPadded *)&vector3D_padded_array[0][j * 4],
+				(Point3DPadded *)&vector3D_padded_array[1][j * 4]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		for (int j = 0; j < vector_array_size / 4; j++)
+			dstMatrixMultiplyVectors1x4(matrix4D_array[0][0],
+				(const Point3DPadded *)&vector3D_padded_array[0][j * 4],
+				(Point3DPadded *)&vector3D_padded_array[2][j * 4]);
+		deviation += Vector3DPaddedArraysDeviation(1, 2);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyVectors1x4Matrix4DPoint3DPadded: average deviation = %lE (%s)\n",
+		avg_deviation, CorrectString(avg_deviation));
+
+	deviation = 0.0d;
+	for (int i = 0; i < nu_correctness_iterations; i++) {
+		SetRandomMatrix4DArrays();
+		SetRandomVector3DPaddedArrays();
+		dstSetSIMDType(simd_type);
+		dstMatrixMultiplyVectors1xN(vector_array_size,
+			matrix4D_array[0][0],
+			(const Point3DPadded *)vector3D_padded_array[0],
+			(Point3DPadded *)vector3D_padded_array[1]);
+		dstSetSIMDType(DST_SIMD_NONE);
+		dstMatrixMultiplyVectors1xN(vector_array_size,
+			matrix4D_array[0][0],
+			(const Point3DPadded *)vector3D_padded_array[0],
+			(Point3DPadded *)vector3D_padded_array[2]);
+		deviation += Vector3DPaddedArraysDeviation(1, 2);
+	}
+	avg_deviation = deviation / nu_correctness_iterations;
+        printf("dstMatrixMultiplyVectors1xNMatrix4DPoint3DPadded: average deviation = %lE (%s)\n",
 		avg_deviation, CorrectString(avg_deviation));
 
 	printf("Array size %d\n", vector_array_size);

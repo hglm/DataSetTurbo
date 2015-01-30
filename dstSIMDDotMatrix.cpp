@@ -75,12 +75,15 @@ const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	dstInlineMatrixMultiplyVectors1xNM4x4CMV4(n, m, v, v_result);
 }
 
-#if 0
-void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMP3)(int n, const float * DST_RESTRICT m,
+void SIMD_FUNC(dstMatrixMultiplyVectors1x4M4x4CMP3P)(const float * DST_RESTRICT m,
 const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
-	dstInlineMatrixMultiplyVectors1xNM4x4CMP3(n, m, v, v_result);
+	dstInlineMatrixMultiplyVectors1x4M4x4CMP3P(m, v, v_result);
 }
-#endif
+
+void SIMD_FUNC(dstMatrixMultiplyVectors1xNM4x4CMP3P)(int n, const float * DST_RESTRICT m,
+const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
+	dstInlineMatrixMultiplyVectors1xNM4x4CMP3P(n, m, v, v_result);
+}
 
 // Dot products (4x4).
 

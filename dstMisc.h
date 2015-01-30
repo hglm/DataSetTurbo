@@ -120,7 +120,9 @@ public :
 	void (*dstMatrixMultiplyVectors1x4M4x4CMV4)(const float *m, const float *v, float *v_result);
 	void (*dstMatrixMultiplyVectors1xNM4x4CMV4)(int n, const float *m, const float *v,
 		float *v_result);
-	void (*dstMatrixMultiplyVectors1xNM4x4CMP3)(int n, const float *m, const float *v,
+	void (*dstMatrixMultiplyVectors1x4M4x4CMP3P)(const float *m, const float *v,
+		float *v_result);
+	void (*dstMatrixMultiplyVectors1xNM4x4CMP3P)(int n, const float *m, const float *v,
 		float *v_result);
 	void (*dstMatrixMultiplyVectors1xNM4x4CMV3)(int n, const float *m, const float *v,
 		float *v_result);

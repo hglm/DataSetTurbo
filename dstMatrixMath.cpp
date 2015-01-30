@@ -759,7 +759,7 @@ Matrix4D Transpose(const Matrix4D& m)
 // Matrix4x3RM class
 
 // Matrix4x3RM class. Transform matrices are zero in row 3 at n30, n31 and n32 and
-// 1.0 at n33. Unlike other matrices, they are stored in row-major formated. They
+// 1.0 at n33. Unlike other matrices, they are stored in row-major format. They
 // have to be transposed when uploaded as a shader uniform.
 
 Matrix4x3RM& Matrix4x3RM::Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
