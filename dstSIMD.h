@@ -376,15 +376,14 @@ const __simd128_float& m_v2_w) {
 
 // Multiply a matrix with a four-component vector, resulting in a four-component vector.
 
-static DST_INLINE_ONLY void simd128_multiply_matrix4x4_vector4(
+static DST_INLINE_ONLY __simd128_float simd128_multiply_matrix4x4_vector4(
 __simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2, __simd128_float m_row3,
-__simd128_float m_v, __simd128_float m_result) {
+__simd128_float m_v) {
         __simd128_float m_mul0  = simd128_mul_float(m_row0, m_v);
         __simd128_float m_mul1  = simd128_mul_float(m_row1, m_v);
         __simd128_float m_mul2  = simd128_mul_float(m_row2, m_v);
         __simd128_float m_mul3  = simd128_mul_float(m_row3, m_v);
-        m_result =
-            simd128_horizontal_add2_float(
+        return simd128_horizontal_add2_float(
                 simd128_horizontal_add2_float(m_mul0, m_mul1),
                 simd128_horizontal_add2_float(m_mul2, m_mul3));
 }
@@ -393,15 +392,14 @@ __simd128_float m_v, __simd128_float m_result) {
 // The fourth row of the 4x3 matrix is implicitly (0.0, 0.0, 0.0, 1.0). The w component
 // of the vector is usually 0.0 or 1.0.
 
-static DST_INLINE_ONLY void simd128_multiply_matrix4x3_vector4(
+static DST_INLINE_ONLY __simd128_float simd128_multiply_matrix4x3_vector4(
 __simd128_float m_row0, __simd128_float m_row1, __simd128_float m_row2,
-__simd128_float m_v, __simd128_float m_result) {
+__simd128_float m_v) {
         __simd128_float m_mul0  = simd128_mul_float(m_row0, m_v);
         __simd128_float m_mul1  = simd128_mul_float(m_row1, m_v);
         __simd128_float m_mul2  = simd128_mul_float(m_row2, m_v);
         __simd128_float m_zeros = simd128_set_zero_float();
-        m_result =
-            simd128_horizontal_add2_float(
+        return simd128_horizontal_add2_float(
                 simd128_horizontal_add2_float(m_mul0, m_mul1),
                 simd128_horizontal_add2_float(m_mul2, m_zeros));
 }

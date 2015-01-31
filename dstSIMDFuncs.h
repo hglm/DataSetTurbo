@@ -69,9 +69,9 @@ DST_API void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float *f1, const float *f2,
 DST_API void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(const float *m, const float *v, float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n, const float *m, const float *v,
 	float *v_result);
-DST_API void dstMatrixMultiplyVectors1x4M4x4CMP3NoSIMD(int n, const float *m, const float *v,
+DST_API void dstMatrixMultiplyVectors1x4M4x4CMP3PNoSIMD(const float *m, const float *v,
 	float *v_result);
-DST_API void dstMatrixMultiplyVectors1xNM4x4CMP3NoSIMD(int n, const float *m, const float *v,
+DST_API void dstMatrixMultiplyVectors1xNM4x4CMP3PNoSIMD(int n, const float *m, const float *v,
 	float *v_result);
 DST_API void dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD(int n, const float *m, const float *v,
 	float *v_result);

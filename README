@@ -138,9 +138,18 @@ of the standard provided random number generator. The code can be modified to te
 an alternative random number generator derived from the base class (although it would
 probably be hard to beat the performance of the CMWC RNG).
 
+
+--- Current bugs, possible improvements ---
+
+- The default matrix multiplication operators for Matrix4D and Matrix4x3RM are currently
+  not SIMD-accelerated. The DST_USE_SIMD flag is no longer used, so the non-SIMD versions
+  are always compiled in dstMatrixMath.cpp. Calls to SIMD-accelerated matrix multiplication
+  functions should probably be integrated into multiplication operator definitions in
+  dstMatrixMath.h.
+
 --- License ---
 
-Copyright (c) 2014 Harm Hanemaaijer <fgenfb@yahoo.com>
+Copyright (c) 2015 Harm Hanemaaijer <fgenfb@yahoo.com>
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above

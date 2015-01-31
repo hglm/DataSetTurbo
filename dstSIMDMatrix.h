@@ -295,12 +295,16 @@ const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT
 	for (; i + 3 < n; i += 4)
 		dstInlineMatrixMultiplyVectors1x4M4x4CMV4(m_column0, m_column1, m_column2, m_column3,
 			&v[i * 4], &v_result[i * 4]);
-	for (; i < n; i++) {
-		__simd128_float m_v = simd128_load_float(&v[i * 4]);
-		__simd128_float m_result;
-		simd128_multiply_matrix4x4_vector4(m_column0, m_column1, m_column2, m_column3,
-			m_v, m_result);
-		simd128_store_float(&v_result[i * 4], m_result);
+	if (i < n) {
+                __simd128_float m_row0, m_row1, m_row2, m_row3;
+		simd128_transpose4to4_float(m_column0, m_column1, m_column2, m_column3,
+			m_row0, m_row1, m_row2, m_row3); 
+		for (; i < n; i++) {
+			__simd128_float m_v = simd128_load_float(&v[i * 4]);
+			__simd128_float m_result = simd128_multiply_matrix4x4_vector4(
+				m_row0, m_row1, m_row2, m_row3, m_v);
+			simd128_store_float(&v_result[i * 4], m_result);
+		}
 	}
 }
 
@@ -403,14 +407,18 @@ const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT
 	for (; i + 3 < n; i += 4)
 		dstInlineMatrixMultiplyVectors1x4M4x4CMP3P(m_column0, m_column1, m_column2, m_column3,
 			&v[i * 4], &v_result[i * 4]);
-	for (; i < n; i++) {
-         	// Load the point vector and make sure the w component is 1.0f.
-		__simd128_float m_v = simd128_set_last_float(
-			simd128_load_float(&v[i * 4]), 1.0f);
-		__simd128_float m_result;
-		simd128_multiply_matrix4x4_vector4(m_column0, m_column1, m_column2, m_column3,
-			m_v, m_result);
-		simd128_store_float(&v_result[i * 4], m_result);
+	if (i < n) {
+                __simd128_float m_row0, m_row1, m_row2, m_row3;
+		simd128_transpose4to4_float(m_column0, m_column1, m_column2, m_column3,
+			m_row0, m_row1, m_row2, m_row3); 
+		for (; i < n; i++) {
+			// Load the point vector and make sure the w component is 1.0f.
+			__simd128_float m_v = simd128_set_last_float(
+				simd128_load_float(&v[i * 4]), 1.0f);
+			__simd128_float m_result = simd128_multiply_matrix4x4_vector4(
+				m_row0, m_row1, m_row2, m_row3, m_v);
+			simd128_store_float(&v_result[i * 4], m_result);
+		}
 	}
 }
 
