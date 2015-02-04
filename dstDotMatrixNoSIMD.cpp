@@ -148,9 +148,9 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float *dot, int& n
 // Determine the minimum and maximum dot product of an array of vertices with a
 // given constant vector (Nx1).
 
-template <class T>
+template <class T, class U>
 static void dstCalculateMinAndMaxDotProductNx1Template(int n, const T * DST_RESTRICT v1,
-const T& DST_RESTRICT v2, float& DST_RESTRICT min_dot_product,
+const U& DST_RESTRICT v2, float& DST_RESTRICT min_dot_product,
 float& DST_RESTRICT max_dot_product) {
 	min_dot_product = FLT_MAX;
 	max_dot_product = - FLT_MAX;
@@ -164,6 +164,13 @@ void dstCalculateMinAndMaxDotProductNx1V3NoSIMD(int n,
 const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 	dstCalculateMinAndMaxDotProductNx1Template(n, (const Vector3D *)v1,
+		*(const Vector3D *)v2, min_dot_product, max_dot_product);
+}
+
+void dstCalculateMinAndMaxDotProductNx1V3PNoSIMD(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+	dstCalculateMinAndMaxDotProductNx1Template(n, (const Vector3DPadded *)v1,
 		*(const Vector3D *)v2, min_dot_product, max_dot_product);
 }
 

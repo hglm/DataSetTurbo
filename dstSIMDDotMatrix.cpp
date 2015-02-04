@@ -358,6 +358,13 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 		min_dot_product, max_dot_product);
 }
 
+void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V3P)(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+	dstInlineCalculateMinAndMaxDotProductNx1V3P(n, f1, f2,
+		min_dot_product, max_dot_product);
+}
+
 void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4)(int n,
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {

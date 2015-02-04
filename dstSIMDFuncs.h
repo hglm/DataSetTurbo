@@ -45,6 +45,8 @@ DST_API void dstCalculateDotProductsAndCountNegativeNx1P3V4NoSIMD(
 
 DST_API void dstCalculateMinAndMaxDotProductNx1V3NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, float& min_dot_product, float& max_dot_product);
+DST_API void dstCalculateMinAndMaxDotProductNx1V3PNoSIMD(int nu_vertices, const float *v1,
+	const float *v2, float& min_dot_product, float& max_dot_product);
 DST_API void dstCalculateMinAndMaxDotProductNx1V4NoSIMD(int nu_vertices, const float *v1,
 	const float *v2, float& min_dot_product, float& max_dot_product);
 

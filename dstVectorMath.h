@@ -1071,6 +1071,13 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 }
 
 DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
+const Vector3DPadded * DST_RESTRICT v1, const Vector3D& DST_RESTRICT v2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V3P)(n, (const float *)v1,
+		(const float *)&v2, min_dot_product, max_dot_product);
+}
+
+DST_INLINE_ONLY void dstCalculateMinAndMaxDotProductNx1(int n,
 const Vector4D * DST_RESTRICT v1, const Vector4D& DST_RESTRICT v2,
 float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
 	DST_FUNC_LOOKUP(dstCalculateMinAndMaxDotProductNx1V4)(n, (const float *)v1,

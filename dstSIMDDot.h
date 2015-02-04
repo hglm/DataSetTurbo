@@ -245,10 +245,53 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 // Calculate dot products of four three-component float vectors stored at f1 and f2. The
 // vectors are assumed to be stored consecutively in packed 12-byte format.
 
+// Because the 4x1 function may be called for an array of just four vectors, be careful
+// to avoid read access overrun.
+
 DST_API void SIMD_FUNC(dstCalculateDotProducts4x4V3)(const float * DST_RESTRICT f1,
 const float * DST_RESTRICT f2, __simd128_float& result);
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+	__simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+	__simd128_float m_v2_1 = simd128_load_float(&f2[4]);
+	__simd128_float m_v2_2 = simd128_load_float(&f2[8]);
+	__simd128_float m_v2_x, m_v2_y, m_v2_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_x, m_v2_y, m_v2_z);
+#else
+    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+    __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
+    __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
+    __simd128_float m_v1_3 = simd128_load3_float(&f1[9]);
+    __simd128_float m_v2_0 = simd128_load_float(&f2[0]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+    __simd128_float m_v2_1 = simd128_load_unaligned_float(&f2[3]);
+    __simd128_float m_v2_2 = simd128_load_unaligned_float(&f2[6]);
+    __simd128_float m_v2_3 = simd128_load3_float(&f2[9]);
+    __simd128_float m_v2_x, m_v2_y, m_v2_z;
+    simd128_transpose4to3_float(m_v2_0, m_v2_1, m_v2_2, m_v2_3, m_v2_x, m_v2_y, m_v2_z);
+#endif
+    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
+        m_v2_z);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
+    __simd128_float m_result;
+    dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
+    simd128_store_float(dot, m_result);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, __simd128_float& m_result) {
 #ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
 	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
 	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
@@ -280,18 +323,18 @@ static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(const float * DST
         m_v2_z);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateDotProducts4x4V3(f1, f2, m_result);
+    dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(f1, f2, m_result);
     simd128_store_float(dot, m_result);
 }
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x16V3(
 const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRICT dot) {
-    dstInlineCalculateDotProducts4x4V3(&f1[0 * 12], &f2[0 * 12], &dot[0]);
-    dstInlineCalculateDotProducts4x4V3(&f1[1 * 12], &f2[1 * 12], &dot[4]);
-    dstInlineCalculateDotProducts4x4V3(&f1[2 * 12], &f2[2 * 12], &dot[8]);
+    dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(&f1[0 * 12], &f2[0 * 12], &dot[0]);
+    dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(&f1[1 * 12], &f2[1 * 12], &dot[4]);
+    dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(&f1[2 * 12], &f2[2 * 12], &dot[8]);
     dstInlineCalculateDotProducts4x4V3(&f1[3 * 12], &f2[3 * 12], &dot[12]);
 }
 
@@ -304,8 +347,13 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
     for (; i + 15 < n; i += 16) {
         dstInlineCalculateDotProducts16x16V3(&f1[i * 3], &f2[i * 3], &dot[i]);
     }
-    for (; i + 3 < n; i += 4)
+    // Use i + 4 < n as condition instead of i + 3 < n to avoid potential source buffer overrun.
+    for (; i + 4 < n; i += 4)
+        dstInlineCalculateDotProducts4x4V3PotentialBufferOverrun(&f1[i * 3], &f2[i * 3], &dot[i]);
+    if (i + 3 < n) {
         dstInlineCalculateDotProducts4x4V3(&f1[i * 3], &f2[i * 3], &dot[i]);
+        i += 4;
+    }
     for (; i < n; i++) {
         /// Note: simd128_load3_float assigns 0.0f to the w component.
         __simd128_float m_v1 = simd128_load3_float(&f1[i * 3]);
@@ -389,7 +437,44 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 
 // Calculate dot products of Nx1 vectors, all vectored stored in packed format.
 
+// Because the 4x1 function may be called for an array of just four vectors, be careful
+// to avoid read access overrun.
+
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
+const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
+const __simd128_float& m_v2_y, const __simd128_float& m_v2_z,
+__simd128_float& m_result) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack before
+	// transposing.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+#else
+    __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+    __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
+    __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
+    __simd128_float m_v1_3 = simd128_load3_float(&f1[9]);
+    __simd128_float m_v1_x, m_v1_y, m_v1_z;
+    simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+#endif
+    m_result = simd128_four_dot_products_vector3_vertical_float(m_v1_x, m_v1_y, m_v1_z, m_v2_x, m_v2_y,
+        m_v2_z);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
+const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
+const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, float * DST_RESTRICT dot) {
+    __simd128_float m_result;
+    dstInlineCalculateDotProducts4x1V3(f1, m_v2_x, m_v2_y, m_v2_z,
+        m_result);
+    simd128_store_float(dot, m_result);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z,
 __simd128_float& m_result) {
@@ -414,11 +499,11 @@ __simd128_float& m_result) {
         m_v2_z);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x,
 const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateDotProducts4x1V3(f1, m_v2_x, m_v2_y, m_v2_z,
+    dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(f1, m_v2_x, m_v2_y, m_v2_z,
         m_result);
     simd128_store_float(dot, m_result);
 }
@@ -426,14 +511,14 @@ const __simd128_float& m_v2_y, const __simd128_float& m_v2_z, float * DST_RESTRI
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x1V3(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float& m_v2_z, float * DST_RESTRICT dot) {
-        dstInlineCalculateDotProducts4x1V3(&f1[0 * 12],
-		m_v2_x, m_v2_y, m_v2_z, &dot[0]);
-        dstInlineCalculateDotProducts4x1V3(&f1[1 * 12],
-		m_v2_x, m_v2_y, m_v2_z, &dot[4]);
-        dstInlineCalculateDotProducts4x1V3(&f1[2 * 12],
-		m_v2_x, m_v2_y, m_v2_z, &dot[8]);
-        dstInlineCalculateDotProducts4x1V3(&f1[3 * 12],
-		m_v2_x, m_v2_y, m_v2_z, &dot[12]);
+        dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(
+            &f1[0 * 12], m_v2_x, m_v2_y, m_v2_z, &dot[0]);
+        dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(
+            &f1[1 * 12], m_v2_x, m_v2_y, m_v2_z, &dot[4]);
+        dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(
+            &f1[2 * 12], m_v2_x, m_v2_y, m_v2_z, &dot[8]);
+        dstInlineCalculateDotProducts4x1V3(
+            &f1[3 * 12], m_v2_x, m_v2_y, m_v2_z, &dot[12]);
 }
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNx1V3)(int n,
@@ -449,9 +534,15 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
     for (; i + 15 < n; i += 16)
         dstInlineCalculateDotProducts16x1V3(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, &dot[i]);
-    for (; i + 3 < n; i += 4)
+    // Use i + 4 < n as condition instead of i + 3 < n to avoid potential source buffer overrun.
+    for (; i + 4 < n; i += 4)
+        dstInlineCalculateDotProducts4x1V3PotentialBufferOverrun(&f1[i * 3],
+            m_v2_x, m_v2_y, m_v2_z, &dot[i]);
+    if (i + 3 < n) {
         dstInlineCalculateDotProducts4x1V3(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, &dot[i]);
+        i += 4;
+    }
     for (; i < n; i++) {
         __simd128_float m_v1 = simd128_load3_float(&f1[i * 3]);
         __simd128_float m_dot = simd128_mul_float(m_v1, m_v2);
@@ -622,7 +713,42 @@ const float * DST_RESTRICT f1, const float * DST_RESTRICT f2, float * DST_RESTRI
 // and is stored unaligned on 12-byte boundaries (but starting on a 16-byte boundary).
 // The constant vector has four components. f1 and dot must be 16-bytes aligned.
 
+// Because the 4x1 function may be called for an array of just four vectors, be careful
+// to avoid read access overrun.
+
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1P3V4(
+const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
+const __simd128_float m_v2_z, const __simd128_float& m_v2_w, __simd128_float& m_result) {
+#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
+	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
+	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
+	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
+	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
+	__simd128_float m_v1_x, m_v1_y, m_v1_z;
+	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
+#else
+        __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
+        __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
+        __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
+        // Do not overrun source buffer.
+        __simd128_float m_v1_3 = simd128_load3_float(&f1[9]);
+        __simd128_float m_v1_x, m_v1_y, m_v1_z;
+        simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
+#endif
+	m_result = simd128_four_dot_products_point3_vector4_vertical_float(
+		m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z, m_v2_w);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1P3V4(
+const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
+const __simd128_float& m_v2_z, const __simd128_float& m_v2_w, float * DST_RESTRICT dot) {
+    __simd128_float m_result;
+    dstInlineCalculateDotProducts4x1P3V4(f1, m_v2_x, m_v2_y, m_v2_z, m_v2_w, m_result);
+    simd128_store_float(dot, m_result);
+}
+
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float m_v2_z, const __simd128_float& m_v2_w, __simd128_float& m_result) {
 #ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
@@ -645,21 +771,27 @@ const __simd128_float m_v2_z, const __simd128_float& m_v2_w, __simd128_float& m_
 		m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z, m_v2_w);
 }
 
-static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1P3V4(
+static DST_INLINE_ONLY void dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float& m_v2_z, const __simd128_float& m_v2_w, float * DST_RESTRICT dot) {
     __simd128_float m_result;
-    dstInlineCalculateDotProducts4x1P3V4(f1, m_v2_x, m_v2_y, m_v2_z, m_v2_w, m_result);
+    dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
+        f1, m_v2_x, m_v2_y, m_v2_z, m_v2_w, m_result);
     simd128_store_float(dot, m_result);
 }
 
 static DST_INLINE_ONLY void dstInlineCalculateDotProducts16x1P3V4(
 const float * DST_RESTRICT f1, const __simd128_float& m_v2_x, const __simd128_float& m_v2_y,
 const __simd128_float& m_v2_z, const __simd128_float& m_v2_w, float * DST_RESTRICT dot) {
-        dstInlineCalculateDotProducts4x1P3V4(&f1[0 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[0]);
-        dstInlineCalculateDotProducts4x1P3V4(&f1[1 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[4]);
-        dstInlineCalculateDotProducts4x1P3V4(&f1[2 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[8]);
-        dstInlineCalculateDotProducts4x1P3V4(&f1[3 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[12]);
+        dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
+            &f1[0 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[0]);
+        dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
+            &f1[1 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[4]);
+        dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(
+            &f1[2 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[8]);
+        // Avoid potential source buffer overrun for the last set of vectors.
+        dstInlineCalculateDotProducts4x1P3V4(
+             &f1[3 * 12], m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[12]);
 }
 
 DST_API void SIMD_FUNC(dstCalculateDotProductsNx1P3V4)(int n,
@@ -673,36 +805,18 @@ const float * DST_RESTRICT f1, const __simd128_float m_v2, float * DST_RESTRICT 
     m_v2_z = simd128_replicate_float(m_v2, 2);
     m_v2_w = simd128_replicate_float(m_v2, 3);
     int i = 0;
-#if 1
     for (; i + 15 < n; i += 16)
         dstInlineCalculateDotProducts16x1P3V4(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[i]);
-    for (; i + 3 < n; i += 4)
+    // Use i + 4 < n as condition instead of i + 3 < n to avoid potential source buffer overrun.
+    for (; i + 4 < n; i += 4)
+        dstInlineCalculateDotProducts4x1P3V4PotentialBufferOverrun(&f1[i * 3],
+            m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[i]);
+    if (i + 3 < n) {
         dstInlineCalculateDotProducts4x1P3V4(&f1[i * 3],
             m_v2_x, m_v2_y, m_v2_z, m_v2_w, &dot[i]);
-#else
-    for (; i + 3 < n; i += 4) {
-#ifdef SIMD_UNALIGNED_LOADS_EXPENSIVE
-	// For CPUs where SSSE3 is likely to be the SSE level of choice, such as the Intel Core 2
-	// architecture, unaligned loads are very expensive, so we load aligned and unpack.
-	__simd128_float m_v1_0 = simd128_load_float(&f1[0]);
-	__simd128_float m_v1_1 = simd128_load_float(&f1[4]);
-	__simd128_float m_v1_2 = simd128_load_float(&f1[8]);
-	__simd128_float m_v1_x, m_v1_y, m_v1_z;
-	simd128_unpack3to4_and_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_x, m_v1_y, m_v1_z);
-#else
-        __simd128_float m_v1_0 = simd128_load_float(&f1[0]);
-        __simd128_float m_v1_1 = simd128_load_unaligned_float(&f1[3]);
-        __simd128_float m_v1_2 = simd128_load_unaligned_float(&f1[6]);
-        __simd128_float m_v1_3 = simd128_load_unaligned_float(&f1[9]);
-        __simd128_float m_v1_x, m_v1_y, m_v1_z;
-        simd128_transpose4to3_float(m_v1_0, m_v1_1, m_v1_2, m_v1_3, m_v1_x, m_v1_y, m_v1_z);
-#endif
-	__simd128_float m_result = simd128_four_dot_products_point3_vector4_vertical_float(
-		m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z, m_v2_w);
-        simd128_store_float(&dot[i], m_result);
+        i += 4;
     }
-#endif
     for (; i < n; i++) {
          // Load the point vector and make sure the w component is 1.0f.
         __simd128_float m_v1 = simd128_set_last_float(
@@ -854,7 +968,8 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
         __simd128_float m_v2_z = simd128_set_same_float(f2[2]);
         __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
         __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
-        for (; i + 3 < n; i += 4) {
+        // Use i + 4 < n as condition instead of i + 3 < n to avoid potential memory read overrun.
+        for (; i + 4 < n; i += 4) {
             __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
             __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
             __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
@@ -893,6 +1008,62 @@ float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
     for (; i < n; i++) {
         min_dot_product = minf(min_dot_product, dstDotVector3(&f1[i * 3], f2));
         max_dot_product = maxf(max_dot_product, dstDotVector3(&f1[i * 3], f2));
+    }
+}
+
+DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V3P)(int n,
+const float * DST_RESTRICT v1, const float * DST_RESTRICT v2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product);
+
+static DST_INLINE_ONLY void dstInlineCalculateMinAndMaxDotProductNx1V3P(int n,
+const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
+float& DST_RESTRICT min_dot_product, float& DST_RESTRICT max_dot_product) {
+    int i = 0;
+    if (((uintptr_t)f1 & 0xF) == 0) {
+        __simd128_float m_v2_x = simd128_set_same_float(f2[0]);
+        __simd128_float m_v2_y = simd128_set_same_float(f2[1]);
+        __simd128_float m_v2_z = simd128_set_same_float(f2[2]);
+        __simd128_float m_min_dot = simd128_set_same_float(FLT_MAX);
+        __simd128_float m_max_dot = simd128_set_same_float(- FLT_MAX);
+        for (; i + 3 < n; i += 4) {
+            __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+            __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+            __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+            __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
+            __simd128_float m_v1_x, m_v1_y, m_v1_z;
+            simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
+                m_v1_x, m_v1_y, m_v1_z);
+            __simd128_float m_dot = simd128_four_dot_products_vector3_vertical_float(
+                m_v1_x, m_v1_y, m_v1_z,	m_v2_x, m_v2_y, m_v2_z);
+            m_min_dot = simd128_min_float(m_min_dot, m_dot);
+            m_max_dot = simd128_max_float(m_max_dot, m_dot);
+        }
+        __simd128_float shifted_float1, shifted_float2, shifted_float3;
+        __simd128_float m_min_dot_23, m_max_dot_23;
+        shifted_float1 = simd128_shift_right_float(m_min_dot, 1);
+        shifted_float2 = simd128_shift_right_float(m_min_dot, 2);
+        shifted_float3 = simd128_shift_right_float(m_min_dot, 3);
+        m_min_dot = simd128_min1_float(m_min_dot, shifted_float1);
+        m_min_dot_23 = simd128_min1_float(shifted_float2, shifted_float3);
+        m_min_dot = simd128_min1_float(m_min_dot, m_min_dot_23);
+        min_dot_product = simd128_get_float(m_min_dot);
+        shifted_float1 = simd128_shift_right_float(m_max_dot, 1);
+        shifted_float2 = simd128_shift_right_float(m_max_dot, 2);
+        shifted_float3 = simd128_shift_right_float(m_max_dot, 3);
+        m_min_dot = simd128_max1_float(m_max_dot, shifted_float1);
+        m_max_dot_23 = simd128_max1_float(shifted_float2, shifted_float3);
+        m_max_dot = simd128_max1_float(m_max_dot, m_max_dot_23);
+        max_dot_product = simd128_get_float(m_max_dot);
+        // Process the remaining vertices using regular code.
+    }
+    else
+    {
+        min_dot_product = FLT_MAX;
+        max_dot_product = - FLT_MAX;
+    }
+    for (; i < n; i++) {
+        min_dot_product = minf(min_dot_product, dstDotVector3(&f1[i * 4], f2));
+        max_dot_product = maxf(max_dot_product, dstDotVector3(&f1[i * 4], f2));
     }
 }
 
@@ -982,7 +1153,8 @@ float * DST_RESTRICT min_dot_product, float * DST_RESTRICT max_dot_product) {
         __simd128_float m_max_dot_C0 = simd128_set_same_float(- FLT_MAX);
         __simd128_float m_max_dot_C1 = m_max_dot_C0;
         __simd128_float m_max_dot_C2 = m_max_dot_C0;
-        for (; i + 3 < n; i += 4) {
+        // Use i + 4 < n as condition instead of i + 3 < n to avoid potential memory read overrun.
+        for (; i + 4 < n; i += 4) {
             __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
             __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
             __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
@@ -1303,7 +1475,8 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
     __simd128_int m_max_dot_index = simd128_set_zero_int();
     // Keep track of four minimum and four maximum dot products (each representing the
     // min/max for a quarter of the vertices).
-    for (; i + 3 < n; i += 4) {
+    // Use i + 4 < n as condition instead of i + 3 < n to avoid potential memory read overrun.
+    for (; i + 4 < n; i += 4) {
         __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 3]);
         __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 3 + 3]);
         __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 3 + 6]);
@@ -1391,10 +1564,10 @@ int& DST_RESTRICT i_Pmin, int& DST_RESTRICT i_Pmax) {
     // Keep track of four minimum and four maximum dot products (each representing the
     // min/max for a quarter of the vertices).
     for (; i + 3 < n; i += 4) {
-        __simd128_float m_vertex0 = simd128_load_unaligned_float(&f1[i * 4]);
-        __simd128_float m_vertex1 = simd128_load_unaligned_float(&f1[i * 4 + 4]);
-        __simd128_float m_vertex2 = simd128_load_unaligned_float(&f1[i * 4 + 8]);
-        __simd128_float m_vertex3 = simd128_load_unaligned_float(&f1[i * 4 + 12]);
+        __simd128_float m_vertex0 = simd128_load_float(&f1[i * 4]);
+        __simd128_float m_vertex1 = simd128_load_float(&f1[i * 4 + 4]);
+        __simd128_float m_vertex2 = simd128_load_float(&f1[i * 4 + 8]);
+        __simd128_float m_vertex3 = simd128_load_float(&f1[i * 4 + 12]);
         __simd128_float m_v1_x, m_v1_y, m_v1_z;
         simd128_transpose4to3_float(m_vertex0, m_vertex1, m_vertex2, m_vertex3,
             m_v1_x, m_v1_y, m_v1_z);

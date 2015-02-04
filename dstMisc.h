@@ -93,6 +93,8 @@ public :
 	// given constant vector.
 	void (*dstCalculateMinAndMaxDotProductNx1V3)(int nu_vertices, const float *v1,
 		const float *v2, float& min_dot_product, float& max_dot_product);
+	void (*dstCalculateMinAndMaxDotProductNx1V3P)(int nu_vertices, const float *v1,
+		const float *v2, float& min_dot_product, float& max_dot_product);
 	void (*dstCalculateMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 		const float *v2, float& min_dot_product, float& max_dot_product);
 	// Determine the minimum and maximum dot products of an array of vertices with three
