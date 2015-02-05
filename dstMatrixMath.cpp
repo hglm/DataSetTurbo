@@ -49,40 +49,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // Matrix3D class.
 
-// Initialize starting with the first row, then the next row, then subsequent columns.
-
-Matrix3D& Matrix3D::Set(float n00, float n01, float n02, float n10, float n11, float n12, float n20, float n21, float n22)
-{
-	n[0][0] = n00;
-	n[0][1] = n10;
-	n[0][2] = n20;
-	n[1][0] = n01;
-	n[1][1] = n11;
-	n[1][2] = n21;
-	n[2][0] = n02;
-	n[2][1] = n12;
-	n[2][2] = n22;
-	return (*this);
-}
-
-// Initialize with columns c1, c2, c3.
-
-Matrix3D& Matrix3D::Set(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3)
-{
-	return Set(c1.x, c2.x, c3.x, c1.y, c2.y, c3.y, c1.z, c2.z, c3.z);
-}
-
-Matrix3D::Matrix3D(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3)
-{
-	Set(c1, c2, c3);
-}
-
-Matrix3D::Matrix3D(float n00, float n01, float n02, float n10, float n11, float n12, float n20, float n21, float n22)
-{
-	Set(n00, n01, n02, n10, n11, n12, n20, n21, n22);
-}
-
-
 Matrix3D& Matrix3D::operator *=(const Matrix3D& __restrict__ m) __restrict__
 {
 	float t = n[0][0] * m.n[0][0] + n[1][0] * m.n[0][1] + n[2][0] * m.n[0][2];
@@ -314,50 +280,6 @@ bool Matrix3D::RotationMatrixPreservesAABB() {
 
 
 // Matrix4D class
-
-Matrix4D& Matrix4D::Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23, float n30, float n31, float n32, float n33)
-{
-	n[0][0] = n00;
-	n[1][0] = n01;
-	n[2][0] = n02;
-	n[3][0] = n03;
-	n[0][1] = n10;
-	n[1][1] = n11;
-	n[2][1] = n12;
-	n[3][1] = n13;
-	n[0][2] = n20;
-	n[1][2] = n21;
-	n[2][2] = n22;
-	n[3][2] = n23;
-	n[0][3] = n30;
-	n[1][3] = n31;
-	n[2][3] = n32;
-	n[3][3] = n33;
-	
-	return (*this);
-}
-
-// Set columns.
-
-Matrix4D& Matrix4D::Set(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3,
-const Vector4D& c4) {
-	return Set(c1.x, c2.x, c3.x, c4.x, c1.y, c2.y, c3.y, c4.y, c1.z, c2.z, c3.z, c4.z,
-            c1.w, c2.w, c3.w, c4.w);
-}
-
-Matrix4D::Matrix4D(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3, const Vector4D& c4)
-{
-	Set(c1, c2, c3 ,c4);
-}
-
-Matrix4D::Matrix4D(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23, float n30, float n31, float n32, float n33)
-{
-	Set(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23, n30, n31, n32, n33);
-}
-
-Matrix4D::Matrix4D(const Matrix4x3RM& m) {
-	Set(m.GetColumn(0), m.GetColumn(1), m.GetColumn(2), m.GetColumn(3));
-}
 
 Matrix4D& Matrix4D::operator =(const Matrix3D& m)
 {
@@ -760,41 +682,6 @@ Matrix4D Transpose(const Matrix4D& m)
 // Matrix4x3RM class. Transform matrices are zero in row 3 at n30, n31 and n32 and
 // 1.0 at n33. Unlike other matrices, they are stored in row-major format. They
 // have to be transposed when uploaded as a shader uniform.
-
-Matrix4x3RM& Matrix4x3RM::Set(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
-{
-	n[0][0] = n00;
-	n[0][1] = n01;
-	n[0][2] = n02;
-	n[0][3] = n03;
-	n[1][0] = n10;
-	n[1][1] = n11;
-	n[1][2] = n12;
-	n[1][3] = n13;
-	n[2][0] = n20;
-	n[2][1] = n21;
-	n[2][2] = n22;
-	n[2][3] = n23;
-	return (*this);
-}
-
-// Set columns.
-
-Matrix4x3RM& Matrix4x3RM::Set(const Vector3D& c1, const Vector3D& c2,
-const Vector3D& c3, const Vector3D& c4) {
-	return Set(c1.x, c2.x, c3.x, c4.x, c1.y, c2.y, c3.y, c4.y, c1.z, c2.z, c3.z, c4.z);
-}
-
-Matrix4x3RM::Matrix4x3RM(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3,
-const Vector3D& c4)
-{
-	Set(c1, c2, c3, c4);
-}
-
-Matrix4x3RM::Matrix4x3RM(float n00, float n01, float n02, float n03, float n10, float n11, float n12, float n13, float n20, float n21, float n22, float n23)
-{
-	Set(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23);
-}
 
 Matrix4x3RM& Matrix4x3RM::SetIdentity(void)
 {
