@@ -66,44 +66,44 @@ static const char *cpuinfo_match_prefix(const char *s, const char *prefix)
     return result;
 }
 
-static int is_space_or_eol(char x)
+static bool is_space_or_eol(char x)
 {
     return (x == 0 || x == ' ' || x == '\t' || x == '\n');
 }
 
-static int find_feature(const char *buffer, const char *feature)
+static bool find_feature(const char *buffer, const char *feature)
 {
     const char *s = buffer;
     while (*s) {
         const char *t = strstr(s, feature);
         if (!t)
-            return 0;
+            return false;
         if (!is_space_or_eol(*(t + strlen(feature)))) {
             s++;
             continue;
         }
         if (t == buffer)
-            return 1;
+            return true;
         if (t > buffer && is_space_or_eol(*(t - 1)))
-            return 1;
+            return true;
         s++;
     }
-    return 0;
+    return false;
 }
 
-static int parse_proc_cpuinfo(dstCpuInfo *cpuinfo)
+static bool parse_proc_cpuinfo(dstCpuInfo *cpuinfo)
 {
     char *buffer = (char *)malloc(MAXBUFSIZE);
     FILE *fd;
     const char *val;
 
     if (!buffer)
-        return 0;
+        return false;
 
     fd = fopen("/proc/cpuinfo", "r");
     if (!fd) {
         free(buffer);
-        return 0;
+        return false;
     }
 
     cpuinfo->type = DST_CPU_TYPE_UNKNOWN;
@@ -111,19 +111,28 @@ static int parse_proc_cpuinfo(dstCpuInfo *cpuinfo)
         if (!strchr(buffer, '\n') && !feof(fd)) {
             fclose(fd);
             free(buffer);
-            return 0;
+            return false;
         }
 
-        if ((val = cpuinfo_match_prefix(buffer, "vendor_id"))) {
+        if ((val = cpuinfo_match_prefix(buffer, "vendor_id")))
             if (find_feature(val, "AuthenticAMD") ||
-            find_feature(val, "GenuineIntel"))
+            find_feature(val, "GenuineIntel")) {
                 cpuinfo->type = DST_CPU_TYPE_X86;
-	    else if (find_feature(val, "ARM"))
+		continue;
+            }
+
+        if ((val = cpuinfo_match_prefix(buffer, "Processor")))
+	    if (find_feature(val, "ARMv6")
+            || find_feature(val, "ARMv7")
+            || find_feature(val, "ARMv8")) {
 		cpuinfo->type = DST_CPU_TYPE_ARM;
-        }
-        else if ((val = cpuinfo_match_prefix(buffer, "Features"))) {
+                continue;
+            }
+
+        if ((val = cpuinfo_match_prefix(buffer, "Features"))) {
             cpuinfo->has_arm_edsp = find_feature(val, "edsp");
             cpuinfo->has_arm_vfp  = find_feature(val, "vfp");
+            cpuinfo->has_arm_vfpv4  = find_feature(val, "vfpv4");
             cpuinfo->has_arm_neon = find_feature(val, "neon");
             cpuinfo->has_arm_wmmx = find_feature(val, "iwmmxt");
         }
@@ -143,48 +152,48 @@ static int parse_proc_cpuinfo(dstCpuInfo *cpuinfo)
             if (sscanf(val, "%i", &cpuinfo->arm_implementer) != 1) {
                 fclose(fd);
                 free(buffer);
-                return 0;
+                return false;
             }
         }
         else if ((val = cpuinfo_match_prefix(buffer, "CPU architecture"))) {
             if (sscanf(val, "%i", &cpuinfo->arm_architecture) != 1) {
                 fclose(fd);
                 free(buffer);
-                return 0;
+                return false;
             }
         }
         else if ((val = cpuinfo_match_prefix(buffer, "CPU variant"))) {
             if (sscanf(val, "%i", &cpuinfo->arm_variant) != 1) {
                 fclose(fd);
                 free(buffer);
-                return 0;
+                return false;
             }
         }
         else if ((val = cpuinfo_match_prefix(buffer, "CPU part"))) {
             if (sscanf(val, "%i", &cpuinfo->arm_part) != 1) {
                 fclose(fd);
                 free(buffer);
-                return 0;
+                return false;
             }
         }
         else if ((val = cpuinfo_match_prefix(buffer, "CPU revision"))) {
             if (sscanf(val, "%x", &cpuinfo->arm_revision) != 1) {
                 fclose(fd);
                 free(buffer);
-                return 0;
+                return false;
             }
         }
     }
     fclose(fd);
     free(buffer);
-    return 1;
+    return true;
 }
 
 #else
 
 static int parse_proc_cpuinfo(dstCpuInfo *cpuinfo)
 {
-    return 0;
+    return false;
 }
 
 #endif

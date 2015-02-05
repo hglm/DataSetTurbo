@@ -238,7 +238,7 @@ static inline void dstMemcpyTypeAlignedLarge(T *dest, const T *src, uint32_t n) 
 #if __ARM_ARCH__ >= 6
 
 static inline void dstMemset(void *p, int c, size_t size) {
-#ifdef DST_USE_ARM_NEON
+#if defined(__ARM_NEON__) && !defined(DST_NO_SIMD)
 	dstMemsetARMv7NEON(p, c, size);
 #else
 	dstMemsetARMv6(p, c, s);

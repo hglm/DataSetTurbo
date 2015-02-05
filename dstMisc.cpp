@@ -36,7 +36,7 @@ dstConfig dst_config;
 
 static const char *simd_name_table[] = {
 	"None", "SSE2", "SSE3", "SSSE3", "SSE4A", "SSE41", "SSE42",
-	"AVX", "AVX_SSE4A_FMA4", "AVX_FMA3", "NEON"
+	"AVX", "NEON", "AVX_SSE4A_FMA4", "AVX_FMA3"
 };
 
 static const uint32_t simd_type_flags[] = {
@@ -70,12 +70,12 @@ static const uint32_t simd_type_flags[] = {
 
 static void PrintSIMDFlagsString(uint32_t flags) {
         if (flags == 0) {
-		printf(" None");
+		printf("None");
 		return;
 	}
 	for (int i = DST_SIMD_FIRST; i <= DST_SIMD_LAST; i++)
 		if (flags & (1 << i))
-			printf(" %s", simd_name_table[i]);
+			printf("%s", simd_name_table[i]);
 }
 
 const char *dstGetSIMDTypeString(int simd_type) {

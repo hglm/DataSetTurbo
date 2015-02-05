@@ -180,7 +180,7 @@ public:
 	Vector2DBase <T> & GetVector2D(void) {
 		return (*this);
 	}
-		
+
 	const Vector2DBase <T> & GetVector2D(void) const {
 		return (*this);
 	}
@@ -251,15 +251,15 @@ public:
 	Vector2DBase <T> & GetVector2DBase() {
 		return (*reinterpret_cast<Vector2DBase <T> *>(this));
 	}
-		
+
 	const Vector2DBase <T> & GetVector2D() const {
 		return (*reinterpret_cast<const Vector2DBase <T> *>(this));
 	}
-		
+
 	Point2DBase <T> & GetPoint2D() {
 		return (*reinterpret_cast<Point2DBase <T> *>(this));
 	}
-		
+
 	const Point2DBase <T>& GetPoint2D() const {
 		return (*reinterpret_cast<const Point2DBase <T> *>(this));
 	}
@@ -411,7 +411,7 @@ template <class T>
 class DST_API Point3DBase : public Vector3DBase <T>
 {
 public:
-		
+
 	Point3DBase() {}
 	Point3DBase(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
 	Point3DBase(const Vector2DBase <T> & v) : Vector3DBase <T>(v) {}
@@ -511,14 +511,14 @@ public:
 		z = v.z;
 		w = - Dot(v, q);
 	}
-	
+
 	Vector4DBase(const Vector3DBase <T> & v) {
 		x = v.x;
 		y = v.y;
 		z = v.z;
 		w = 0.0;
 	}
-		
+
 	Vector4DBase(const Point3DBase <T> & p) {
 		x = p.x;
 		y = p.y;
@@ -539,7 +539,7 @@ public:
 		z = 0.0;
 		w = 1.0;
 	}
-		
+
 	Vector4DBase& Set(T r, T s, T t, T u) {
 		x = r;
 		y = s;
@@ -555,7 +555,7 @@ public:
 		w = u;
 		return (*this);
 	}
-		
+
 	Vector4DBase& Set(const Vector3DBase <T> &v, const Point3DBase <T> & q) {
 		x = v.x;
 		y = v.y;
@@ -563,7 +563,7 @@ public:
 		w = - Dot(v, q);
 		return (*this);
 	}
-		
+
 	T& operator [](int k) {
 		return ((&x)[k]);
 	}
@@ -607,7 +607,7 @@ public:
 		w = 0.0;
 		return (*this);
 	}
-		
+
 	Vector4DBase& operator =(const Point3D& p) {
 		x = p.x;
 		y = p.y;

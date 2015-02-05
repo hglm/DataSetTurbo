@@ -19,5 +19,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // All exported ARM NEON functions are concentrated in this file. The SIMD extension is recognized
 // in the build process from the filename and the module built appropriately.
 
+#ifndef DST_NO_SIMD
 #include "dstSIMDDotMatrix.cpp"
-
+#endif

@@ -146,11 +146,16 @@ int main(int argc, char *argv[]) {
 
 	dstHugeIntArray ha;
 	uint64_t ha_max_capacity = ha.MaxCapacity();
-	printf("dstHugeIntArray: MaxCapacity() = %lu\n", ha_max_capacity);
-
+	if (sizeof(long int) == 64)
+		printf("dstHugeIntArray: MaxCapacity() = %lu\n", ha_max_capacity);
+	else
+		printf("dstHugeIntArray: MaxCapacity() = %llu\n", ha_max_capacity);
 	dstTightHugeIntArray tha[NU_ARRAYS];
 	uint64_t tha_max_capacity = tha[0].MaxCapacity();
-	printf("dstTightHugeIntArray: MaxCapacity() = %lu\n", tha_max_capacity);
+	if (sizeof(long int) == 64)
+		printf("dstTightHugeIntArray: MaxCapacity() = %lu\n", tha_max_capacity);
+	else
+		printf("dstTightHugeIntArray: MaxCapacity() = %llu\n", tha_max_capacity);
         for (int j = 0; j < 1001; j++) {
 		// Allow one round of warm-up before starting timer.
 		if (j == 1)

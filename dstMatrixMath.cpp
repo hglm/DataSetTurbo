@@ -20,11 +20,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 
 #include "dstMatrixMath.h"
-#include "dstSIMD.h"
 
 // Non-inline member funtions for Matrix3D, Matrix4D and Matrix4x3RM classes,
 // in that order. This is all C++ code, when SIMD can be taken advantage of the following
-// matrix multiplication functions are excluded and will be defined in serMatrixMathSIMD.cpp
+// matrix multiplication functions are excluded and will be defined in sreMatrixMathSIMD.cpp
 // instead:
 // - Matrix4 * Matrix4
 // - MartixTransform * MatrixTranform

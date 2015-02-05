@@ -292,7 +292,7 @@ dep :
 
 .depend: Makefile.conf Makefile dstConfigParams.h
 	g++ -MM $(CFLAGS_LIB) $(patsubst %.o,%.cpp,$(LIBRARY_CPP_MODULE_OBJECTS)) >> .depend
-	g++ -MM $(patsubst %.o,%.S,$(LIBRARY_ASM_MODULE_OBJECTS)) >> .depend
+	g++ -MM $(CFLAGS_LIB) $(patsubst %.o,%.S,$(LIBRARY_ASM_MODULE_OBJECTS)) >> .depend
         # Make sure Makefile.conf and Makefile are dependency for all modules.
 	for x in $(LIBRARY_MODULE_OBJECTS); do \
 	echo $$x : Makefile.conf Makefile >> .depend; done

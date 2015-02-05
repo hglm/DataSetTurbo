@@ -72,10 +72,11 @@ typedef struct {
     int arm_part;
     int arm_revision;
     /* CPU features */
-    int has_arm_edsp;
-    int has_arm_vfp;
-    int has_arm_neon;
-    int has_arm_wmmx;
+    bool has_arm_edsp;
+    bool has_arm_vfp;
+    bool has_arm_vfpv4;
+    bool has_arm_neon;
+    bool has_arm_wmmx;
     /* The user-friendly CPU description string (usable for logs, etc.) */
     char *processor_name;
 } dstCpuInfo;

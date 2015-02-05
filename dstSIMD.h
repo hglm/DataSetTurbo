@@ -119,7 +119,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_FUNC_SIMD_TYPE(f) f ## AVXStream
 #elif defined(DST_SIMD_MODE_NEON)
 #define SIMD_FUNC_SIMD_TYPE(f) f ## NEONStream
-#elif !defined(__SSE2__) && !defined(__ARM_NEON_FP)
+#elif !defined(__SSE2__) && !defined(__ARM_NEON__)
 #error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
 #else // No stream mode.
@@ -139,7 +139,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SIMD_FUNC_SIMD_TYPE(f) f ## AVX
 #elif defined(DST_SIMD_MODE_NEON)
 #define SIMD_FUNC_SIMD_TYPE(f) f ## NEON
-#elif !defined(__SSE2__) && !defined(__ARM_NEON_FP)
+#elif !defined(__SSE2__) && !defined(__ARM_NEON__)
 #error dstSIMD.h compiled with unknown SIMD level (DST_SIMD_MODE_x) and no SIMD compiler flags.
 #endif
 #endif // !defined (DST_SIMD_MODE_STREAM)
@@ -192,7 +192,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #else // Not SSE2-based
-#ifdef __ARM_NEON_FP
+#ifdef __ARM_NEON__
 // When implemented, define feature flags for NEON.
 #else
 // No SIMD.
@@ -218,7 +218,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #error __SSE2__ not defined.
 #endif
 
-#ifdef __ARM_NEON_FP
+#ifdef __ARM_NEON__
 
 // Not yet implemented.
 
