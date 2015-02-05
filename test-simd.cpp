@@ -407,6 +407,96 @@ static double Vector3DPaddedArraysDeviation(int i1, int i2) {
 	return deviation / vector_array_size;
 }
 
+// Matrix multiplication tests.
+
+static void Matrix4DMultiplicationTest() {
+	Matrix4D m1;
+        m1.Set(RandomVector4D(), RandomVector4D(), RandomVector4D(), RandomVector4D());
+        Matrix4D m2[1024], m3[1024];
+        for (int i = 0; i < 1024; i++)
+            m2[i].Set(RandomVector4D(), RandomVector4D(), RandomVector4D(), RandomVector4D());
+	printf("Testing matrix multiplication.\n");
+	dstSetSIMDType(simd_type);
+	dstTimer timer;
+	timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = m1 * m2[i];
+	}
+	double elapsed = timer.Elapsed();
+        printf("SIMD accelerated Matrix4D multiplication (n = 10240000) took %.3gs\n",
+		elapsed);
+	dstSetSIMDType(DST_SIMD_NONE);
+        timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = m1 * m2[i];
+	}
+	elapsed = timer.Elapsed();
+        printf("Non-SIMD accelerated Matrix4D multiplication (n = 10240000) took %.3gs\n",
+		elapsed);
+	dstSetSIMDType(simd_type);
+        timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = dstMultiply(m1, m2[i]);
+	}
+	elapsed = timer.Elapsed();
+        printf("Non-SIMD accelerated Matrix4D multiplication (explicit using dstMultiply) "
+		"(n = 10240000) took %.3gs\n", elapsed);
+	// Calculate sum of all result matrix elements.
+	float sum = 0.0f;
+	for (int i = 0; i < 1024; i++)
+		for (int j = 0; j < 4; j++)
+			for (int k = 0; k < 4; k++)
+				sum += m3[i].Get(j, k);
+	printf("Sum = %f.\n", sum);
+}
+
+static void Matrix4x3RMMultiplicationTest() {
+	Matrix4x3RM m1;
+        m1.Set(RandomVector3D(), RandomVector3D(), RandomVector3D(), RandomVector3D());
+        Matrix4x3RM m2[1024], m3[1024];
+        for (int i = 0; i < 1024; i++)
+            m2[i].Set(RandomVector3D(), RandomVector3D(), RandomVector3D(), RandomVector3D());
+	printf("Testing matrix multiplication.\n");
+	dstSetSIMDType(simd_type);
+	dstTimer timer;
+	timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = m1 * m2[i];
+	}
+	double elapsed = timer.Elapsed();
+        printf("SIMD accelerated Matrix3x4RM multiplication (n = 10240000) took %.3gs\n",
+		elapsed);
+	dstSetSIMDType(DST_SIMD_NONE);
+        timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = m1 * m2[i];
+	}
+	elapsed = timer.Elapsed();
+        printf("Non-SIMD accelerated Matrix3x4RM multiplication (n = 10240000) took %.3gs\n",
+		elapsed);
+	dstSetSIMDType(simd_type);
+        timer.Start();
+	for (int j = 0; j < 10000; j++) {
+		for (int i = 0; i < 1024; i++)
+		    m3[i] = dstMultiply(m1, m2[i]);
+	}
+	elapsed = timer.Elapsed();
+        printf("Non-SIMD accelerated Matrix3x4RM multiplication (explicit using dstMultiply) "
+		"(n = 10240000) took %.3gs\n", elapsed);
+	// Calculate sum of all result matrix elements.
+	float sum = 0.0f;
+	for (int i = 0; i < 1024; i++)
+		for (int j = 0; j < 3; j++)
+			for (int k = 0; k < 4; k++)
+				sum += m3[i].Get(j, k);
+	printf("Sum = %f.\n", sum);
+}
+
 static const char *CorrectString(double deviation) {
 	if (deviation == 0.0d)
 		return "100% correct";
@@ -745,6 +835,9 @@ int main(int argc, char *argv[]) {
 	avg_deviation = deviation / nu_correctness_iterations;
         printf("dstMatrixMultiplyMatrix4DMatrix4x3RM: average deviation = %lE (%s)\n",
 		avg_deviation, CorrectString(avg_deviation));
+
+	Matrix4DMultiplicationTest();
+	Matrix4x3RMMultiplicationTest();
 
 	// Correctness of matrix x vector multiplication functions.
 	deviation = 0.0d;

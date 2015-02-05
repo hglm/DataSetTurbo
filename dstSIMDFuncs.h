@@ -103,6 +103,8 @@ DST_API void SIMD_FUNC(dstCalculateDotProductsAndCountNegativeNx1P3V4)(
 
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V3)(int nu_vertices, const float *v1,
 	const float *v2, float& min_dot_product, float& max_dot_product);
+DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V3P)(int nu_vertices, const float *v1,
+	const float *v2, float& min_dot_product, float& max_dot_product);
 DST_API void SIMD_FUNC(dstCalculateMinAndMaxDotProductNx1V4)(int nu_vertices, const float *v1,
 	const float *v2, float& min_dot_product, float& max_dot_product);
 

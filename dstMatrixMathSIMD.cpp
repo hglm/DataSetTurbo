@@ -16,117 +16,39 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
-#include "dstMatrixMathSIMD.h"
+#ifndef DST_NO_SIMD
 
-// Non-inline member funtions for Matrix3D, Matrix4D and MatrixTransform classes
+#include "dstMatrixMath.h"
+
+// Non-inline member funtions for Matrix3D, Matrix4D and Matrix4x3RM classes
 // that use SIMD. SIMD functions are taken advantage of for the following multiplications:
 // - Matrix4 * Matrix4
-// - MatixTransform * MatrixTranform
-// - Matrix4D * MatrixTransform
+// - Matix4x3RM * Matrix4x3RM
+// - Matrix4D * Matrix4x3RM
 //
-// When DST_USE_SIMD is not defined, these member function will be defined as regular C++
+// When DST_NO_SIMD is defined, these member function will be defined as regular C++
 // functions in sreMatrixMath.cpp.
 //
-// Additional functions include multiplying a matrix by an array of vectors:
-// - Matrix4D * Vector4D[]
-// - Matrix4D * Point3D[]
-// - MatrixTransform * Vector3D[]
-//
-// C++ code is provided for the latter functions when DST_USE_SIMD is not defined.
+// Because of the nested function call from a table lookup, this is not very efficient unless
+// DST_FIXED_SIMD is defined.
 
-#ifndef DST_NO_SIMD
-
-Matrix4D operator *(const Matrix4D& __restrict__ m1, const Matrix4D& __restrict__ m2) {
-    Matrix4D m3;
-    SIMDMatrixMultiply(m1, m2, m3);
-    return m3;
+Matrix4D operator *(const Matrix4D& DST_RESTRICT m1, const Matrix4D& DST_RESTRICT m2) {
+	Matrix4D m3;
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x4CM)((const float *)&m1, (const float *)&m2, (float *)&m3);
+	return m3;
 }
 
-MatrixTransform operator *(const MatrixTransform& __restrict__ m1,
-const MatrixTransform& __restrict__ m2) {
-    MatrixTransform m3;
-    SIMDMatrixMultiply(m1, m2, m3);
-#if 0
-    char *s1 = m3.GetString();
-    Matrix4D m4 = Matrix4D(m1) * Matrix4D(m2);
-    char *s2 = m4.GetString();
-    sreMessage(SRE_MESSAGE_INFO, "%s\n%s", s1, s2);
-    delete [] s1;
-    delete [] s2;
-#endif
-    return m3;
+Matrix4x3RM operator *(const Matrix4x3RM& DST_RESTRICT m1, const Matrix4x3RM& DST_RESTRICT m2) {
+	Matrix4x3RM m3;
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x3RM)((const float *)&m1, (const float *)&m2, (float *)&m3);
+	return m3;
 }
 
-Matrix4D operator *(const Matrix4D& __restrict__ m1, const MatrixTransform& __restrict__ m2)
-{
-    Matrix4D m3;
-    SIMDMatrixMultiply(m1, m2, m3);
-#if 0
-    char *s1 = m3.GetString();
-    Matrix4D m4 = m1 * Matrix4D(m2);
-    char *s2 = m4.GetString();
-    sreMessage(SRE_MESSAGE_INFO, "SIMD %s\nNon-SIMD %s", s1, s2);
-    delete [] s1;
-    delete [] s2;
-#endif
-    return m3;
+Matrix4D operator *(const Matrix4D& DST_RESTRICT m1, const Matrix4x3RM& DST_RESTRICT m2) {
+	Matrix4D m3;
+	DST_FUNC_LOOKUP(dstMatrixMultiply4x4CM4x3RM)((const float *)&m1, (const float *)&m2, (float *)&m3);
+	return m3;
 }
 
 #endif
-
-void MatrixMultiplyVectors(int n, const Matrix4D& m, const Vector4D *v1, Vector4D *v2) {
-    int i = 0;
-#ifndef DST_NO_SIMD
-    Matrix4DSIMD m_simd;
-    m_simd.Set(m);
-    for (; i + 3 < n; i += 4) {
-        // Processing one vertex at a time using SIMD is not very efficient.
-        // Process four at at time.
-        SIMDMatrixMultiplyFourVectors(m_simd, &v1[i], &v2[i]);
-    }
-    // Handle remaining vertices.
-    for (; i < n; i++)
-        SIMDMatrixMultiplyVector(m_simd, &v1[i], &v2[i]);
-#endif
-    for (; i < n; i++)
-        v2[i] = m * v1[i];
-}
-
-void MatrixMultiplyVectors(int n, const Matrix4D& m, const Point3D *p1, Point3D *p2) {
-    int i = 0;
-#ifndef DST_NO_SIMD
-    Matrix4DSIMD m_simd;
-    m_simd.Set(m);
-    for (; i + 3 < n; i += 4) {
-        // Processing one vertex at a time using SIMD is not very efficient.
-        // Process four at at time.
-        SIMDMatrixMultiplyFourVectors(m_simd, &p1[i], &p2[i]);
-    }
-    // Handle remaining vertices.
-    for (; i < n; i++)
-        SIMDMatrixMultiplyVector(m_simd, &p1[i], &p2[i]);
-#else
-    for (; i < n; i++)
-        p2[i] = (m * p1[i]).GetPoint3D();
-#endif
-}
-
-void MatrixMultiplyVectors(int n, const MatrixTransform& m, const Vector3D *v1, Vector3D *v2) {
-    int i = 0;
-#ifdef SIMD_HAVE_MATRIX4X3_VECTOR_MULTIPLICATION
-    MatrixTransformSIMD m_simd;
-    m_simd.Set(m);
-    for (; i + 3 < n; i += 4) {
-        // Processing one vertex at a time using SIMD is not very efficient.
-        // Process four at at time.
-        SIMDMatrixMultiplyFourVectors(m_simd, &v1[i], &v2[i]);
-    }
-    // Handle remaining vertices.
-    for (; i < n; i++)
-        SIMDMatrixMultiplyVector(m_simd, &v1[i], &v2[i]);
-#else
-    for (; i < n; i++)
-        v2[i] = (m * v1[i]).GetVector3D();
-#endif
-}
 

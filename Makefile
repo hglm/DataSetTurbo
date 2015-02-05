@@ -105,7 +105,7 @@ endif
 endif
 # This flag has been moved to the automatically generated file dstConfigParams.h.
 # OPTFLAGS += -DDST_FIXED_SIMD_$(FIXED_SIMD_TYPE)
-SIMD_MODULES = dstSIMD$(FIXED_SIMD_TYPE).o
+SIMD_MODULES = dstSIMD$(FIXED_SIMD_TYPE).o dstSIMD$(FIXED_SIMD_TYPE)Stream.o
 
 endif	# TARGET_SIMD != NONE
 endif	# TARGET_SIMD != <empty>
@@ -162,7 +162,7 @@ LIBRARY_LIBS = -lpthread -lm -lc
 
 LIBRARY_CPP_MODULE_OBJECTS = dstMisc.o dstRandom.o dstRNGCMWC.o dstThread.o \
 	dstVectorMath.o dstMatrixMath.o dstCpuInfo.o dstDotMatrixNoSIMD.o \
-	$(SIMD_MODULES) # dstMatrixMathSIMD.o
+	$(SIMD_MODULES) dstMatrixMathSIMD.o
 LIBRARY_ASM_MODULE_OBJECTS = dstARMMemset.o
 LIBRARY_MODULE_OBJECTS = $(LIBRARY_CPP_MODULE_OBJECTS) $(LIBRARY_ASM_MODULE_OBJECTS)
 LIBRARY_HEADER_FILES = dstConfig.h dstMisc.h dstRandom.h dstDynamicArray.h dstQueue.h \

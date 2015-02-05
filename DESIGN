@@ -114,3 +114,17 @@ n = 2			382	532	570	508	565	351
 n = 3			431	481	594/670	705	767	500
 n = 4			300	378	578	734/767	629/746 480/573
 
+
+
+SIMD matrix multiplication
+
+			Matrix4D * Matrix4D	Matrix4x3RM * Matrix4x3RM
+
+SIMD (fixed SSE4A)		0.159s			0.106s
+SIMD (fixed SSE2)		0.163s			0.106s
+SIMD (lookup function SSE4A)	0.166s			0.111s		
+Non-SIMD (lookup function)	0.584s			0.377s
+Non-SIMD (lookup, then inline)	0.399s			0.217s
+Non-SIMD direct (dstMultiply)	0.380s			0.183s
+Non-SIMD (fixed)		0.376s			0.185s
+

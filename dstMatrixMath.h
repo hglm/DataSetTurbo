@@ -149,7 +149,6 @@ inline Matrix3D operator *(float t, const Matrix3D& m)
 	return (m * t);
 }
 
-
 DST_API float Determinant(const Matrix3D& m);
 DST_API Matrix3D Inverse(const Matrix3D& m);
 DST_API Matrix3D Adjugate(const Matrix3D& m);
@@ -157,7 +156,7 @@ DST_API Matrix3D Transpose(const Matrix3D& m);
 
 class Matrix4D;
 
-// Custom Matrix4x3RM class. Transform matrices are zero at n30, n31 and n32 and 1.0 at n33.
+// Custom Matrix4x3RM class. These matrices are zero at n30, n31 and n32 and 1.0 at n33.
 
 class DST_API Matrix4x3RM
 {
@@ -251,6 +250,14 @@ class DST_API Matrix4x3RM
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
 
+                // dstMultiply is a non-SIMD multiplication function.
+		friend DST_API Matrix4x3RM dstMultiply(const Matrix4x3RM& m1, const Matrix4x3RM& m2);
+		friend DST_API Matrix4D dstMultiply(const Matrix4D& m1, const Matrix4x3RM& m2);
+		friend DST_INLINE_ONLY Matrix4x3RM dstInlineMultiply(const Matrix4x3RM& m1,
+			const Matrix4x3RM& m2);
+		friend DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1,
+			const Matrix4x3RM& m2);
+                // The * operator is potentially SIMD-accelerated.
 		friend DST_API Matrix4x3RM operator *(const Matrix4x3RM& m1, const Matrix4x3RM& m2);
 		friend DST_API Matrix4D operator *(const Matrix4D& m1, const Matrix4x3RM& m2);
 		friend DST_API Vector4D operator *(const Matrix4x3RM& m, const Vector4D& v);
@@ -369,6 +376,10 @@ class DST_API Matrix4D
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
 		
+                // dstMultiply is a non-SIMD multiplication function.
+		friend DST_API Matrix4D dstMultiply(const Matrix4D& m1, const Matrix4D& m2);
+		friend DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4D& m2);
+                // The * operator is potentially SIMD-accelerated.
 		friend DST_API Matrix4D operator *(const Matrix4D& m1, const Matrix4D& m2);
 		friend DST_API Matrix4D operator *(const Matrix4D& m1, const Matrix3D& m2);
 		friend DST_API Vector4D operator *(const Matrix4D& m, const Vector4D& v);
@@ -392,6 +403,71 @@ DST_API float Determinant(const Matrix4D& m);
 DST_API Matrix4D Inverse(const Matrix4D& m);
 DST_API Matrix4D Adjugate(const Matrix4D& m);
 DST_API Matrix4D Transpose(const Matrix4D& m);
+
+// Inline multiplication functions.
+
+DST_INLINE_ONLY Matrix4x3RM dstInlineMultiply(const Matrix4x3RM& m1, const Matrix4x3RM& m2) {
+    return
+        Matrix4x3RM(
+            m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
+            m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
+            m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
+            m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
+		m1.Get(3, 0),
+            m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
+            m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
+            m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
+            m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
+		m1.Get(3, 1),
+            m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
+            m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
+            m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
+            m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
+		m1.Get(3, 2));
+}
+
+DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4x3RM& m2) {
+    return
+        Matrix4D(m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
+            m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
+            m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
+            m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
+		m1.Get(3, 0),
+            m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
+            m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
+            m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
+            m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
+		m1.Get(3, 1),
+            m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
+            m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
+            m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
+            m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
+		m1.Get(3, 2),
+            m1.Get(0, 3) * m2.Get(0, 0) + m1.Get(1, 3) * m2.Get(0, 1) + m1.Get(2, 3) * m2.Get(0, 2),
+            m1.Get(0, 3) * m2.Get(1, 0) + m1.Get(1, 3) * m2.Get(1, 1) + m1.Get(2, 3) * m2.Get(1, 2),
+            m1.Get(0, 3) * m2.Get(2, 0) + m1.Get(1, 3) * m2.Get(2, 1) + m1.Get(2, 3) * m2.Get(2, 2),
+            m1.Get(0, 3) * m2.Get(3, 0) + m1.Get(1, 3) * m2.Get(3, 1) + m1.Get(2, 3) * m2.Get(3, 2) + m1.Get(3, 3));
+}
+
+DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4D& m2) {
+	return (Matrix4D(
+		m1.n[0][0] * m2.n[0][0] + m1.n[1][0] * m2.n[0][1] + m1.n[2][0] * m2.n[0][2] + m1.n[3][0] * m2.n[0][3],
+		m1.n[0][0] * m2.n[1][0] + m1.n[1][0] * m2.n[1][1] + m1.n[2][0] * m2.n[1][2] + m1.n[3][0] * m2.n[1][3],
+		m1.n[0][0] * m2.n[2][0] + m1.n[1][0] * m2.n[2][1] + m1.n[2][0] * m2.n[2][2] + m1.n[3][0] * m2.n[2][3],
+		m1.n[0][0] * m2.n[3][0] + m1.n[1][0] * m2.n[3][1] + m1.n[2][0] * m2.n[3][2] + m1.n[3][0] * m2.n[3][3],
+		m1.n[0][1] * m2.n[0][0] + m1.n[1][1] * m2.n[0][1] + m1.n[2][1] * m2.n[0][2] + m1.n[3][1] * m2.n[0][3],
+		m1.n[0][1] * m2.n[1][0] + m1.n[1][1] * m2.n[1][1] + m1.n[2][1] * m2.n[1][2] + m1.n[3][1] * m2.n[1][3],
+		m1.n[0][1] * m2.n[2][0] + m1.n[1][1] * m2.n[2][1] + m1.n[2][1] * m2.n[2][2] + m1.n[3][1] * m2.n[2][3],
+		m1.n[0][1] * m2.n[3][0] + m1.n[1][1] * m2.n[3][1] + m1.n[2][1] * m2.n[3][2] + m1.n[3][1] * m2.n[3][3],
+		m1.n[0][2] * m2.n[0][0] + m1.n[1][2] * m2.n[0][1] + m1.n[2][2] * m2.n[0][2] + m1.n[3][2] * m2.n[0][3],
+		m1.n[0][2] * m2.n[1][0] + m1.n[1][2] * m2.n[1][1] + m1.n[2][2] * m2.n[1][2] + m1.n[3][2] * m2.n[1][3],
+		m1.n[0][2] * m2.n[2][0] + m1.n[1][2] * m2.n[2][1] + m1.n[2][2] * m2.n[2][2] + m1.n[3][2] * m2.n[2][3],
+		m1.n[0][2] * m2.n[3][0] + m1.n[1][2] * m2.n[3][1] + m1.n[2][2] * m2.n[3][2] + m1.n[3][2] * m2.n[3][3],
+		m1.n[0][3] * m2.n[0][0] + m1.n[1][3] * m2.n[0][1] + m1.n[2][3] * m2.n[0][2] + m1.n[3][3] * m2.n[0][3],
+		m1.n[0][3] * m2.n[1][0] + m1.n[1][3] * m2.n[1][1] + m1.n[2][3] * m2.n[1][2] + m1.n[3][3] * m2.n[1][3],
+		m1.n[0][3] * m2.n[2][0] + m1.n[1][3] * m2.n[2][1] + m1.n[2][3] * m2.n[2][2] + m1.n[3][3] * m2.n[2][3],
+		m1.n[0][3] * m2.n[3][0] + m1.n[1][3] * m2.n[3][1] + m1.n[2][3] * m2.n[3][2] + m1.n[3][3] * m2.n[3][3]));
+}
 
 // Matrix functions with optional SIMD support.
 // All matrices must be aligned on a 16-byte boundary.

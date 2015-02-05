@@ -266,23 +266,26 @@ const float * DST_RESTRICT v1, const float * DST_RESTRICT v2, int& DST_RESTRICT 
 // Matrix multiplication. Use Matrix class functions. This is relatively inefficient because
 // of the extra level of function class (matrix multiplication is not defined inline in the matrix
 // class).
+//
+// The first thre functions should not use the * operator because that would cause infinite recursion.
+// They use the (non-SIMD) dstMultiply function instead.
 
 void dstMatrixMultiply4x4CMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT f3) {
 	Matrix4D m = *(Matrix4D *)f1;
-	*(Matrix4D *)f3 = m * *(Matrix4D *)f2;
+	*(Matrix4D *)f3 = dstInlineMultiply(m, *(Matrix4D *)f2);
 }
 
 void dstMatrixMultiply4x3RMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT f3) {
 	Matrix4x3RM m = *(Matrix4x3RM *)f1;
-	*(Matrix4x3RM *)f3 = m * *(Matrix4x3RM *)f2;
+	*(Matrix4x3RM *)f3 = dstInlineMultiply(m, *(Matrix4x3RM *)f2);
 }
 
 void dstMatrixMultiply4x4CM4x3RMNoSIMD(const float * DST_RESTRICT f1, const float * DST_RESTRICT f2,
 float * DST_RESTRICT f3) {
 	Matrix4D m = *(Matrix4D *)f1;
-	*(Matrix4D *)f3 = m * *(Matrix4x3RM *)f2;
+	*(Matrix4D *)f3 = dstInlineMultiply(m, *(Matrix4x3RM *)f2);
 }
 
 void dstMatrixMultiplyVectors1x4M4x4CMV4NoSIMD(
