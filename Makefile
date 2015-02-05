@@ -4,8 +4,8 @@ include Makefile.conf
 
 SHORT_LIBRARY_NAME = datasetturbo
 LIBRARY_NAME = lib$(SHORT_LIBRARY_NAME)
-VERSION = 0.4
-SO_VERSION = 0.4
+VERSION = 0.5
+SO_VERSION = 0.5
 MAJOR_VERSION = 0
 
 # CFLAGS with optional tuning for CPU
