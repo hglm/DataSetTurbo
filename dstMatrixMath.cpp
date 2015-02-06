@@ -281,24 +281,6 @@ bool Matrix3D::RotationMatrixPreservesAABB() {
 
 // Matrix4D class
 
-Matrix4D& Matrix4D::operator =(const Matrix3D& m)
-{
-	n[0][0] = m.n[0][0];
-	n[0][1] = m.n[0][1];
-	n[0][2] = m.n[0][2];
-	n[1][0] = m.n[1][0];
-	n[1][1] = m.n[1][1];
-	n[1][2] = m.n[1][2];
-	n[2][0] = m.n[2][0];
-	n[2][1] = m.n[2][1];
-	n[2][2] = m.n[2][2];
-	
-	n[0][3] = n[1][3] = n[2][3] = n[3][0] = n[3][1] = n[3][2] = 0.0F;
-	n[3][3] = 1.0F;
-	
-	return (*this);
-}
-
 Matrix4D& Matrix4D::operator *=(const Matrix4D& __restrict__ m) __restrict__
 {
 	float x = n[0][0];

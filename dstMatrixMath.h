@@ -211,9 +211,9 @@ class DST_API Matrix4x3RM
 		}
 
  		// Get column i.
-		Vector4D GetColumn(int i) const
+		Vector3D GetColumn(int i) const
 		{
-			return Vector4D(n[0][i], n[1][i], n[2][i], i == 3 ? 1.0f : 0.0f);
+			return Vector3D(n[0][i], n[1][i], n[2][i]);
 		}
 
 		const Vector4D& GetRow(int j) const
@@ -301,6 +301,7 @@ class DST_API Matrix4D
 		            c1.w, c2.w, c3.w, c4.w);
 		}
 
+		// Set row-by-row, column-by-column (second element is first row, second column.
 		Matrix4D& Set(float n00, float n01, float n02, float n03, float n10,
 		float n11, float n12, float n13, float n20, float n21, float n22, float n23,
 		float n30, float n31, float n32, float n33) {
@@ -363,7 +364,22 @@ class DST_API Matrix4D
 			return (*this);
 		}
 		
-		DST_API Matrix4D& operator =(const Matrix3D& m);
+		DST_API Matrix4D& operator =(const Matrix3D& m) {
+                    Set(m.n[0][0], m.n[1][0], m.n[2][0], 0.0f,
+			m.n[0][1], m.n[1][1], m.n[2][1], 0.0f,
+                        m.n[0][2], m.n[1][2], m.n[2][2], 0.0f,
+                        0.0f, 0.0f, 0.0f, 1.0f);
+		    return (*this);
+		}
+
+                DST_API Matrix4D& operator =(const Matrix4x3RM& m) {
+		    Set(m.n[0][0], m.n[0][1], m.n[0][2], m.n[0][3],
+			m.n[1][0], m.n[1][1], m.n[1][2], m.n[1][3],
+                        m.n[2][0], m.n[2][1], m.n[2][2], m.n[2][3],
+                        0.0f, 0.0f, 0.0f, 1.0f);
+		    return (*this);
+                }
+
 		DST_API Matrix4D& operator *=(const Matrix4D& m);
 		DST_API Matrix4D& operator *=(const Matrix3D& m);
 		
