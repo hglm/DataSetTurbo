@@ -572,6 +572,7 @@ public:
 		return ((&x)[k]);
 	}
 
+#if 0
 	const Vector3DBase <T> & GetVector3D(void) const {
 		return (*reinterpret_cast<const Vector3DBase <T> *>(this));
 	}
@@ -580,23 +581,23 @@ public:
 		return (*reinterpret_cast<const Point3DBase <T> *>(this));
 	}
 
-#if 1
 	Vector3DBase <T> & GetVector3D(void) {
 		return (*reinterpret_cast<Vector3DBase <T> *>(this));
 	}
 
-	Point3DBase <T>& GetPoint3D(void) {
+	Point3DBase <T> & GetPoint3D(void) {
 		return (*reinterpret_cast<Point3DBase <T> *>(this));
 	}
 #else
 	// Work around issues encountered with gcc 4.8.2 and -O2 and higher
-	// on armhf.
-	Vector3D GetVector3D(void) {
-		return Vector3D(x, y, z);
+	// on armhf. These definitions are unlikely to result in less
+	// optimized code compared to the original definitions above.
+	Vector3DBase <T> GetVector3D(void) const {
+		return Vector3DBase <T>(x, y, z);
 	}
 
-	Point3D GetPoint3D(void) {
-		return Point3D(x, y, z);
+	Point3DBase <T> GetPoint3D(void) const {
+		return Point3DBase <T>(x, y, z);
 	}
 #endif
 

@@ -94,12 +94,7 @@ class DST_API Matrix3D
 			return (n[column][row]);
 		}
 
-		Vector3D& operator [](int j)
-		{
-			return (*reinterpret_cast<Vector3D *>(n[j]));
-		}
-
-		const Vector3D& operator [](int j) const
+		const Vector3D& GetColumn(int j) const
 		{
 			return (*reinterpret_cast<const Vector3D *>(n[j]));
 		}
