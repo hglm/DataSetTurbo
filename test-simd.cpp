@@ -493,7 +493,7 @@ static void Matrix4x3RMMultiplicationTest() {
 	for (int i = 0; i < 1024; i++)
 		for (int j = 0; j < 3; j++)
 			for (int k = 0; k < 4; k++)
-				sum += m3[i].Get(j, k);
+				sum += m3[i].Get(k, j);
 	printf("Sum = %f.\n", sum);
 }
 
@@ -527,6 +527,7 @@ static void Usage() {
 }
 
 int main(int argc, char *argv[]) {
+#if 0
 	// Check queue semantics.
 	printf("Checking dstThreadDataQueue semantics.\n");
 	dstThreadDataQueue queue;
@@ -547,6 +548,7 @@ int main(int argc, char *argv[]) {
 			printf("dstTreadDataQueue(4) minimum capacity changed from %d to %d, size = %d.\n",
 				previous_capacity, capacity, queue.Size());
 	}
+#endif
 
 	vector_array_size = DEFAULT_VECTOR_ARRAY_SIZE;
 	matrix_array_size = 1024;

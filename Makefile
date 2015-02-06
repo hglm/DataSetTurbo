@@ -44,9 +44,11 @@ FIXED_SIMD_TYPE =
 FIXED_NO_SIMD =
 ifneq ($(TARGET_SIMD),)
 ifeq ($(TARGET_SIMD), NONE)
-OPTCFLAGS +=-DDST_NO_SIMD
+# This flag has been moved to the automatically generated file dstConfigParams.h.
+# OPTCFLAGS +=-DDST_NO_SIMD
 FIXED_NO_SIMD = DST_NO_SIMD
 else
+# This flag has been moved to the automatically generated file dstConfigParams.h.
 # OPTCFLAGS += -DDST_FIXED_SIMD
 
 ifeq ($(TARGET_SIMD), X86_SSE2)
