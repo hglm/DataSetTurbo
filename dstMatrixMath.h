@@ -41,13 +41,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 class DST_API Matrix3D
 {
 	public:
-	
+
 		float	n[3][3];
-	
+
 	public:
-		
+
 		Matrix3D() {}
-		
+
 		DST_API Matrix3D(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3) {
 			Set(c1, c2, c3);
 		}
@@ -56,7 +56,7 @@ class DST_API Matrix3D
 		float n20, float n21, float n22) {
 			Set(n00, n01, n02, n10, n11, n12, n20, n21, n22);
 		}
-		
+
 		DST_API Matrix3D& Set(const Vector3D& c1, const Vector3D& c2, const Vector3D& c3) {
 			return Set(c1.x, c2.x, c3.x, c1.y, c2.y, c3.y, c1.z, c2.z, c3.z);
 		}
@@ -75,12 +75,12 @@ class DST_API Matrix3D
 			n[2][2] = n22;
 			return (*this);
 		}
-		
+
 		float& operator ()(int i, int j)
 		{
 			return (n[j][i]);
 		}
-		
+
 		const float& operator ()(int i, int j) const
 		{
 			return (n[j][i]);
@@ -98,17 +98,17 @@ class DST_API Matrix3D
 		{
 			return (*reinterpret_cast<Vector3D *>(n[j]));
 		}
-		
+
 		const Vector3D& operator [](int j) const
 		{
 			return (*reinterpret_cast<const Vector3D *>(n[j]));
 		}
-		
+
 		Vector3D GetRow(int i) const
 		{
 			return (Vector3D(n[0][i], n[1][i], n[2][i]));
 		}
-		
+
 		Matrix3D& SetRow(int i, const Vector3D& row)
 		{
 			n[0][i] = row.x;
@@ -116,11 +116,11 @@ class DST_API Matrix3D
 			n[2][i] = row.z;
 			return (*this);
 		}
-		
+
 		DST_API Matrix3D& operator *=(const Matrix3D& m);
 		DST_API Matrix3D& operator *=(float t);
 		DST_API Matrix3D& operator /=(float t);
-		
+
 		DST_API Matrix3D& SetIdentity(void);
                 DST_API Matrix3D& AssignRotationAlongAxis(const Vector3D& axis, float angle);
                 DST_API Matrix3D& AssignRotationAlongXAxis(float angle);
@@ -167,7 +167,7 @@ class DST_API Matrix4x3RM
 
 	public:
 		Matrix4x3RM() {}
-		
+
 		Matrix4x3RM(float n00, float n01, float n02, float n03, float n10,
 		float n11, float n12, float n13, float n20, float n21, float n22, float n23) {
 			Set(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23);
@@ -229,7 +229,7 @@ class DST_API Matrix4x3RM
 			n[j][3] = 0.0f;
 			return (*this);
 		}
-		
+
 		Matrix4x3RM& SetRow(int j, const Vector4D& row)
 		{
 			n[j][0] = row.x;
@@ -275,11 +275,11 @@ class DST_API Matrix4D
 	public:
 		// The internal storage is in column-major order.
 		float n[4][4];
-	
+
 	public:
-		
+
 		Matrix4D() {}
-		
+
 		Matrix4D(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3, const Vector4D& c4) {
 			Set(c1, c2, c3, c4);
 		}
@@ -321,7 +321,7 @@ class DST_API Matrix4D
 			n[1][3] = n31;
 			n[2][3] = n32;
 			n[3][3] = n33;
-			return (*this);			
+			return (*this);
 		}
 
 		// Return element at row i, column j.
@@ -339,7 +339,7 @@ class DST_API Matrix4D
 		{
 			return (Vector4D(n[0][j], n[1][j], n[2][j], n[3][j]));
 		}
-		
+
 		// Get column i.
 		const Vector4D& GetColumn(int i) const
 		{
@@ -354,7 +354,7 @@ class DST_API Matrix4D
 			n[3][j] = 0.0f;
 			return (*this);
 		}
-		
+
 		Matrix4D& SetRow(int j, const Vector4D& row)
 		{
 			n[0][j] = row.x;
@@ -363,7 +363,7 @@ class DST_API Matrix4D
 			n[3][j] = row.w;
 			return (*this);
 		}
-		
+
 		DST_API Matrix4D& operator =(const Matrix3D& m) {
                     Set(m.n[0][0], m.n[1][0], m.n[2][0], 0.0f,
 			m.n[0][1], m.n[1][1], m.n[2][1], 0.0f,
@@ -382,7 +382,7 @@ class DST_API Matrix4D
 
 		DST_API Matrix4D& operator *=(const Matrix4D& m);
 		DST_API Matrix4D& operator *=(const Matrix3D& m);
-		
+
 		DST_API Matrix4D& SetIdentity(void);
                 DST_API Matrix4D& AssignRotationAlongXAxis(float angle);
                 DST_API Matrix4D& AssignRotationAlongYAxis(float angle);
@@ -391,7 +391,7 @@ class DST_API Matrix4D
                 DST_API Matrix4D& AssignScaling(float scaling);
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
-		
+
                 // dstMultiply is a non-SIMD multiplication function.
 		friend DST_API Matrix4D dstMultiply(const Matrix4D& m1, const Matrix4D& m2);
 		friend DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4D& m2);
