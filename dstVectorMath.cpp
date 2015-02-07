@@ -39,6 +39,20 @@ char *Vector3DPadded::GetString() const {
 }
 
 template <>
+char *Point3D::GetString() const {
+	char *s = new char[80];
+	sprintf(s, "Point3D(%.10G, %.10G, %.10G)", x, y, z);
+	return s;
+}
+
+template <>
+char *Point3DPadded::GetString() const {
+	char *s = new char[80];
+	sprintf(s, "Point3DPadded(%.10G, %.10G, %.10G)", x, y, z);
+	return s;
+}
+
+template <>
 char *VectorDouble3D::GetString() const {
 	char *s = new char[80];
 	sprintf(s, "VectorDouble3D(%.10G, %.10G, %10G)", x, y, z);
@@ -54,8 +68,8 @@ char *Vector4D::GetString() const {
 
 template <>
 char *VectorDouble4D::GetString() const {
-    char *s = new char[80];
-    sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
+    char *s = new char[128];
+    sprintf(s, "VectorDouble4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);
     return s;
 }
 

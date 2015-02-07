@@ -301,7 +301,7 @@ void dstMatrixMultiplyVectors1xNM4x4CMV4NoSIMD(int n,
 const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	for (int i = 0; i < n; i++) {
 		Vector4D result;
-		result = *((Matrix4D *)m) * *(Vector4D *)&v[i * 4];
+		result = *((Matrix4D *)m) * (*(Vector4D *)&v[i * 4]);
 		*(Vector4D *)&v_result[i * 4] = result;
 	}
 }
@@ -310,7 +310,7 @@ void dstMatrixMultiplyVectors1x4M4x4CMP3PNoSIMD(const float * DST_RESTRICT m,
 const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	for (int i = 0; i < 4; i++) {
 		Point3DPadded result;
-		result = (*((Matrix4D *)m) * *(Point3DPadded *)&v[i * 4]).GetPoint3D();
+		result = (*((Matrix4D *)m) * (*((Point3DPadded *)&v[i * 4]))).GetPoint3DPadded();
 		*(Point3DPadded *)&v_result[i * 4] = result;
 	}
 }
@@ -319,7 +319,7 @@ void dstMatrixMultiplyVectors1xNM4x4CMP3PNoSIMD(int n,
 const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	for (int i = 0; i < n; i++) {
 		Point3DPadded result;
-		result = (*((Matrix4D *)m) * *(Point3DPadded *)&v[i * 4]).GetPoint3D();
+		result = (*((Matrix4D *)m) * (*((Point3DPadded *)&v[i * 4]))).GetPoint3DPadded();
 		*(Point3DPadded *)&v_result[i * 4] = result;
 	}
 }
@@ -328,7 +328,7 @@ void dstMatrixMultiplyVectors1xNM4x4CMV3NoSIMD(int n,
 const float * DST_RESTRICT m, const float * DST_RESTRICT v, float * DST_RESTRICT v_result) {
 	for (int i = 0; i < n; i++) {
 		Vector3D result;
-		result = (*((Matrix4D *)m) * *(Vector3D *)&v[i * 3]).GetVector3D();
+		result = (*((Matrix4D *)m) * (*((Vector3D *)&v[i * 3]))).GetVector3D();
 		*(Vector3D *)&v_result[i * 3] = result;
 	}
 }

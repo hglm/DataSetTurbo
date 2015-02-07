@@ -112,20 +112,20 @@ class DST_API Matrix3D
 			return (*this);
 		}
 
-		DST_API Matrix3D& operator *=(const Matrix3D& m);
-		DST_API Matrix3D& operator *=(float t);
-		DST_API Matrix3D& operator /=(float t);
+		Matrix3D& operator *=(const Matrix3D& m);
+		Matrix3D& operator *=(float t);
+		Matrix3D& operator /=(float t);
 
-		DST_API Matrix3D& SetIdentity(void);
-                DST_API Matrix3D& AssignRotationAlongAxis(const Vector3D& axis, float angle);
-                DST_API Matrix3D& AssignRotationAlongXAxis(float angle);
-                DST_API Matrix3D& AssignRotationAlongYAxis(float angle);
-                DST_API Matrix3D& AssignRotationAlongZAxis(float angle);
-                DST_API Matrix3D& AssignTranslation(const Vector2D& translation);
-                DST_API Matrix3D& AssignScaling(float scaling);
-		DST_API bool RotationMatrixPreservesAABB();
+		Matrix3D& SetIdentity(void);
+                Matrix3D& AssignRotationAlongAxis(const Vector3D& axis, float angle);
+                Matrix3D& AssignRotationAlongXAxis(float angle);
+                Matrix3D& AssignRotationAlongYAxis(float angle);
+                Matrix3D& AssignRotationAlongZAxis(float angle);
+                Matrix3D& AssignTranslation(const Vector2D& translation);
+                Matrix3D& AssignScaling(float scaling);
+		bool RotationMatrixPreservesAABB();
 		// Return text respresentation. To be freed with delete [].
-		DST_API char *GetString() const;
+		char *GetString() const;
 
 		friend DST_API Matrix3D operator *(const Matrix3D& m1, const Matrix3D& m2);
 		friend DST_API Matrix3D operator *(const Matrix3D& m, float t);
@@ -234,14 +234,14 @@ class DST_API Matrix4x3RM
 			return (*this);
 		}
 
-		DST_API Matrix4x3RM& operator *=(const Matrix4x3RM& m);
+		Matrix4x3RM& operator *=(const Matrix4x3RM& m);
 
-		DST_API Matrix4x3RM& SetIdentity(void);
-                DST_API Matrix4x3RM& AssignRotationAlongXAxis(float angle);
-                DST_API Matrix4x3RM& AssignRotationAlongYAxis(float angle);
-                DST_API Matrix4x3RM& AssignRotationAlongZAxis(float angle);
-                DST_API Matrix4x3RM& AssignTranslation(const Vector3D& translation);
-                DST_API Matrix4x3RM& AssignScaling(float scaling);
+		Matrix4x3RM& SetIdentity(void);
+                Matrix4x3RM& AssignRotationAlongXAxis(float angle);
+                Matrix4x3RM& AssignRotationAlongYAxis(float angle);
+                Matrix4x3RM& AssignRotationAlongZAxis(float angle);
+                Matrix4x3RM& AssignTranslation(const Vector3D& translation);
+                Matrix4x3RM& AssignScaling(float scaling);
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
 
@@ -287,7 +287,8 @@ class DST_API Matrix4D
                }
 
 		Matrix4D(const Matrix4x3RM& m) {
-			Set(m.GetColumn(0), m.GetColumn(1), m.GetColumn(2), m.GetColumn(3));
+			Set(Vector4D(m.GetColumn(0), 0.0f), Vector4D(m.GetColumn(1), 0.0f),
+				Vector4D(m.GetColumn(2), 0.0f), Vector4D(m.GetColumn(3), 1.0f));
 		}
 
 		Matrix4D& Set(const Vector4D& c1, const Vector4D& c2, const Vector4D& c3,
@@ -359,31 +360,33 @@ class DST_API Matrix4D
 			return (*this);
 		}
 
-		DST_API Matrix4D& operator =(const Matrix3D& m) {
-                    Set(m.n[0][0], m.n[1][0], m.n[2][0], 0.0f,
-			m.n[0][1], m.n[1][1], m.n[2][1], 0.0f,
-                        m.n[0][2], m.n[1][2], m.n[2][2], 0.0f,
-                        0.0f, 0.0f, 0.0f, 1.0f);
-		    return (*this);
+		Matrix4D& operator =(const Matrix3D& m) {
+			Set(
+				m.n[0][0], m.n[1][0], m.n[2][0], 0.0f,
+				m.n[0][1], m.n[1][1], m.n[2][1], 0.0f,
+				m.n[0][2], m.n[1][2], m.n[2][2], 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f);
+			return (*this);
 		}
 
-                DST_API Matrix4D& operator =(const Matrix4x3RM& m) {
-		    Set(m.n[0][0], m.n[0][1], m.n[0][2], m.n[0][3],
-			m.n[1][0], m.n[1][1], m.n[1][2], m.n[1][3],
-                        m.n[2][0], m.n[2][1], m.n[2][2], m.n[2][3],
-                        0.0f, 0.0f, 0.0f, 1.0f);
-		    return (*this);
+                Matrix4D& operator =(const Matrix4x3RM& m) {
+			Set(
+				m.n[0][0], m.n[0][1], m.n[0][2], m.n[0][3],
+				m.n[1][0], m.n[1][1], m.n[1][2], m.n[1][3],
+				m.n[2][0], m.n[2][1], m.n[2][2], m.n[2][3],
+				0.0f, 0.0f, 0.0f, 1.0f);
+			return (*this);
                 }
 
-		DST_API Matrix4D& operator *=(const Matrix4D& m);
-		DST_API Matrix4D& operator *=(const Matrix3D& m);
+		Matrix4D& operator *=(const Matrix4D& m);
+		Matrix4D& operator *=(const Matrix3D& m);
 
-		DST_API Matrix4D& SetIdentity(void);
-                DST_API Matrix4D& AssignRotationAlongXAxis(float angle);
-                DST_API Matrix4D& AssignRotationAlongYAxis(float angle);
-                DST_API Matrix4D& AssignRotationAlongZAxis(float angle);
-                DST_API Matrix4D& AssignTranslation(const Vector3D& translation);
-                DST_API Matrix4D& AssignScaling(float scaling);
+		Matrix4D& SetIdentity(void);
+                Matrix4D& AssignRotationAlongXAxis(float angle);
+                Matrix4D& AssignRotationAlongYAxis(float angle);
+                Matrix4D& AssignRotationAlongZAxis(float angle);
+                Matrix4D& AssignTranslation(const Vector3D& translation);
+                Matrix4D& AssignScaling(float scaling);
 		// Return text respresentation. To be freed with delete [].
 		char *GetString() const;
 
@@ -418,46 +421,46 @@ DST_API Matrix4D Transpose(const Matrix4D& m);
 // Inline multiplication functions.
 
 DST_INLINE_ONLY Matrix4x3RM dstInlineMultiply(const Matrix4x3RM& m1, const Matrix4x3RM& m2) {
-    return
-        Matrix4x3RM(
-            m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
-            m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
-            m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
-            m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
+	return Matrix4x3RM(
+		m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
+		m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
+		m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
+		m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
 		m1.Get(3, 0),
-            m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
-            m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
-            m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
-            m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
+		m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
+		m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
+		m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
+		m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
 		m1.Get(3, 1),
-            m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
-            m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
-            m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
-            m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
+		m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
+		m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
+		m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
+		m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
 		m1.Get(3, 2));
 }
 
 DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4x3RM& m2) {
-    return
-        Matrix4D(m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
-            m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
-            m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
-            m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
+	return Matrix4D(
+		m1.Get(0, 0) * m2.Get(0, 0) + m1.Get(1, 0) * m2.Get(0, 1) + m1.Get(2, 0) * m2.Get(0, 2),
+		m1.Get(0, 0) * m2.Get(1, 0) + m1.Get(1, 0) * m2.Get(1, 1) + m1.Get(2, 0) * m2.Get(1, 2),
+		m1.Get(0, 0) * m2.Get(2, 0) + m1.Get(1, 0) * m2.Get(2, 1) + m1.Get(2, 0) * m2.Get(2, 2),
+		m1.Get(0, 0) * m2.Get(3, 0) + m1.Get(1, 0) * m2.Get(3, 1) + m1.Get(2, 0) * m2.Get(3, 2) +
 		m1.Get(3, 0),
-            m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
-            m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
-            m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
-            m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
+		m1.Get(0, 1) * m2.Get(0, 0) + m1.Get(1, 1) * m2.Get(0, 1) + m1.Get(2, 1) * m2.Get(0, 2),
+		m1.Get(0, 1) * m2.Get(1, 0) + m1.Get(1, 1) * m2.Get(1, 1) + m1.Get(2, 1) * m2.Get(1, 2),
+		m1.Get(0, 1) * m2.Get(2, 0) + m1.Get(1, 1) * m2.Get(2, 1) + m1.Get(2, 1) * m2.Get(2, 2),
+		m1.Get(0, 1) * m2.Get(3, 0) + m1.Get(1, 1) * m2.Get(3, 1) + m1.Get(2, 1) * m2.Get(3, 2) +
 		m1.Get(3, 1),
-            m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
-            m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
-            m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
-            m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
+		m1.Get(0, 2) * m2.Get(0, 0) + m1.Get(1, 2) * m2.Get(0, 1) + m1.Get(2, 2) * m2.Get(0, 2),
+		m1.Get(0, 2) * m2.Get(1, 0) + m1.Get(1, 2) * m2.Get(1, 1) + m1.Get(2, 2) * m2.Get(1, 2),
+		m1.Get(0, 2) * m2.Get(2, 0) + m1.Get(1, 2) * m2.Get(2, 1) + m1.Get(2, 2) * m2.Get(2, 2),
+		m1.Get(0, 2) * m2.Get(3, 0) + m1.Get(1, 2) * m2.Get(3, 1) + m1.Get(2, 2) * m2.Get(3, 2) +
 		m1.Get(3, 2),
-            m1.Get(0, 3) * m2.Get(0, 0) + m1.Get(1, 3) * m2.Get(0, 1) + m1.Get(2, 3) * m2.Get(0, 2),
-            m1.Get(0, 3) * m2.Get(1, 0) + m1.Get(1, 3) * m2.Get(1, 1) + m1.Get(2, 3) * m2.Get(1, 2),
-            m1.Get(0, 3) * m2.Get(2, 0) + m1.Get(1, 3) * m2.Get(2, 1) + m1.Get(2, 3) * m2.Get(2, 2),
-            m1.Get(0, 3) * m2.Get(3, 0) + m1.Get(1, 3) * m2.Get(3, 1) + m1.Get(2, 3) * m2.Get(3, 2) + m1.Get(3, 3));
+		m1.Get(0, 3) * m2.Get(0, 0) + m1.Get(1, 3) * m2.Get(0, 1) + m1.Get(2, 3) * m2.Get(0, 2),
+		m1.Get(0, 3) * m2.Get(1, 0) + m1.Get(1, 3) * m2.Get(1, 1) + m1.Get(2, 3) * m2.Get(1, 2),
+		m1.Get(0, 3) * m2.Get(2, 0) + m1.Get(1, 3) * m2.Get(2, 1) + m1.Get(2, 3) * m2.Get(2, 2),
+		m1.Get(0, 3) * m2.Get(3, 0) + m1.Get(1, 3) * m2.Get(3, 1) + m1.Get(2, 3) * m2.Get(3, 2) +
+		m1.Get(3, 3));
 }
 
 DST_INLINE_ONLY Matrix4D dstInlineMultiply(const Matrix4D& m1, const Matrix4D& m2) {

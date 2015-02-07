@@ -221,11 +221,13 @@ public:
 		z = u;
 	}
 
+#if 0
 	Vector3DBase(const Vector2D& v) {
 		x = v.x;
 		y = v.y;
 		z = 0.0;
 	}
+#endif
 
 	Vector3DBase(const Vector2D& v, float u) {
 		x = v.x;
@@ -393,6 +395,8 @@ public:
 template <class T>
 class DST_API Vector3DBasePadded : public Vector3DBase <T> {
 public :
+	Vector3DBasePadded() {}
+	Vector3DBasePadded(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
 	Vector3DBasePadded <T> & operator =(const Vector3DBase <T> & v) {
 		this->x = v.x;
 		this->y = v.y;
@@ -414,7 +418,7 @@ public:
 
 	Point3DBase() {}
 	Point3DBase(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
-	Point3DBase(const Vector2DBase <T> & v) : Vector3DBase <T>(v) {}
+//	Point3DBase(const Vector2DBase <T> & v) : Vector3DBase <T>(v) {}
 	Point3DBase(const Vector2DBase <T> & v, float u) : Vector3DBase <T>(v, u) {}
 	Point3DBase(const Vector3DBase <T> & v) {
 		*((Vector3DBase <T> *)this) = v;
@@ -459,11 +463,15 @@ public:
 	    v.Normalize();
 	    return v;
 	}
+
+	char *GetString() const;
 };
 
 template <class T>
 class DST_API Point3DBasePadded : public Point3DBase <T> {
 public :
+	Point3DBasePadded() { }
+	Point3DBasePadded(T r, T s, T t) : Point3DBase <T>(r, s, t) {}
 	Point3DBasePadded <T> & operator =(const Vector3DBase <T> & v) {
 		this->x = v.x;
 		this->y = v.y;
@@ -471,7 +479,8 @@ public :
 		return (*this);
 	}
 
-} DST_ALIGNED(sizeof(T) *4);
+	char *GetString() const;
+} DST_ALIGNED(sizeof(T) * 4);
 
 typedef Point3DBase <float> Point3D;
 typedef Point3DBasePadded <float> Point3DPadded;
@@ -512,6 +521,8 @@ public:
 		w = - Dot(v, q);
 	}
 
+#if 0
+	// "Auto-completing" constructors can be confusing.
 	Vector4DBase(const Vector3DBase <T> & v) {
 		x = v.x;
 		y = v.y;
@@ -539,6 +550,7 @@ public:
 		z = 0.0;
 		w = 1.0;
 	}
+#endif
 
 	Vector4DBase& Set(T r, T s, T t, T u) {
 		x = r;
@@ -598,6 +610,14 @@ public:
 
 	Point3DBase <T> GetPoint3D(void) const {
 		return Point3DBase <T>(x, y, z);
+	}
+
+	Vector3DBasePadded <T> GetVector3DPadded(void) const {
+		return Vector3DBasePadded <T>(x, y, z);
+	}
+
+	Point3DBasePadded <T> GetPoint3DPadded(void) const {
+		return Point3DBasePadded <T>(x, y, z);
 	}
 #endif
 

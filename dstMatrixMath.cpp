@@ -56,19 +56,19 @@ Matrix3D& Matrix3D::operator *=(const Matrix3D& __restrict__ m) __restrict__
 	n[2][0] = n[0][0] * m.n[2][0] + n[1][0] * m.n[2][1] + n[2][0] * m.n[2][2];
 	n[0][0] = t;
 	n[1][0] = u;
-	
+
 	t = n[0][1] * m.n[0][0] + n[1][1] * m.n[0][1] + n[2][1] * m.n[0][2];
 	u = n[0][1] * m.n[1][0] + n[1][1] * m.n[1][1] + n[2][1] * m.n[1][2];
 	n[2][1] = n[0][1] * m.n[2][0] + n[1][1] * m.n[2][1] + n[2][1] * m.n[2][2];
 	n[0][1] = t;
 	n[1][1] = u;
-	
+
 	t = n[0][2] * m.n[0][0] + n[1][2] * m.n[0][1] + n[2][2] * m.n[0][2];
 	u = n[0][2] * m.n[1][0] + n[1][2] * m.n[1][1] + n[2][2] * m.n[1][2];
 	n[2][2] = n[0][2] * m.n[2][0] + n[1][2] * m.n[2][1] + n[2][2] * m.n[2][2];
 	n[0][2] = t;
 	n[1][2] = u;
-	
+
 	return (*this);
 }
 
@@ -83,7 +83,7 @@ Matrix3D& Matrix3D::operator *=(float t)
 	n[2][0] *= t;
 	n[2][1] *= t;
 	n[2][2] *= t;
-	
+
 	return (*this);
 }
 
@@ -99,7 +99,7 @@ Matrix3D& Matrix3D::operator /=(float t)
 	n[2][0] *= f;
 	n[2][1] *= f;
 	n[2][2] *= f;
-	
+
 	return (*this);
 }
 
@@ -107,7 +107,7 @@ Matrix3D& Matrix3D::SetIdentity(void)
 {
 	n[0][0] = n[1][1] = n[2][2] = 1.0F;
 	n[0][1] = n[0][2] = n[1][0] = n[1][2] = n[2][0] = n[2][1] = 0.0F;
-	
+
 	return (*this);
 }
 
@@ -228,13 +228,13 @@ Matrix3D Inverse(const Matrix3D& m)
 	float n20 = m(2,0);
 	float n21 = m(2,1);
 	float n22 = m(2,2);
-	
+
 	float p00 = n11 * n22 - n12 * n21;
 	float p10 = n12 * n20 - n10 * n22;
 	float p20 = n10 * n21 - n11 * n20;
-	
-	float t = 1.0F / (n00 * p00 + n01 * p10 + n02 * p20);
-	
+
+	float t = 1.0f / (n00 * p00 + n01 * p10 + n02 * p20);
+
 	return (Matrix3D(p00 * t, (n02 * n21 - n01 * n22) * t, (n01 * n12 - n02 * n11) * t,
 					 p10 * t, (n00 * n22 - n02 * n20) * t, (n02 * n10 - n00 * n12) * t,
 					 p20 * t, (n01 * n20 - n00 * n21) * t, (n00 * n11 - n01 * n10) * t));
@@ -251,7 +251,7 @@ Matrix3D Adjugate(const Matrix3D& m)
 	float n20 = m(2,0);
 	float n21 = m(2,1);
 	float n22 = m(2,2);
-	
+
 	return (Matrix3D(n11 * n22 - n12 * n21, n02 * n21 - n01 * n22, n01 * n12 - n02 * n11,
 					 n12 * n20 - n10 * n22, n00 * n22 - n02 * n20, n02 * n10 - n00 * n12,
 					 n10 * n21 - n11 * n20, n01 * n20 - n00 * n21, n00 * n11 - n01 * n10));
@@ -291,7 +291,7 @@ Matrix4D& Matrix4D::operator *=(const Matrix4D& __restrict__ m) __restrict__
 	n[1][0] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2] + w * m.n[1][3];
 	n[2][0] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2] + w * m.n[2][3];
 	n[3][0] = x * m.n[3][0] + y * m.n[3][1] + z * m.n[3][2] + w * m.n[3][3];
-	
+
 	x = n[0][1];
 	y = n[1][1];
 	z = n[2][1];
@@ -300,7 +300,7 @@ Matrix4D& Matrix4D::operator *=(const Matrix4D& __restrict__ m) __restrict__
 	n[1][1] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2] + w * m.n[1][3];
 	n[2][1] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2] + w * m.n[2][3];
 	n[3][1] = x * m.n[3][0] + y * m.n[3][1] + z * m.n[3][2] + w * m.n[3][3];
-	
+
 	x = n[0][2];
 	y = n[1][2];
 	z = n[2][2];
@@ -309,7 +309,7 @@ Matrix4D& Matrix4D::operator *=(const Matrix4D& __restrict__ m) __restrict__
 	n[1][2] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2] + w * m.n[1][3];
 	n[2][2] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2] + w * m.n[2][3];
 	n[3][2] = x * m.n[3][0] + y * m.n[3][1] + z * m.n[3][2] + w * m.n[3][3];
-	
+
 	x = n[0][3];
 	y = n[1][3];
 	z = n[2][3];
@@ -318,7 +318,7 @@ Matrix4D& Matrix4D::operator *=(const Matrix4D& __restrict__ m) __restrict__
 	n[1][3] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2] + w * m.n[1][3];
 	n[2][3] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2] + w * m.n[2][3];
 	n[3][3] = x * m.n[3][0] + y * m.n[3][1] + z * m.n[3][2] + w * m.n[3][3];
-	
+
 	return (*this);
 }
 
@@ -330,28 +330,28 @@ Matrix4D& Matrix4D::operator *=(const Matrix3D& __restrict__ m) __restrict__
 	n[0][0] = x * m.n[0][0] + y * m.n[0][1] + z * m.n[0][2];
 	n[1][0] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2];
 	n[2][0] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2];
-	
+
 	x = n[0][1];
 	y = n[1][1];
 	z = n[2][1];
 	n[0][1] = x * m.n[0][0] + y * m.n[0][1] + z * m.n[0][2];
 	n[1][1] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2];
 	n[2][1] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2];
-	
+
 	x = n[0][2];
 	y = n[1][2];
 	z = n[2][2];
 	n[0][2] = x * m.n[0][0] + y * m.n[0][1] + z * m.n[0][2];
 	n[1][2] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2];
 	n[2][2] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2];
-	
+
 	x = n[0][3];
 	y = n[1][3];
 	z = n[2][3];
 	n[0][3] = x * m.n[0][0] + y * m.n[0][1] + z * m.n[0][2];
 	n[1][3] = x * m.n[1][0] + y * m.n[1][1] + z * m.n[1][2];
 	n[2][3] = x * m.n[2][0] + y * m.n[2][1] + z * m.n[2][2];
-	
+
 	return (*this);
 }
 
@@ -531,22 +531,22 @@ float Determinant(const Matrix4D& m)
 	float n01 = m(0,1);
 	float n02 = m(0,2);
 	float n03 = m(0,3);
-	
+
 	float n10 = m(1,0);
 	float n11 = m(1,1);
 	float n12 = m(1,2);
 	float n13 = m(1,3);
-	
+
 	float n20 = m(2,0);
 	float n21 = m(2,1);
 	float n22 = m(2,2);
 	float n23 = m(2,3);
-	
+
 	float n30 = m(3,0);
 	float n31 = m(3,1);
 	float n32 = m(3,2);
 	float n33 = m(3,3);
-	
+
 	return (n00 * (n11 * (n22 * n33 - n23 * n32) + n12 * (n23 * n31 - n21 * n33) + n13 * (n21 * n32 - n22 * n31)) +
 			n01 * (n10 * (n23 * n32 - n22 * n33) + n12 * (n20 * n33 - n23 * n30) + n13 * (n22 * n30 - n20 * n32)) +
 			n02 * (n10 * (n21 * n33 - n23 * n31) + n11 * (n23 * n30 - n20 * n33) + n13 * (n20 * n31 - n21 * n30)) +
@@ -559,29 +559,29 @@ Matrix4D Inverse(const Matrix4D& m)
 	float n01 = m(0,1);
 	float n02 = m(0,2);
 	float n03 = m(0,3);
-	
+
 	float n10 = m(1,0);
 	float n11 = m(1,1);
 	float n12 = m(1,2);
 	float n13 = m(1,3);
-	
+
 	float n20 = m(2,0);
 	float n21 = m(2,1);
 	float n22 = m(2,2);
 	float n23 = m(2,3);
-	
+
 	float n30 = m(3,0);
 	float n31 = m(3,1);
 	float n32 = m(3,2);
 	float n33 = m(3,3);
-	
+
 	float p00 = n11 * (n22 * n33 - n23 * n32) + n12 * (n23 * n31 - n21 * n33) + n13 * (n21 * n32 - n22 * n31);
 	float p10 = n10 * (n23 * n32 - n22 * n33) + n12 * (n20 * n33 - n23 * n30) + n13 * (n22 * n30 - n20 * n32);
 	float p20 = n10 * (n21 * n33 - n23 * n31) + n11 * (n23 * n30 - n20 * n33) + n13 * (n20 * n31 - n21 * n30);
 	float p30 = n10 * (n22 * n31 - n21 * n32) + n11 * (n20 * n32 - n22 * n30) + n12 * (n21 * n30 - n20 * n31);
-	
-	float t = 1.0F / (n00 * p00 + n01 * p10 + n02 * p20 + n03 * p30);
-	
+
+	float t = 1.0f / (n00 * p00 + n01 * p10 + n02 * p20 + n03 * p30);
+
 	return (Matrix4D(p00 * t,
 					 (n01 * (n23 * n32 - n22 * n33) + n02 * (n21 * n33 - n23 * n31) + n03 * (n22 * n31 - n21 * n32)) * t,
 					 (n01 * (n12 * n33 - n13 * n32) + n02 * (n13 * n31 - n11 * n33) + n03 * (n11 * n32 - n12 * n31)) * t,
@@ -606,22 +606,22 @@ Matrix4D Adjugate(const Matrix4D& m)
 	float n01 = m(0,1);
 	float n02 = m(0,2);
 	float n03 = m(0,3);
-	
+
 	float n10 = m(1,0);
 	float n11 = m(1,1);
 	float n12 = m(1,2);
 	float n13 = m(1,3);
-	
+
 	float n20 = m(2,0);
 	float n21 = m(2,1);
 	float n22 = m(2,2);
 	float n23 = m(2,3);
-	
+
 	float n30 = m(3,0);
 	float n31 = m(3,1);
 	float n32 = m(3,2);
 	float n33 = m(3,3);
-	
+
 	return (Matrix4D(n11 * (n22 * n33 - n23 * n32) + n12 * (n23 * n31 - n21 * n33) + n13 * (n21 * n32 - n22 * n31),
 					 n01 * (n23 * n32 - n22 * n33) + n02 * (n21 * n33 - n23 * n31) + n03 * (n22 * n31 - n21 * n32),
 					 n01 * (n12 * n33 - n13 * n32) + n02 * (n13 * n31 - n11 * n33) + n03 * (n11 * n32 - n12 * n31),
@@ -705,7 +705,7 @@ Matrix4x3RM& Matrix4x3RM::operator *=(const Matrix4x3RM& __restrict__ m) __restr
 	n[0][1] = x * m.Get(1, 0) + y * m.Get(1, 1) + z * m.Get(1, 2);
 	n[0][2] = x * m.Get(2, 0) + y * m.Get(2, 1) + z * m.Get(2, 2);
 	n[0][3] = x * m.Get(3, 0) + y * m.Get(3, 1) + z * m.Get(3, 2) + w;
-	
+
 	x = Get(0, 1);
 	y = Get(1, 1);
 	z = Get(2, 1);
@@ -714,7 +714,7 @@ Matrix4x3RM& Matrix4x3RM::operator *=(const Matrix4x3RM& __restrict__ m) __restr
 	n[1][1] = x * m.Get(1, 0) + y * m.Get(1, 1) + z * m.Get(1, 2);
 	n[1][2] = x * m.Get(2, 0) + y * m.Get(2, 1) + z * m.Get(2, 2);
 	n[1][3] = x * m.Get(3, 0) + y * m.Get(3, 1) + z * m.Get(3, 2);
-	
+
 	x = Get(0, 2);
 	y = Get(1, 2);
 	z = Get(2, 2);
@@ -723,7 +723,7 @@ Matrix4x3RM& Matrix4x3RM::operator *=(const Matrix4x3RM& __restrict__ m) __restr
 	n[2][1] = x * m.Get(1, 0) + y * m.Get(1, 1) + z * m.Get(1, 2);
 	n[2][2] = x * m.Get(2, 0) + y * m.Get(2, 1) + z * m.Get(2, 2);
 	n[2][3] = x * m.Get(3, 0) + y * m.Get(3, 1) + z * m.Get(3, 2) + w;
-		
+
 	return (*this);
 }
 
@@ -798,7 +798,7 @@ bool operator !=(const Matrix4x3RM& m1, const Matrix4x3RM& m2)
 
 Matrix4D Inverse(const Matrix4x3RM& m)
 {
-	Matrix4D m2 = Matrix4D(m);
+	Matrix4D m2 = m;
 	return Inverse(m2);
 }
 
