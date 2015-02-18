@@ -1,5 +1,7 @@
 # Do not edit normally. Configuration settings are in Makefile.conf.
 
+TARGET_MACHINE := $(shell gcc -dumpmachine)
+
 include Makefile.conf
 
 SHORT_LIBRARY_NAME = datasetturbo
@@ -7,6 +9,26 @@ LIBRARY_NAME = lib$(SHORT_LIBRARY_NAME)
 VERSION = 0.5
 SO_VERSION = 0.5
 MAJOR_VERSION = 0
+
+# Autodetect platform based on TARGET_MACHINE
+ifneq (,$(findstring x86,$(TARGET_MACHINE)))
+DETECTED_CPU=X86
+CPU_DESCRIPTION="Detected CPU platform: x86"
+else
+ifneq (,$(findstring arm,$(TARGET_MACHINE)))
+DETECTED_CPU=ARM
+CPU_DESCRIPTION="Detected CPU platform: ARM"
+else
+endif
+endif
+
+ifeq (,$(TARGET_ARCH))
+ifneq (,$(DETECTED_CPU))
+TARGET_ARCH = $(DETECTED_CPU)
+else
+$(error Could not detect CPU platform.)
+endif
+endif
 
 # CFLAGS with optional tuning for CPU
 OPTCFLAGS = $(TARGET_CPU_FLAGS)
@@ -18,9 +40,11 @@ ARM_ASSEMBLER_FLAGS_NON_THUMB =
 # SIMD configuration (SSE on x86, NEON on ARM).
 ifeq ($(TARGET_ARCH), X86)
 SIMD_TYPES = SSE2 SSE3 SSSE3 SSE4A # SSE41 SSE42 AVX NEON AVX_SSE4A_FMA4 X86_AVX_FMA
-endif
-ifeq ($TARGET_ARCH), ARM)
-SIMD_TYPES = NEON
+else ifeq ($TARGET_ARCH), ARM)
+# ARM NEON is currently not yet functional.
+SIMD_TYPES = #NEON
+else
+$(error Unknown value for TARGET_ARCH.)
 endif
 
 # Select the compiled in SIMD types.
@@ -33,7 +57,8 @@ SIMD_MODULES = dstSIMDSSE2.o dstSIMDSSE3.o dstSIMDSSSE3.o dstSIMDSSE4A.o # Add t
 SIMD_MODULES += dstSIMDSSE2Stream.o dstSIMDSSE3Stream.o dstSIMDSSSE3Stream.o dstSIMDSSE4AStream.o
 else
 ifeq ($(TARGET_ARCH), ARM)
-SIMD_MODULES = dstSIMDNEON.o
+# ARM NEON is currently not yet functional.
+SIMD_MODULES = #dstSIMDNEON.o
 endif
 endif
 endif
