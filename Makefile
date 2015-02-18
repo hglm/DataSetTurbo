@@ -59,6 +59,7 @@ else
 ifeq ($(TARGET_ARCH), ARM)
 # ARM NEON is currently not yet functional.
 SIMD_MODULES = #dstSIMDNEON.o
+TARGET_SIMD = NONE
 endif
 endif
 endif
