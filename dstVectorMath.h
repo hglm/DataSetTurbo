@@ -221,6 +221,12 @@ public:
 		z = u;
 	}
 
+	Vector3DBase(const Vector3DBase <float>& v) {
+		x = v.x;
+		y = v.y;
+		z = v.z;
+	}
+
 #if 0
 	Vector3DBase(const Vector2D& v) {
 		x = v.x;
@@ -264,6 +270,20 @@ public:
 
 	const Point2DBase <T>& GetPoint2D() const {
 		return (*reinterpret_cast<const Point2DBase <T> *>(this));
+	}
+
+	Vector3DBase <float> GetVector3D(void) {
+		if (sizeof(T) == 4)
+			return (*reinterpret_cast<Vector3DBase <float> *>(this));
+		else
+			return Vector3DBase <float>((float)x, (float)y, (float)z);
+	}
+
+	const Vector3DBase <float> GetVector3D(void) const {
+		if (sizeof(T) == 4)
+			return (*reinterpret_cast<const Vector3DBase <float> *>(this));
+		else
+			return Vector3DBase <float>((float)x, (float)y, (float)z);
 	}
 
 	Vector3DBase& operator +=(const Vector3DBase& v) {
@@ -409,7 +429,6 @@ public :
 typedef Vector3DBase <float> Vector3D;
 typedef Vector3DBasePadded <float> Vector3DPadded;
 typedef Vector3DBase <double> VectorDouble3D;
-typedef Vector3DBasePadded <double> VectorDouble3DPadded;
 
 template <class T>
 class DST_API Point3DBase : public Vector3DBase <T>
@@ -420,16 +439,43 @@ public:
 	Point3DBase(T r, T s, T t) : Vector3DBase <T>(r, s, t) {}
 //	Point3DBase(const Vector2DBase <T> & v) : Vector3DBase <T>(v) {}
 	Point3DBase(const Vector2DBase <T> & v, float u) : Vector3DBase <T>(v, u) {}
-	Point3DBase(const Vector3DBase <T> & v) {
-		*((Vector3DBase <T> *)this) = v;
+	Point3DBase(const Vector3DBase <float> & v) {
+		if (sizeof(T) == 4)
+			*((Vector3DBase <float> *)this) = v;
+		else {
+			this->x = (double)v.x;
+			this->y = (double)v.y;
+			this->z = (double)v.z;
+		}
 	}
 
-	Vector3DBase <T> & GetVector3D(void) {
-		return (*this);
+	Vector3DBase <float> GetVector3D(void) {
+		if (sizeof(T) == 4)
+			return (*this);
+		else
+			return Vector3DBase <float>((float)this->x, (float)this->y, (float)this->z);
 	}
 
-	const Vector3DBase <T>& GetVector3D(void) const {
-		return (*this);
+	const Vector3DBase <float> GetVector3D(void) const {
+		if (sizeof(T) == 4)
+			return (*this);
+		else
+			return Vector3DBase <float>((float)this->x, (float)this->y, (float)this->z);
+	}
+
+
+	Point3DBase <float> GetPoint3D(void) {
+		if (sizeof(T) == 4)
+			return (*this);
+		else
+			return Point3DBase <float>((float)this->x, (float)this->y, (float)this->z);
+	}
+
+	const Point3DBase <float> GetPoint3D(void) const {
+		if (sizeof(T) == 4)
+			return (*this);
+		else
+			return Point3DBase <float>((float)this->x, (float)this->y, (float)this->z);
 	}
 
 	Point2DBase <T> & GetPoint2D(void) {
@@ -447,14 +493,17 @@ public:
 
 	// Adding a vector to a point yields a point, so we cannot inherit the parent class
 	// version.
-	Point3DBase operator -(const Vector3DBase <T>& v) const {
-		return (*(Vector3DBase <T> *)this) - v;
+	Point3DBase <T> operator +(const Vector3DBase <T>& v) const {
+		return (*(Vector3DBase <T> *)this) + v;
 	}
 
 	// Subtracting a vector from a point yields a point, so we cannot inherit the parent class
 	// version.
-	Point3DBase operator +(const Vector3DBase <T>& v) const {
-		return (*(Vector3DBase <T> *)this) + v;
+	Point3DBase <T> operator -(const Vector3DBase <T>& v) const {
+		return (*(Vector3DBase <T> *)this) - v;
+	}
+	Point3DBase <T> operator -() const {
+		return - (*(Vector3DBase <T> *)this);
 	}
 
 	friend Vector3DBase <T> CalculateNormal(const Point3DBase <T> &v1, const Point3DBase <T> &v2,
@@ -471,7 +520,7 @@ template <class T>
 class DST_API Point3DBasePadded : public Point3DBase <T> {
 public :
 	Point3DBasePadded() { }
-	Point3DBasePadded(T r, T s, T t) : Point3DBase <T>(r, s, t) {}
+	Point3DBasePadded(T r, T s, T t) : Point3DBase <T>(r, s, t) { }
 	Point3DBasePadded <T> & operator =(const Vector3DBase <T> & v) {
 		this->x = v.x;
 		this->y = v.y;
@@ -484,8 +533,7 @@ public :
 
 typedef Point3DBase <float> Point3D;
 typedef Point3DBasePadded <float> Point3DPadded;
-typedef Point3DBase <double> Point3DDouble;
-typedef Point3DBasePadded <double> Point3DDoublePadded;
+typedef Point3DBase <double> PointDouble3D;
 
 template <class T>
 class DST_API Vector4DBase {

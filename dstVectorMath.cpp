@@ -60,6 +60,13 @@ char *VectorDouble3D::GetString() const {
 }
 
 template <>
+char *PointDouble3D::GetString() const {
+	char *s = new char[80];
+	sprintf(s, "PointDouble3D(%.10G, %.10G, %10G)", x, y, z);
+	return s;
+}
+
+template <>
 char *Vector4D::GetString() const {
     char *s = new char[80];
     sprintf(s, "Vector4D(%.10G, %.10G, %.10G, %.10G)", x, y, z, w);

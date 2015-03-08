@@ -71,7 +71,8 @@ static DST_INLINE_ONLY __simd128_float simd128_load_and_set_w(const Vector3D *v)
 }
 
 static DST_INLINE_ONLY __simd128_float simd128_load(const Point3D *p) {
-    return simd128_load(&p->GetVector3D());
+
+    return simd128_load(reinterpret_cast<const Vector3D *>(p));
 }
 
 // Load a point vector and set the fourth component w to 1.0f.
@@ -112,7 +113,7 @@ static DST_INLINE_ONLY void simd128_store(Vector3D *v, __simd128_float m_v) {
 }
 
 static DST_INLINE_ONLY void simd128_store(Point3D *p, __simd128_float m_v) {
-    simd128_store(&p->GetVector3D(), m_v);
+    simd128_store(reinterpret_cast<Vector3D *>(p), m_v);
 }
 
 #endif // !defined(DST_NO_SIMD)
