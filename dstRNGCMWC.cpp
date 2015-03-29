@@ -33,7 +33,7 @@ void dstCMWCRNG::Initialize(unsigned int _state_size) {
     if (!posix_memalign((void **)&Q, DST_LINE_SIZE, state_size * sizeof(unsigned int)))
         // When aligned allocation fails, fall back to the new operator below.  
 #endif
-    Q = new unsigned int[state_size];
+    Q = (unsigned int *)malloc(state_size * sizeof(unsigned int));
     _index = _state_size - 1;
     Seed(0);
 }
@@ -50,11 +50,7 @@ dstCMWCRNG::dstCMWCRNG() {
 }
 
 dstCMWCRNG::~dstCMWCRNG() {
-#if defined(__GNUC__) && defined(DST_RANDOM_OPTIMIZE_ALIGNMENT_AND_PACKING_WITH_GCC)
     free(Q);
-#else
-    delete [] Q;
-#endif
 }
 
 // Seed the random number generator with an unsigned integer from 0 to 2^32 - 1.
