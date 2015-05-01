@@ -277,7 +277,7 @@ $(LIBRARY_PKG_CONFIG_FILE) : Makefile.conf Makefile
 	@echo Version: $(VERSION) >> datasetturbo.pc
 	@echo Description: DataSetTurbo library >> datasetturbo.pc
 	@echo Requires: $(PKG_CONFIG_REQUIREMENTS) >> datasetturbo.pc
-	@echo Libs: -ldatasetturbo >> datasetturbo.pc
+	@echo Libs: -ldatasetturbo -lpthread >> datasetturbo.pc
 	@echo Cflags: -I$(HEADER_FILE_INSTALL_DIR)/DataSetTurbo >> datasetturbo.pc
 
 clean :
