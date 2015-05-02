@@ -6,7 +6,7 @@ include Makefile.conf
 
 SHORT_LIBRARY_NAME = datasetturbo
 LIBRARY_NAME = lib$(SHORT_LIBRARY_NAME)
-VERSION = 0.6
+VERSION = 0.6.1
 SO_VERSION = 0.6
 MAJOR_VERSION = 0
 
