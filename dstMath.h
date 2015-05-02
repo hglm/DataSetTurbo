@@ -143,9 +143,9 @@ static void dstValidateBitsNeeded(unsigned int n, unsigned int n_bits) {
 // Calculate floor(log2(n))). For a power of two, this is equivalent to the
 // number of bits needed to represent the range 0 to n - 1. For a non-power-of-two,
 // the return value is one less than the number of bits needed to represent
-// the range 0 to n - 1.
+// the range 0 to n - 1. For n = 0, it returns 0.
 DST_API static inline unsigned int dstCalculateLog2(unsigned int n) {
-        // Set shift to 16 if bits 15-31 are non-zero, zero otherwise.
+        // Set shift to 16 if bits 16-31 are non-zero, zero otherwise.
         unsigned int shift = (((n >> 16) + 0xFFFF) & 0x10000) >> 12;
         unsigned int bits = n >> shift;
         // Add 8 to shift if bits 8-15 of the highest non-zero half-word found previously
@@ -181,10 +181,9 @@ DST_API static inline unsigned int dstCalculateBitsNeeded(unsigned int n) {
 }
 
 // Calculate floor(log2(n)) when n is guaranteed to be <= 256, so that the
-// return value will be <= 8. Undefined for n > 256.
+// return value will be <= 8. Undefined for n > 256. For n = 0, it returns 0.
 DST_API static inline unsigned int dstCalculateLog2Max256(unsigned int n) {
-        // Set shift to 4 if bits 4-7 of the highest non-zero byte found previously
-        // are non-zero.
+        // Set shift to 4 if bits 4-7 of n are non-zero.
         unsigned int shift = (((n >> 4) + 0xF) & 0x10) >> 2;
         unsigned int bits = n >> shift;
         // Add 2 to shift if bits 2-3 of the highest non-zero nibble found previously
@@ -195,10 +194,8 @@ DST_API static inline unsigned int dstCalculateLog2Max256(unsigned int n) {
         // Add 1 to shift if bit 1 of the highest non-zero pair found previously
         // is non-zero.
         shift += bits >> 1;
-        // When n = 2^16, set shift to 16 (shift will still be zero).
-        shift += (n & 0x10000) >> 12;
         return shift;
-    }
+}
 
 // Calculate number of bits needed for an integer range of n (log2(n - 1) + 1),
 // when n <= 256.
@@ -213,9 +210,9 @@ DST_API static inline unsigned int dstCalculateBitsNeededMax256(unsigned int n) 
 }
 
 // Calculate floor(log2(n)) when n is guaranteed to be <= 2^16, so that the
-// return value will be <= 16. Undefined for n > 2^16.
+// return value will be <= 16. Undefined for n > 2^16. For n = 0, it returns 0.
 DST_API static inline unsigned int dstCalculateLog2Max65536(unsigned int n) {
-        // Set shift to 8 if bits 7-15 are non-zero.
+        // Set shift to 8 if bits 8-15 are non-zero.
         unsigned int shift = (((n >> 8) + 0xFF) & 0x100) >> 5;
         unsigned bits = n >> shift;
         // Add 4 to shift if bits 4-7 of the highest non-zero byte found previously
@@ -231,10 +228,8 @@ DST_API static inline unsigned int dstCalculateLog2Max65536(unsigned int n) {
         // Add 1 to shift if bit 1 of the highest non-zero pair found previously
         // is non-zero.
         shift += bits >> 1;
-        // When n = 256, set shift to 8 (shift will still be zero).
-        shift += (n & 0x100) >> 5;
         return shift;
-    }
+}
 
 // Calculate number of bits needed for an integer range of n (log2(n - 1) + 1),
 // when n <= 65536.
